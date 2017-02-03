@@ -341,4 +341,7 @@
 
     <!-- The default ringer mode. See `AudioManager` for list of valid values. -->
     <integer name="def_ringer_mode">2</integer>
+
+    <bool name="def_text_show_password">false</bool>
+
 </resources>
