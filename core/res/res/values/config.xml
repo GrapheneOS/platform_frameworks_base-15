@@ -3078,7 +3078,7 @@
     <bool name="config_canSwitchToHeadlessSystemUser">false</bool>
 
     <!-- Whether UI for multi user should be shown -->
-    <bool name="config_enableMultiUserUI">false</bool>
+    <bool name="config_enableMultiUserUI">true</bool>
 
     <!-- Whether to boot system with the headless system user, i.e. user 0. If set to true,
          system will be booted with the headless system user, or user 0. It has no effect if device
