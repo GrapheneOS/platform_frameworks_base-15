@@ -24,6 +24,7 @@ import com.android.systemui.qs.QsEventLogger
 import com.android.systemui.qs.pipeline.shared.TileSpec
 import com.android.systemui.qs.tileimpl.QSTileImpl
 import com.android.systemui.qs.tiles.AlarmTile
+import com.android.systemui.qs.tiles.BatteryShareTile
 import com.android.systemui.qs.tiles.CameraToggleTile
 import com.android.systemui.qs.tiles.DndTile
 import com.android.systemui.qs.tiles.FlashlightTile
@@ -425,4 +426,9 @@ interface PolicyModule {
     @IntoMap
     @StringKey(UiModeNightTile.TILE_SPEC)
     fun bindUiModeNightTile(uiModeNightTile: UiModeNightTile): QSTileImpl<*>
+
+    @Binds
+    @IntoMap
+    @StringKey(BatteryShareTile.TILE_SPEC)
+    fun bindBatteryShareTile(batteryShareTile: BatteryShareTile): QSTileImpl<*>
 }
