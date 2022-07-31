@@ -181,4 +181,6 @@ oneway interface IApplicationThread {
     void scheduleTimeoutService(IBinder token, int startId);
     void scheduleTimeoutServiceForType(IBinder token, int startId, int fgsType);
     void schedulePing(in RemoteCallback pong);
+
+    void onGosPackageStateChanged(in @nullable android.content.pm.GosPackageState state);
 }
