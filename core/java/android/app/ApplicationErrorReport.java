@@ -26,6 +26,8 @@ import android.content.pm.ResolveInfo;
 import android.os.Binder;
 import android.os.Parcel;
 import android.os.Parcelable;
+import android.os.Process;
+import android.os.SystemClock;
 import android.os.SystemProperties;
 import android.provider.Settings;
 import android.util.Printer;
@@ -99,6 +101,9 @@ public class ApplicationErrorReport implements Parcelable {
      */
     public String packageName;
 
+    /** @hide */
+    public ApplicationInfo applicationInfo;
+
     /**
      * Package name of the application which installed the application this
      * report pertains to.
@@ -163,12 +168,18 @@ public class ApplicationErrorReport implements Parcelable {
             String packageName, int appFlags) {
         // check if error reporting is enabled in secure settings
         int enabled = Settings.Global.getInt(context.getContentResolver(),
-                Settings.Global.SEND_ACTION_APP_ERROR, 0);
+                Settings.Global.SEND_ACTION_APP_ERROR, 1);
         if (enabled == 0) {
             return null;
         }
 
         PackageManager pm = context.getPackageManager();
+
+        ComponentName logViewerApp = getErrorReportReceiver(pm, packageName,
+                android.ext.LogViewerApp.getPackageName());
+        if (logViewerApp != null) {
+            return logViewerApp;
+        }
 
         // look for receiver in the installer package
         String candidate = null;
@@ -234,6 +245,11 @@ public class ApplicationErrorReport implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeInt(type);
         dest.writeString(packageName);
+        ApplicationInfo appInfo = applicationInfo;
+        dest.writeBoolean(appInfo != null);
+        if (appInfo != null) {
+            appInfo.writeToParcel(dest, 0);
+        }
         dest.writeString(installerPackageName);
         dest.writeString(processName);
         dest.writeLong(time);
@@ -261,6 +277,9 @@ public class ApplicationErrorReport implements Parcelable {
     public void readFromParcel(Parcel in) {
         type = in.readInt();
         packageName = in.readString();
+        if (in.readBoolean()) {
+            applicationInfo = ApplicationInfo.CREATOR.createFromParcel(in);
+        }
         installerPackageName = in.readString();
         processName = in.readString();
         time = in.readLong();
@@ -346,6 +365,11 @@ public class ApplicationErrorReport implements Parcelable {
          */
         public String crashTag;
 
+        /** @hide */
+        public long processUptimeMs;
+        /** @hide */
+        public long processStartupLatencyMs;
+
         /**
          * Create an uninitialized instance of CrashInfo.
          */
@@ -399,6 +423,9 @@ public class ApplicationErrorReport implements Parcelable {
             }
 
             exceptionMessage = sanitizeString(exceptionMessage);
+
+            processUptimeMs = SystemClock.elapsedRealtime() - Process.getStartElapsedRealtime();
+            processStartupLatencyMs = Process.getStartElapsedRealtime() - Process.getStartRequestedElapsedRealtime();
         }
 
         /** {@hide} */
@@ -440,6 +467,8 @@ public class ApplicationErrorReport implements Parcelable {
             throwLineNumber = in.readInt();
             stackTrace = in.readString();
             crashTag = in.readString();
+            processUptimeMs = in.readLong();
+            processStartupLatencyMs = in.readLong();
         }
 
         /**
@@ -456,6 +485,8 @@ public class ApplicationErrorReport implements Parcelable {
             dest.writeInt(throwLineNumber);
             dest.writeString(stackTrace);
             dest.writeString(crashTag);
+            dest.writeLong(processUptimeMs);
+            dest.writeLong(processStartupLatencyMs);
             int total = dest.dataPosition()-start;
             if (Binder.CHECK_PARCEL_SIZE && total > 20*1024) {
                 Slog.d("Error", "ERR: exHandler=" + exceptionHandlerClassName);
