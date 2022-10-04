@@ -5624,4 +5624,10 @@
   <!-- Identity check strings -->
   <java-symbol type="string" name="identity_check_settings_action" />
   <java-symbol type="string" name="identity_check_settings_package_name" />
+
+  <java-symbol type="string" name="notification_action_dont_show_again" />
+
+  <java-symbol type="string" name="notification_channel_missing_permission" />
+  <java-symbol type="string" name="missing_sensors_permission_title" />
+  <java-symbol type="string" name="missing_sensors_permission_message" />
 </resources>
