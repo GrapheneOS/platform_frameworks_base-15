@@ -180,7 +180,7 @@ public class PackageManagerServiceUtils {
     /**
      * The initial enabled state of the cache before other checks are done.
      */
-    private static final boolean DEFAULT_PACKAGE_PARSER_CACHE_ENABLED = true;
+    private static final boolean DEFAULT_PACKAGE_PARSER_CACHE_ENABLED = false;
 
     /**
      * Whether to skip all other checks and force the cache to be enabled.
@@ -1344,6 +1344,13 @@ public class PackageManagerServiceUtils {
 
     public static @Nullable File preparePackageParserCache(boolean forEngBuild,
             boolean isUserDebugBuild, String incrementalVersion) {
+        // The base directory for the package parser cache lives under /data/system/.
+        final File cacheBaseDir = Environment.getPackageCacheDirectory();
+        if (true) {
+            FileUtils.deleteContentsAndDir(cacheBaseDir);
+            return null;
+        }
+
         if (!FORCE_PACKAGE_PARSED_CACHE_ENABLED) {
             if (!DEFAULT_PACKAGE_PARSER_CACHE_ENABLED) {
                 return null;
@@ -1360,8 +1367,7 @@ public class PackageManagerServiceUtils {
             }
         }
 
-        // The base directory for the package parser cache lives under /data/system/.
-        final File cacheBaseDir = Environment.getPackageCacheDirectory();
+
         if (!FileUtils.createDir(cacheBaseDir)) {
             return null;
         }
