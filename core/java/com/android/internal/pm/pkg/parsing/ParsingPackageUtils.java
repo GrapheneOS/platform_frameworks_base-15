@@ -1097,6 +1097,10 @@ public class ParsingPackageUtils {
             }
         }
 
+        if (pkg.isDeclaredHavingCode() && usesPerms.add(android.Manifest.permission.OTHER_SENSORS)) {
+            pkg.addImplicitPermission(android.Manifest.permission.OTHER_SENSORS);
+        }
+
         convertCompatPermissions(pkg);
 
         convertSplitPermissions(pkg);
