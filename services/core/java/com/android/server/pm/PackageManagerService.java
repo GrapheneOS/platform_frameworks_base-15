@@ -216,6 +216,7 @@ import com.android.server.art.model.DeleteResult;
 import com.android.server.compat.CompatChange;
 import com.android.server.compat.PlatformCompat;
 import com.android.server.ext.PackageManagerHooks;
+import com.android.server.ext.SeInfoOverride;
 import com.android.server.pm.Installer.InstallerException;
 import com.android.server.pm.Settings.VersionInfo;
 import com.android.server.pm.dex.ArtManagerService;
@@ -1795,6 +1796,8 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
                 selinuxChangeListener);
         injector.getCompatibility().registerListener(SELinuxMMAC.SELINUX_R_CHANGES,
                 selinuxChangeListener);
+
+        m.selinuxChangeListener = selinuxChangeListener;
 
         m.installAllowlistedSystemPackages();
         IPackageManagerImpl iPackageManager = m.new IPackageManagerImpl();
@@ -6740,6 +6743,11 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
         }
 
         @Override
+        public void updateSeInfo(String packageName) {
+            SeInfoOverride.updateSeInfo(PackageManagerService.this, packageName);
+        }
+
+        @Override
         public void sendBootCompletedBroadcastToPackage(String packageName, boolean includeStopped,
                                                     int userId) {
             mContext.enforceCallingPermission(Manifest.permission.GRANT_RUNTIME_PERMISSIONS, null);
@@ -8311,5 +8319,12 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
     private static boolean isSystemOrPhone(int uid) {
         return UserHandle.isSameApp(uid, Process.SYSTEM_UID)
                 || UserHandle.isSameApp(uid, Process.PHONE_UID);
+    }
+
+    private CompatChange.ChangeListener selinuxChangeListener;
+
+    public void updateSeInfo(String packageName) {
+        // use the same procedure that is used for SELinux compat changes
+        selinuxChangeListener.onCompatChange(packageName);
     }
 }
