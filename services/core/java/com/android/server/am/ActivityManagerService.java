@@ -21186,4 +21186,10 @@ public class ActivityManagerService extends IActivityManager.Stub
     void clearPendingTopAppLocked() {
         mPendingStartActivityUids.clear();
     }
+
+    @Override
+    public String[] getSystemIdmapPaths() {
+        // see comment in AssetManager#createSystemAssetsInZygoteLocked()
+        return android.content.res.AssetManager.systemIdmapPaths_;
+    }
 }
