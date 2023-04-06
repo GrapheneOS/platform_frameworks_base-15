@@ -4848,7 +4848,7 @@
      See android.credentials.CredentialManager
     -->
     <string name="config_defaultCredentialManagerHybridService" translatable="false"></string>
-    
+
     <!-- The component name, flattened to a string, for the system's credential manager
       autofill service. This service allows interceding autofill requests and routing
       them to credential manager.
@@ -7100,4 +7100,7 @@
     <!-- Whether to show GAIA education screen during account login of private space setup.
          OEM/Partner can explicitly opt to disable the screen. -->
     <bool name="config_enableGaiaEducationInPrivateSpace">true</bool>
+
+    <bool name="config_Google_apps_can_have_special_access_to_accelerators">false</bool>
+    <bool name="config_GoogleCamera_needs_seinfo_for_access_to_accelerators">false</bool>
 </resources>
