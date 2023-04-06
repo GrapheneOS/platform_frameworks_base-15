@@ -4858,7 +4858,7 @@
      See android.credentials.CredentialManager
     -->
     <string name="config_defaultCredentialManagerHybridService" translatable="false"></string>
-    
+
     <!-- The component name, flattened to a string, for the system's credential manager
       autofill service. This service allows interceding autofill requests and routing
       them to credential manager.
@@ -7152,4 +7152,7 @@
     <string name="identity_check_settings_action"></string>
     <!-- Package for opening identity check settings page [CHAR LIMIT=NONE] [DO NOT TRANSLATE] -->
     <string name="identity_check_settings_package_name">com\u002eandroid\u002esettings</string>
+
+    <bool name="config_Google_apps_can_have_special_access_to_accelerators">false</bool>
+    <bool name="config_GoogleCamera_needs_seinfo_for_access_to_accelerators">false</bool>
 </resources>
