@@ -39,6 +39,7 @@ import android.annotation.SuppressLint;
 import android.annotation.SystemApi;
 import android.annotation.SystemService;
 import android.annotation.TestApi;
+import android.app.compat.gms.GmsCompat;
 import android.app.usage.UsageStatsManager;
 import android.companion.virtual.VirtualDeviceManager;
 import android.compat.Compatibility;
@@ -9053,6 +9054,10 @@ public class AppOpsManager {
 
     private int noteOpNoThrow(int op, int uid, @Nullable String packageName,
             @Nullable String attributionTag, int virtualDeviceId, @Nullable String message) {
+        if (GmsCompat.isEnabled() && uid != Process.myUid()) {
+            return noteProxyOpNoThrow(opToPublicName(op), packageName, uid, attributionTag, message);
+        }
+
         try {
             collectNoteOpCallsForValidation(op);
             int collectionMode = getNotedOpCollectionMode(uid, packageName, op);
@@ -9640,6 +9645,10 @@ public class AppOpsManager {
             boolean startIfModeDefault, @Nullable String attributionTag, int virtualDeviceId,
             @Nullable String message, @AttributionFlags int attributionFlags,
             int attributionChainId) {
+        if (GmsCompat.isEnabled() && uid != Process.myUid()) {
+            return startProxyOpNoThrow(opToPublicName(op), uid, packageName, attributionTag, message);
+        }
+
         try {
             collectNoteOpCallsForValidation(op);
             int collectionMode = getNotedOpCollectionMode(uid, packageName, op);
@@ -9888,6 +9897,11 @@ public class AppOpsManager {
 
     private void finishOp(IBinder token, int op, int uid, @NonNull String packageName,
             @Nullable String attributionTag, int virtualDeviceId ) {
+        if (GmsCompat.isEnabled() && uid != Process.myUid()) {
+            finishProxyOp(opToPublicName(op), uid, packageName, attributionTag);
+            return;
+        }
+
         try {
             if (virtualDeviceId == Context.DEVICE_ID_DEFAULT) {
                 mService.finishOperation(token, op, uid, packageName, attributionTag);
