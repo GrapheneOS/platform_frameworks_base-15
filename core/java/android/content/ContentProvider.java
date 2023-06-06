@@ -32,6 +32,7 @@ import android.annotation.Nullable;
 import android.annotation.SystemApi;
 import android.annotation.TestApi;
 import android.app.AppOpsManager;
+import android.app.compat.gms.GmsCompat;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.content.pm.PackageManager;
 import android.content.pm.PathPermission;
@@ -938,8 +939,35 @@ public abstract class ContentProvider implements ContentInterface, ComponentCall
         if (Binder.getCallingPid() == Process.myPid()) {
             return PermissionChecker.PERMISSION_GRANTED;
         }
+        AttributionSource selfAttributionSource = getContext().getAttributionSource();
+        if (GmsCompat.isAndroidAuto()) {
+            if (Manifest.permission.RECORD_AUDIO.equals(permission)) {
+                int deviceId = selfAttributionSource.getDeviceId();
+                if (deviceId != Context.DEVICE_ID_DEFAULT) {
+                    // RECORD_AUDIO is a device-aware permission, but there's currently no way to
+                    // grant it in the UI for non-default deviceId. This leads to permission denial
+                    // when Google app tries to access car microphone data provider in Android Auto.
+                    //
+                    // This issue doesn't affect fully privileged Android Auto because it has the
+                    // privileged UPDATE_APP_OPS_STATS permissions, which makes the OS use a
+                    // different codepath for permission checks that use a chained AttributionSource.
+                    selfAttributionSource = new AttributionSource(
+                            selfAttributionSource.getUid(),
+                            selfAttributionSource.getPid(),
+                            selfAttributionSource.getPackageName(),
+                            selfAttributionSource.getAttributionTag(),
+                            selfAttributionSource.getToken(),
+                            selfAttributionSource.getRenouncedPermissions().toArray(new String[0]),
+                            Context.DEVICE_ID_DEFAULT,
+                            selfAttributionSource.getNext()
+                        );
+                    Log.d("GmsCompat", "replaced AttributionSource deviceId ("
+                            + deviceId + ") with default deviceId in " + getClass().getName());
+                }
+            }
+        }
         return PermissionChecker.checkPermissionForDataDeliveryFromDataSource(getContext(),
-                permission, -1, new AttributionSource(getContext().getAttributionSource(),
+                permission, -1, new AttributionSource(selfAttributionSource,
                         attributionSource), /*message*/ null);
     }
 

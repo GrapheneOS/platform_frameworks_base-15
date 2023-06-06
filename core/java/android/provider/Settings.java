@@ -44,6 +44,7 @@ import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.SearchManager;
 import android.app.WallpaperManager;
+import android.app.compat.gms.GmsCompat;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.content.ComponentName;
 import android.content.ContentResolver;
@@ -102,6 +103,7 @@ import android.view.WindowManager.LayoutParams;
 import android.widget.Editor;
 
 import com.android.internal.annotations.GuardedBy;
+import com.android.internal.gmscompat.GmsCompatApp;
 import com.android.internal.util.Preconditions;
 
 import java.io.IOException;
@@ -3440,9 +3442,31 @@ public final class Settings {
                     mReadableFieldsWithMaxTargetSdk);
         }
 
+        // Returns last path component of the relevant Uri.
+        // Keep in sync with GmsCompatApp#registerObserver
+        private String maybeGetGmsCompatNamespace() {
+            Uri uri = mUri;
+            // no need to use expensive equals() method in this case
+            if (uri == Global.CONTENT_URI) {
+                return "global";
+            }
+            if (uri == Secure.CONTENT_URI) {
+                return "secure";
+            }
+            return null;
+        }
+
         public boolean putStringForUser(ContentResolver cr, String name, String value,
                 String tag, boolean makeDefault, final int userHandle,
                 boolean overrideableByRestore) {
+            if (GmsCompat.isEnabled()) {
+                String ns = maybeGetGmsCompatNamespace();
+                if (ns != null && !mAllFields.contains(name)) {
+                    return GmsCompatApp.putString(ns, name, value);
+                }
+                return false;
+            }
+
             try {
                 Bundle arg = new Bundle();
                 arg.putString(Settings.NameValueTable.VALUE, value);
@@ -3503,6 +3527,15 @@ public final class Settings {
 
         @UnsupportedAppUsage
         public String getStringForUser(ContentResolver cr, String name, final int userHandle) {
+            if (GmsCompat.isEnabled()) {
+                String ns = maybeGetGmsCompatNamespace();
+                if (ns != null) {
+                    if (!mAllFields.contains(name) && !name.startsWith("gmscompat")) {
+                        return GmsCompatApp.getString(ns, name);
+                    }
+                }
+            }
+
             final boolean isSelf = (userHandle == UserHandle.myUserId());
             final boolean useCache = isSelf && !isInSystemServer();
             boolean needsGenerationTracker = false;
@@ -3550,6 +3583,10 @@ public final class Settings {
             // still be regarded as readable.
             if (!isCallerExemptFromReadableRestriction() && mAllFields.contains(name)) {
                 if (!mReadableFields.contains(name)) {
+                    if (GmsCompat.isEnabled()) {
+                        return null;
+                    }
+
                     throw new SecurityException(
                             "Settings key: <" + name + "> is not readable. From S+, settings keys "
                                     + "annotated with @hide are restricted to system_server and "
@@ -3566,6 +3603,10 @@ public final class Settings {
                                 && application.getApplicationInfo().targetSdkVersion
                                 <= maxTargetSdk;
                         if (!targetSdkCheckOk) {
+                            if (GmsCompat.isEnabled()) {
+                                return null;
+                            }
+
                             throw new SecurityException(
                                     "Settings key: <" + name + "> is only readable to apps with "
                                             + "targetSdkVersion lower than or equal to: "
@@ -6843,6 +6884,11 @@ public final class Settings {
                 CALL_METHOD_DELETE_SECURE,
                 sProviderHolder,
                 Secure.class);
+
+        /** @hide */
+        public static boolean isKnownKey(String key) {
+            return sNameValueCache.mAllFields.contains(key);
+        }
 
         @UnsupportedAppUsage
         private static final HashSet<String> MOVED_TO_LOCK_SETTINGS;
@@ -18102,6 +18148,11 @@ public final class Settings {
                     sProviderHolder,
                     Global.class);
 
+        /** @hide */
+        public static boolean isKnownKey(String key) {
+            return sNameValueCache.mAllFields.contains(key);
+        }
+
         // Certain settings have been moved from global to the per-user secure namespace
         @UnsupportedAppUsage
         private static final HashSet<String> MOVED_TO_SECURE;
@@ -18381,6 +18432,17 @@ public final class Settings {
          * or not a valid integer.
          */
         public static int getInt(ContentResolver cr, String name, int def) {
+            if (GmsCompat.isEnabled()) {
+                if ("google_play_store_system_component_update".equals(name)) {
+                    // stop Play Store from attempting to auto-install some system component
+                    // packages, such as "Android System SafetyCore" (com.google.android.safetycore)
+                    // and "Android System Key Verifier" (com.google.android.contactkeys)
+                    if (!"1".equals(getString(cr, "gmscompat_bypass_sys_component_update_stub"))) {
+                        return 0;
+                    }
+                }
+            }
+
             String v = getString(cr, name);
             return parseIntSettingWithDefault(v, def);
         }

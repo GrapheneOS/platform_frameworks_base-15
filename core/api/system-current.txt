@@ -2130,6 +2130,30 @@ package android.app.compat {
 
 }
 
+package android.app.compat.gms {
+
+  public class AndroidAuto {
+    field public static final long PKG_FLAG_GRANT_AUDIO_ROUTING_PERM = 4L; // 0x4L
+    field public static final long PKG_FLAG_GRANT_PERMS_FOR_ANDROID_AUTO_PHONE_CALLS = 8L; // 0x8L
+    field public static final long PKG_FLAG_GRANT_PERMS_FOR_WIRED_ANDROID_AUTO = 1L; // 0x1L
+    field public static final long PKG_FLAG_GRANT_PERMS_FOR_WIRELESS_ANDROID_AUTO = 2L; // 0x2L
+  }
+
+  public final class GmsCompat {
+    method public static void catchOrRethrow(@NonNull SecurityException);
+    method public static boolean hasPermission(@NonNull String);
+    method public static boolean isAndroidAuto();
+    method public static boolean isEnabled();
+    method public static boolean isEnabledFor(@NonNull android.content.pm.ApplicationInfo);
+    method public static boolean isEnabledFor(@NonNull String, int);
+  }
+
+  public class GmsUtils {
+    method @NonNull public static android.content.Intent createAppPlayStoreIntent(@NonNull String);
+  }
+
+}
+
 package android.app.contentsuggestions {
 
   public final class ClassificationsRequest implements android.os.Parcelable {
@@ -4927,7 +4951,6 @@ package android.ext {
     field public static final String EUICC_SUPPORT_PIXEL_NAME = "com.google.euiccpixel";
     field public static final int GMS_CORE = 2; // 0x2
     field public static final String GMS_CORE_NAME = "com.google.android.gms";
-    field public static final int GSF = 1; // 0x1
     field public static final String GSF_NAME = "com.google.android.gsf";
     field public static final int G_CAMERA = 8; // 0x8
     field public static final String G_CAMERA_NAME = "com.google.android.GoogleCamera";

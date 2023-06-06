@@ -57,6 +57,9 @@ public class PackageExtInit implements ParsingPackageUtils.PackageExtInitIface {
 
         Bundle metadata = pkg.getMetaData();
         if (metadata != null) {
+            if (metadata.containsKey("com.google.android.gms.version")) {
+                flags |= (1 << AppInfoExt.FLAG_HAS_GMSCORE_CLIENT_LIBRARY);
+            }
         }
 
         return flags;
@@ -64,7 +67,6 @@ public class PackageExtInit implements ParsingPackageUtils.PackageExtInitIface {
 
     private int getPackageId() {
         return switch (pkg.getPackageName()) {
-            case GSF_NAME -> validate(GSF, 30L, mainGmsCerts());
             case GMS_CORE_NAME -> validate(GMS_CORE, 21_00_00_000L, mainGmsCerts());
             case PLAY_STORE_NAME -> validate(PLAY_STORE, 0L, mainGmsCerts());
             case G_SEARCH_APP_NAME -> validate(G_SEARCH_APP, 0L, mainGmsCerts());

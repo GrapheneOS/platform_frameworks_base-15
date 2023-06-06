@@ -24,10 +24,13 @@ import android.annotation.SystemApi;
 import android.annotation.SystemService;
 import android.annotation.TestApi;
 import android.annotation.UserHandleAware;
+import android.app.compat.gms.GmsCompat;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.os.LocaleList;
 import android.os.RemoteException;
+
+import com.android.internal.gmscompat.PlayStoreHooks;
 
 /**
  * This class gives access to system locale services. These services allow applications to
@@ -145,11 +148,19 @@ public class LocaleManager {
     @UserHandleAware
     @NonNull
     public LocaleList getApplicationLocales(@NonNull String appPackageName) {
+        LocaleList res;
         try {
-            return mService.getApplicationLocales(appPackageName, mContext.getUserId());
+            res = mService.getApplicationLocales(appPackageName, mContext.getUserId());
         } catch (RemoteException e) {
             throw e.rethrowFromSystemServer();
         }
+        if (GmsCompat.isPlayStore()) {
+            LocaleList override = PlayStoreHooks.overrideApplicationLocales(res, appPackageName);
+            if (override != null) {
+                res = override;
+            }
+        }
+        return res;
     }
 
     /**

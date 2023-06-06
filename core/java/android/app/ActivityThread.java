@@ -59,6 +59,7 @@ import android.app.backup.BackupAgent;
 import android.app.backup.BackupAnnotations.BackupDestination;
 import android.app.backup.BackupAnnotations.OperationType;
 import android.app.compat.CompatChanges;
+import android.app.compat.gms.GmsCompat;
 import android.app.sdksandbox.sandboxactivity.ActivityContextInfo;
 import android.app.sdksandbox.sandboxactivity.SdkSandboxActivityAuthority;
 import android.app.servertransaction.ActivityLifecycleItem;
@@ -231,6 +232,7 @@ import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.app.IVoiceInteractor;
 import com.android.internal.content.ReferrerIntent;
+import com.android.internal.gmscompat.GmcDebug;
 import com.android.internal.os.BinderCallsStats;
 import com.android.internal.os.BinderInternal;
 import com.android.internal.os.DebugStore;
@@ -3867,6 +3869,10 @@ public final class ActivityThread extends ClientTransactionHandler
         }
     }
 
+    public int getProcessState() {
+        return mLastProcessState;
+    }
+
     @Override
     public void updateProcessState(int processState, boolean fromIpc) {
         synchronized (mAppThread) {
@@ -4857,6 +4863,9 @@ public final class ActivityThread extends ClientTransactionHandler
 
             sCurrentBroadcastIntent.set(data.intent);
             receiver.setPendingResult(data);
+            if (GmsCompat.isEnabled()) {
+                GmcDebug.maybeLogReceiveBroadcast(receiver, data.intent, true);
+            }
             receiver.onReceive(context.getReceiverRestrictedContext(),
                     data.intent);
         } catch (Exception e) {
@@ -5220,6 +5229,15 @@ public final class ActivityThread extends ClientTransactionHandler
                 r.mLocalProvider.dump(info.fd.getFileDescriptor(), pw, info.args);
                 pw.flush();
             }
+        } catch (NoSuchMethodError e) {
+            if (android.app.compat.gms.GmsCompat.isEnabled()) {
+                // one of the GSF content providers accesses a hidden method from ContentProvider.dump(),
+                // which leads to a confusing crash when a bugreport is being taken (dumps of all
+                // of the active ContentProviders are included in bugreports)
+                Log.d(TAG, "handleDumpProvider", e);
+            } else {
+                throw e;
+            }
         } finally {
             IoUtils.closeQuietly(info.fd);
             StrictMode.setThreadPolicy(oldPolicy);
@@ -5238,6 +5256,9 @@ public final class ActivityThread extends ClientTransactionHandler
                 }
                 int res;
                 if (!data.taskRemoved) {
+                    if (GmsCompat.isEnabled()) {
+                        GmcDebug.maybeLogServiceOnStartCommand(s, data.args, data.flags, data.startId);
+                    }
                     res = s.onStartCommand(data.args, data.flags, data.startId);
                 } else {
                     s.onTaskRemoved(data.args);
