@@ -482,7 +482,7 @@
          screenshots. The icon for this app will be shown to the user when informing them that a
          screenshot has been saved to a different profile (e.g. work profile). If blank, a default
          icon will be shown. -->
-    <string name="config_screenshotFilesApp" translatable="false"></string>
+    <string name="config_screenshotFilesApp" translatable="false">com.android.documentsui/.files.LauncherActivity</string>
 
     <!-- The component name of the screenshot editing activity that provides the App Clips flow.
          The App Clips flow includes taking a screenshot, showing user screenshot cropping activity
