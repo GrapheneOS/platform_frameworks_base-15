@@ -80,6 +80,7 @@ import android.util.ArrayMap;
 import android.util.ArraySet;
 import android.util.DebugUtils;
 import android.util.Log;
+import android.util.PackageUtils;
 import android.util.Slog;
 
 import com.android.internal.R;
@@ -95,6 +96,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+
+import libcore.util.EmptyArray;
 
 /**
  * System level service for accessing the permission capabilities of the platform.
@@ -1366,6 +1369,11 @@ public final class PermissionManager {
             if (exemptedPackage != null) {
                 pkgNames.add(exemptedPackage);
             }
+        }
+        {
+            String[] arr = pkgNames.toArray(EmptyArray.STRING);
+            pkgNames.clear();
+            pkgNames.addAll(PackageUtils.filterNonSystemPackagesL(context, arr));
         }
         return pkgNames;
     }
