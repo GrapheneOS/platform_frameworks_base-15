@@ -2,9 +2,11 @@ package com.android.server.ext;
 
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Handler;
 
 import com.android.internal.os.BackgroundThread;
+import com.android.internal.os.SELinuxFlags;
 import com.android.server.pm.PackageManagerService;
 
 public final class SystemServerExt {
@@ -36,5 +38,13 @@ public final class SystemServerExt {
     void initBgThread() {
         WifiAutoOff.maybeInit(this);
         BluetoothAutoOff.maybeInit(this);
+
+        if (Build.IS_DEBUGGABLE) {
+            if (!SELinuxFlags.kernelSupportsSELinuxFlags()) {
+                String title = "Kernel doesn't support SELinux flags";
+                String msg = "App hardening features that use SELinux flags, such as DCL and ptrace restrictions, do not work.";
+                new SystemErrorNotification("missing hardening", title, msg).show(context);
+            }
+        }
     }
 }
