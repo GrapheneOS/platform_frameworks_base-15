@@ -20,11 +20,14 @@ import android.annotation.CallSuper;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.UserIdInt;
+import android.app.ActivityManager;
 import android.content.pm.SigningDetails;
 import android.os.Binder;
 import android.os.Build;
+import android.os.RemoteException;
 import android.os.UserHandle;
 import android.util.ArrayMap;
+import android.util.Slog;
 import android.util.apk.ApkSignatureVerifier;
 
 import com.android.server.pm.Computer;
@@ -258,6 +261,21 @@ public class PackageManagerLocalImpl implements PackageManagerLocal {
             }
 
             return mFilteredPackageStates;
+        }
+    }
+
+    public void showDexoptProgressBootMessage(int percentage, int current, int total) {
+        final String TAG = "DexoptBootUI";
+
+        String msg = mService.getContext().getString(
+            com.android.internal.R.string.dexopt_progress_msg, percentage, current, total);
+
+        Slog.d(TAG, "msg: " + msg);
+
+        try {
+            ActivityManager.getService().showBootMessage(msg, true);
+        } catch (RemoteException e) {
+            Slog.e(TAG, "", e);
         }
     }
 }
