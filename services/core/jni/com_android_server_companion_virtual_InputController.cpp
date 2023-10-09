@@ -159,7 +159,7 @@ static bool nativeWriteRotaryEncoderScrollEvent(JNIEnv* env, jobject thiz, jlong
                                                   std::chrono::nanoseconds(eventTimeNanos));
 }
 
-static JNINativeMethod methods[] = {
+static const JNINativeMethod methods[] = {
         {"nativeOpenUinputDpad", "(Ljava/lang/String;IILjava/lang/String;)J",
          (void*)nativeOpenUinputDpad},
         {"nativeOpenUinputKeyboard", "(Ljava/lang/String;IILjava/lang/String;)J",

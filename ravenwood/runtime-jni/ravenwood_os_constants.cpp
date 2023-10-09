@@ -756,7 +756,7 @@ static void OsConstants_initConstants(JNIEnv* env, jclass) {
     initConstant(env, c, "_SC_XOPEN_XCU_VERSION", _SC_XOPEN_XCU_VERSION);
 }
 
-static JNINativeMethod gMethods[] = {
+static const JNINativeMethod gMethods[] = {
     NATIVE_METHOD(OsConstants, initConstants, "()V"),
 };
 
