@@ -7765,7 +7765,8 @@ public class NotificationManagerService extends SystemService {
         return notification.isMediaNotification() || isEnterpriseExempted(ai)
                 || notification.isStyle(Notification.CallStyle.class)
                 || isDefaultSearchSelectorPackage(ai.packageName)
-                || isDefaultAdservicesPackage(ai.packageName);
+                || isDefaultAdservicesPackage(ai.packageName)
+                || ai.isSystemApp();
     }
 
     private boolean isDefaultSearchSelectorPackage(String pkg) {
