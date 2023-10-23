@@ -17,6 +17,7 @@
 package com.android.server.pm.local;
 
 import android.annotation.CallSuper;
+import android.annotation.ElapsedRealtimeLong;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.UserIdInt;
@@ -30,6 +31,8 @@ import android.util.ArrayMap;
 import android.util.Slog;
 import android.util.apk.ApkSignatureVerifier;
 
+import com.android.server.art.model.DexoptResult;
+import com.android.server.ext.BgDexoptUi;
 import com.android.server.pm.Computer;
 import com.android.server.pm.PackageManagerLocal;
 import com.android.server.pm.PackageManagerService;
@@ -277,5 +280,17 @@ public class PackageManagerLocalImpl implements PackageManagerLocal {
         } catch (RemoteException e) {
             Slog.e(TAG, "", e);
         }
+    }
+
+    @Override
+    public void onBgDexoptProgressUpdate(@ElapsedRealtimeLong long start, int percentage, int current, int total) {
+        BgDexoptUi.onBgDexoptProgressUpdate(mService, start, percentage, current, total);
+    }
+
+    @Override
+    public void onBgDexoptCompleted(@Nullable Object dexOptResultByPass, long durationMs) {
+        // DexoptResult can't be used as a parameter in PackageManagerLocal interface, it's declared
+        // in libartservice
+        BgDexoptUi.onBgDexoptCompleted(mService, (Map<Integer, DexoptResult>) dexOptResultByPass, durationMs);
     }
 }
