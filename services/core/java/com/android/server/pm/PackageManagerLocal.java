@@ -26,6 +26,7 @@ import android.content.pm.SigningDetails;
 import android.os.Binder;
 import android.os.UserHandle;
 
+import com.android.server.pm.pkg.AndroidPackage;
 import com.android.server.pm.pkg.PackageState;
 import com.android.server.pm.pkg.SharedUserApi;
 
@@ -254,4 +255,9 @@ public interface PackageManagerLocal {
             // Map<Integer, com.android.server.art.model.DexoptResult>
             @Nullable Object dexOptResultByPass,
             long durationMs);
+
+    @Nullable
+    String maybeOverrideCompilerFilter(@NonNull String origFilter, @NonNull AndroidPackage pkg,
+                                       // com.android.server.art.model.DexoptParams
+                                       @NonNull Object dexoptParams);
 }
