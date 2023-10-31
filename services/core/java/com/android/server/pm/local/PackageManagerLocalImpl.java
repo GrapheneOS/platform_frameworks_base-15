@@ -31,6 +31,7 @@ import android.util.ArrayMap;
 import android.util.Slog;
 import android.util.apk.ApkSignatureVerifier;
 
+import com.android.server.art.model.DexoptParams;
 import com.android.server.art.model.DexoptResult;
 import com.android.server.ext.BgDexoptUi;
 import com.android.server.pm.Computer;
@@ -292,5 +293,21 @@ public class PackageManagerLocalImpl implements PackageManagerLocal {
         // DexoptResult can't be used as a parameter in PackageManagerLocal interface, it's declared
         // in libartservice
         BgDexoptUi.onBgDexoptCompleted(mService, (Map<Integer, DexoptResult>) dexOptResultByPass, durationMs);
+    }
+
+    @Nullable
+    @Override
+    public String maybeOverrideCompilerFilter(@NonNull String origFilter, @NonNull AndroidPackage pkg,
+                                              @NonNull Object dexoptParamsR) {
+        final String TAG = "maybeOverrideCompilerFilter";
+        final String speedFilter = "speed";
+
+        if (speedFilter.equals(origFilter)) {
+            return null;
+        }
+
+        var dexoptParams = (DexoptParams) dexoptParamsR;
+
+        return null;
     }
 }
