@@ -69,6 +69,7 @@ public class SecurityStateManagerService extends ISecurityStateManager.Stub {
         globalSecurityState.putString(KEY_KERNEL_VERSION, getKernelVersion());
         addWebViewPackages(globalSecurityState);
         addSecurityStatePackages(globalSecurityState);
+        SecurityStateManagerServiceExt.appendSecurityStateExt(mContext, globalSecurityState);
         return globalSecurityState;
     }
 
