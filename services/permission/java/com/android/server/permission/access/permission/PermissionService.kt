@@ -2855,4 +2855,9 @@ class PermissionService(private val service: AccessCheckingService) :
         fun getFullerPermission(permissionName: String): String? =
             FULLER_PERMISSIONS[permissionName]
     }
+
+    override fun updatePermissions(pkg: AndroidPackage, userId: Int) {
+        // this new version of PermissionService is WIP and is not used yet
+        TODO()
+    }
 }
