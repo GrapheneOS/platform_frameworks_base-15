@@ -666,7 +666,33 @@ public class CompanionDeviceManagerService extends SystemService {
         @EnforcePermission(ASSOCIATE_COMPANION_DEVICES)
         public void createAssociation(String packageName, String macAddress, int userId,
                 byte[] certificate) {
-            createAssociation_enforcePermission();
+            try {
+                createAssociation_enforcePermission();
+            } catch (SecurityException se) {
+                String perm = android.Manifest.permission.ASSOCIATE_COMPANION_DEVICES_RESTRICTED;
+                if (getContext().checkCallingPermission(perm) != PERMISSION_GRANTED) {
+                    throw se;
+                }
+
+                int callingUid = Binder.getCallingUid();
+                if (UserHandle.getUserId(callingUid) != userId) {
+                    // don't allow interacting across users, which is allowed by upstream even without
+                    // the INTERACT_ACROSS_USERS permission
+                    throw new SecurityException("userId mismatch");
+                }
+
+                try {
+                    int targetUid = getContext().getPackageManager().getPackageUid(packageName, 0);
+
+                    if (targetUid != callingUid) {
+                        // don't allow creating companion device associations for other packages
+                        throw new SecurityException("targetUid mismatch");
+                    }
+
+                } catch (PackageManager.NameNotFoundException e) {
+                    throw new SecurityException(e);
+                }
+            }
 
             if (!getContext().getPackageManager().hasSigningCertificate(
                     packageName, certificate, CERT_INPUT_SHA256)) {
