@@ -30,6 +30,7 @@ import static com.android.server.companion.utils.RolesUtils.addRoleHolderForAsso
 import static com.android.server.companion.utils.RolesUtils.isRoleHolder;
 import static com.android.server.companion.utils.Utils.prepareForIpc;
 
+import static com.android.server.pm.ext.AndroidAutoHooks.isAndroidAutoWithGrantedBasePrivPerms;
 import static java.util.Objects.requireNonNull;
 
 import android.annotation.NonNull;
@@ -167,10 +168,14 @@ public class AssociationRequestsProcessor {
         enforcePermissionForCreatingAssociation(mContext, request, packageUid);
         enforceUsesCompanionDeviceFeature(mContext, userId, packageName);
 
+        final boolean shouldSkipAddRoleHolderCheck =
+                AssociationRequest.DEVICE_PROFILE_AUTOMOTIVE_PROJECTION.equals(request.getDeviceProfile())
+                        && isAndroidAutoWithGrantedBasePrivPerms(packageName, userId);
+
         // 2a. Check if association can be created without launching UI (i.e. CDM needs NEITHER
         // to perform discovery NOR to collect user consent).
         if (request.isSelfManaged() && !request.isForceConfirmation()
-                && !willAddRoleHolder(request, packageName, userId)) {
+                && (shouldSkipAddRoleHolderCheck || !willAddRoleHolder(request, packageName, userId))) {
             // 2a.1. Create association right away.
             createAssociationAndNotifyApplication(request, packageName, userId,
                     /* macAddress */ null, callback, /* resultReceiver */ null);
@@ -292,8 +297,17 @@ public class AssociationRequestsProcessor {
                 selfManaged, /* notifyOnDeviceNearby */ false, /* revoked */ false,
                 /* pending */ false, timestamp, Long.MAX_VALUE, /* systemDataSyncFlags */ 0);
 
-        // Add role holder for association (if specified) and add new association to store.
-        maybeGrantRoleAndStoreAssociation(association, callback, resultReceiver);
+        final boolean skipAddRoleHolder =
+                AssociationRequest.DEVICE_PROFILE_AUTOMOTIVE_PROJECTION.equals(deviceProfile)
+                        && isAndroidAutoWithGrantedBasePrivPerms(packageName, userId);
+
+        if (skipAddRoleHolder) {
+            mAssociationStore.addAssociation(association);
+            sendCallbackAndFinish(association, callback, resultReceiver);
+        } else {
+            // Add role holder for association (if specified) and add new association to store.
+            maybeGrantRoleAndStoreAssociation(association, callback, resultReceiver);
+        }
     }
 
     /**
