@@ -253,6 +253,7 @@ java_library {
     ],
 
     required: [
+        "AppCompatConfig",
         "libukey2_jni_shared",
         "protolog.conf.json.gz",
         "core.protolog.pb",
