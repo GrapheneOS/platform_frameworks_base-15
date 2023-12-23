@@ -889,6 +889,15 @@ public final class DropBoxManagerService extends SystemService {
             if (hashCode() > o.hashCode()) return 1;
             return 0;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof FileList l) {
+                return compareTo(l) == 0;
+            }
+
+            return false;
+        }
     }
 
     /**
@@ -917,6 +926,15 @@ public final class DropBoxManagerService extends SystemService {
             if (comp != 0) return comp;
 
             return Integer.compare(hashCode(), o.hashCode());
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (o instanceof EntryFile e) {
+                return compareTo(e) == 0;
+            }
+
+            return false;
         }
 
         /**
