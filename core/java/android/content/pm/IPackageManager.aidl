@@ -860,4 +860,7 @@ interface IPackageManager {
     PackageInfo findPackage(String packageName, long minVersion, in Bundle validSignaturesSha256);
 
     boolean updateListOfBusyPackages(boolean add, in List<String> packageNames, IBinder callerBinder);
+
+    void sendBootCompletedBroadcastToPackage(String packageName, boolean includeStopped,
+                                                    int userId);
 }
