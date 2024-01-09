@@ -16,6 +16,7 @@ public class PackageHooksRegistry {
             case PackageId.GSF_NAME -> new GsfParsingHooks();
             case PackageId.EUICC_SUPPORT_PIXEL_NAME -> new EuiccSupportPixelHooks.ParsingHooks();
             case PackageId.G_EUICC_LPA_NAME -> new EuiccGoogleHooks.ParsingHooks();
+            case PackageId.PIXEL_CAMERA_SERVICES_NAME -> new PixelCameraServicesHooks.ParsingHooks();
             default -> PackageParsingHooks.DEFAULT;
         };
     }
@@ -26,6 +27,7 @@ public class PackageHooksRegistry {
             case PackageId.G_CARRIER_SETTINGS -> new GCarrierSettingsHooks();
             case PackageId.G_EUICC_LPA -> new EuiccGoogleHooks();
             case PackageId.ANDROID_AUTO -> new AndroidAutoHooks();
+            case PackageId.PIXEL_CAMERA_SERVICES -> new PixelCameraServicesHooks();
             default -> PackageHooks.DEFAULT;
         };
     }
