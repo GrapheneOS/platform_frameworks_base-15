@@ -98,7 +98,7 @@ public class ClipboardListener implements
         }
 
         // user should not access intents before setup or while device is locked
-        if ((clipboardNoninteractiveOnLockscreen() && mKeyguardManager.isDeviceLocked())
+        if (mKeyguardManager.isDeviceLocked()
                 || !isUserSetupComplete()
                 || clipData == null // shouldn't happen, but just in case
                 || clipData.getItemCount() == 0) {

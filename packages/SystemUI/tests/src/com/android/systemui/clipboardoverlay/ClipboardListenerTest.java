@@ -197,6 +197,19 @@ public class ClipboardListenerTest extends SysuiTestCase {
     }
 
     @Test
+    public void test_deviceLocked_showsToast() {
+        when(mKeyguardManager.isDeviceLocked()).thenReturn(true);
+
+        mClipboardListener.start();
+        mClipboardListener.onPrimaryClipChanged();
+
+        verify(mUiEventLogger, times(1)).log(
+                ClipboardOverlayEvent.CLIPBOARD_TOAST_SHOWN, 0, mSampleSource);
+        verify(mClipboardToast, times(1)).showCopiedToast();
+        verifyZeroInteractions(mOverlayControllerProvider);
+    }
+
+    @Test
     @EnableFlags(Flags.FLAG_CLIPBOARD_NONINTERACTIVE_ON_LOCKSCREEN)
     public void test_deviceLocked_showsToast() {
         when(mKeyguardManager.isDeviceLocked()).thenReturn(true);
