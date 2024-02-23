@@ -52,4 +52,7 @@
     <string name="notif_storage_dcl_title">%1$s tried to perform DCL via storage</string>
     <java-symbol type="string" name="notif_storage_dcl_title" />
 
+    <string name="usb_port_security_error_title">USB-C port security feature has malfunctioned</string>
+    <java-symbol type="string" name="usb_port_security_error_title" />
+
 </resources>
