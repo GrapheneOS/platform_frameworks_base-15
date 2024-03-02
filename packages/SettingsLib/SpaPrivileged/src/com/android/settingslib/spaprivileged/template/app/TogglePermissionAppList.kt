@@ -40,6 +40,10 @@ interface TogglePermissionAppListModel<T : AppRecord> {
     val enhancedConfirmationKey: String?
         get() = null
 
+    // called after main switch, but before footer content
+    @Composable
+    fun extContent(record: T, pkgInfo: android.content.pm.PackageInfo) {}
+
     /**
      * Loads the extra info for the App List, and generates the [AppRecord] List.
      *
