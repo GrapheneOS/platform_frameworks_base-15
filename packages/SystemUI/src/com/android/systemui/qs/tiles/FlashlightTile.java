@@ -99,6 +99,11 @@ public class FlashlightTile extends QSTileImpl<BooleanState> implements
     }
 
     @Override
+    public boolean isAllowedWhenLocked(QSTileImpl.Action action) {
+        return true;
+    }
+
+    @Override
     protected void handleClick(@Nullable Expandable expandable) {
         if (ActivityManager.isUserAMonkey()) {
             return;

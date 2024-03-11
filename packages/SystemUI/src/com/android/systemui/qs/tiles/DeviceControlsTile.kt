@@ -100,6 +100,8 @@ class DeviceControlsTile @Inject constructor(
         }
     }
 
+    override fun isAllowedWhenLocked(action: Action) = true
+
     override fun handleClick(expandable: Expandable?) {
         if (state.state == Tile.STATE_UNAVAILABLE) {
             return

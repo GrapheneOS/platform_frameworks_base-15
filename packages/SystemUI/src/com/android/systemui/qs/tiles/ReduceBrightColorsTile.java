@@ -97,6 +97,11 @@ public class ReduceBrightColorsTile extends QSTileImpl<QSTile.BooleanState>
     }
 
     @Override
+    public boolean isAllowedWhenLocked(QSTileImpl.Action action) {
+        return true;
+    }
+
+    @Override
     protected void handleClick(@Nullable Expandable expandable) {
         mReduceBrightColorsController.setReduceBrightColorsActivated(!mState.value);
     }
