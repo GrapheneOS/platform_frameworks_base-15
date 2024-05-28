@@ -25,6 +25,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
+import android.ext.settings.ExtSettings
 import android.os.RemoteException
 import android.util.Log
 import android.view.WindowManager
@@ -95,6 +96,9 @@ constructor(
                 intent,
                 selectedUserInteractor.getSelectedUserId()
             )
+        if (!ExtSettings.ALLOW_KEYGUARD_CAMERA.get(context) && !keyguardStateController.isUnlocked()) {
+            return
+        }
         if (CameraIntents.isSecureCameraIntent(intent) && !wouldLaunchResolverActivity) {
             uiExecutor.execute {
                 // Normally an activity will set its requested rotation animation on its window.
