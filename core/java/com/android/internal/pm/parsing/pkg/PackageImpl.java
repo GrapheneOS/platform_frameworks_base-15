@@ -2750,6 +2750,7 @@ public class PackageImpl implements ParsedPackage, AndroidPackageInternal,
     @Override
     public PackageImpl hideAsParsed() {
         assignDerivedFields();
+        assignDerivedFields2();
         return this;
     }
 
