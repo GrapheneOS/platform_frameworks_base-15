@@ -582,10 +582,6 @@ public class SystemConfig {
         return mAppMetadataFilePaths;
     }
 
-    public Set<String> getPreinstallPackagesWithStrictSignatureCheck() {
-        return mPreinstallPackagesWithStrictSignatureCheck;
-    }
-
     public ArraySet<SignedPackage> getEnhancedConfirmationTrustedPackages() {
         return mEnhancedConfirmationTrustedPackages;
     }
