@@ -1028,4 +1028,7 @@ interface IActivityManager {
             boolean enabled, int reason, in String subReason, int source, long threshold);
 
     String[] getSystemIdmapPaths();
+
+    oneway void showDynCodeLoadingNotification(int type, String pkgName, @nullable String path,
+                                            in List<String> reportBody, String denialType);
 }
