@@ -4159,6 +4159,11 @@ public class TelephonyManager {
      */
     @RequiresFeature(PackageManager.FEATURE_TELEPHONY_SUBSCRIPTION)
     public String getSimCountryIso() {
+        if (android.app.AppGlobals.getInitialPackageId() == android.ext.PackageId.PIXEL_HEALTH) {
+            // Body temperature feature is region-locked to US as of version 2224
+            return "us";
+        }
+
         return getSimCountryIsoForPhone(getPhoneId());
     }
 
