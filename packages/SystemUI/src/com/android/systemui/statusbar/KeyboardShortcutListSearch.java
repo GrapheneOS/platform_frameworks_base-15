@@ -421,7 +421,8 @@ public final class KeyboardShortcutListSearch {
                 mKeySearchResultMap.put(SHORTCUT_SPECIFICAPP_INDEX, false);
             } else {
                 mCurrentAppPackageName = result.get(0).getPackageName();
-                mSpecificAppGroup.addAll(reMapToKeyboardShortcutMultiMappingGroup(result));
+                KeyboardShortcuts.sanitiseShortcuts(result);
+                    mSpecificAppGroup .addAll(reMapToKeyboardShortcutMultiMappingGroup(result));
                 mKeySearchResultMap.put(SHORTCUT_SPECIFICAPP_INDEX, true);
             }
             mAppShortcutsReceived = true;
