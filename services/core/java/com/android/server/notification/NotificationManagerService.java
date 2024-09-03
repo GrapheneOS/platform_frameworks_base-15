@@ -8967,12 +8967,14 @@ public class NotificationManagerService extends SystemService {
             return CensoredSendState.DONT_SEND;
         }
 
+        /*
         // Muted by listener
         final String disableEffects = disableNotificationEffects(record);
         if (disableEffects != null) {
             if (DBG) Slog.d(TAG, "not sending censored notif due to disableEffects");
             return CensoredSendState.DONT_SEND;
         }
+         */
 
         // Suppressed because another notification in its group handles alerting
         if (record.getSbn().isGroup()) {
