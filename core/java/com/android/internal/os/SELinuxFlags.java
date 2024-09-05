@@ -57,8 +57,8 @@ public class SELinuxFlags {
 
     static long getForWebViewProcess(Context ctx, int userId, ApplicationInfo callerAppInfo,
                     @Nullable GosPackageStateBase callerPs) {
-        if (Build.IS_EMULATOR) {
-            if (shouldSkipOnEmulator()) {
+        if (Build.IS_DEBUGGABLE || Build.IS_EMULATOR) {
+            if (!kernelSupportsSELinuxFlags()) {
                 return 0L;
             }
         }
@@ -74,8 +74,8 @@ public class SELinuxFlags {
 
     static long get(Context ctx, int userId, ApplicationInfo appInfo,
                     @Nullable GosPackageStateBase ps, boolean isIsolatedProcess) {
-        if (Build.IS_EMULATOR) {
-            if (shouldSkipOnEmulator()) {
+        if (Build.IS_DEBUGGABLE || Build.IS_EMULATOR) {
+            if (!kernelSupportsSELinuxFlags()) {
                 return 0L;
             }
         }
@@ -130,21 +130,15 @@ public class SELinuxFlags {
         return false;
     }
 
-    private static volatile Boolean skipOnEmulator;
+    private static volatile Boolean kernelSupportsSELinuxFlagsCache;
 
-    // needed to prevent breaking emulator builds that don't have the necessary kernel changes
-    private static boolean shouldSkipOnEmulator() {
-        if (!Build.IS_EMULATOR) {
-            return false;
-        }
-
-        Boolean skip = skipOnEmulator;
-        if (skip == null) {
+    public static boolean kernelSupportsSELinuxFlags() {
+        Boolean cache = kernelSupportsSELinuxFlagsCache;
+        if (cache == null) {
             var f = new File(getSelfProcAttrPath());
-            skip = !f.exists();
-            skipOnEmulator = skip;
+            cache = Boolean.valueOf(f.exists());
+            kernelSupportsSELinuxFlagsCache = cache;
         }
-
-        return skip;
+        return cache.booleanValue();
     }
 }
