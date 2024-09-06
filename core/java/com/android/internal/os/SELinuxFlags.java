@@ -57,10 +57,8 @@ public class SELinuxFlags {
 
     static long getForWebViewProcess(Context ctx, int userId, ApplicationInfo callerAppInfo,
                     @Nullable GosPackageStateBase callerPs) {
-        if (Build.IS_EMULATOR) {
-            if (shouldSkipOnEmulator()) {
-                return 0L;
-            }
+        if (shouldSkipOnNonCustomKernels()) {
+            return 0L;
         }
 
         long res = ALL_RESTRICTIONS;
@@ -74,10 +72,8 @@ public class SELinuxFlags {
 
     static long get(Context ctx, int userId, ApplicationInfo appInfo,
                     @Nullable GosPackageStateBase ps, boolean isIsolatedProcess) {
-        if (Build.IS_EMULATOR) {
-            if (shouldSkipOnEmulator()) {
-                return 0L;
-            }
+        if (shouldSkipOnNonCustomKernels()) {
+            return 0L;
         }
 
         long res = ALL_RESTRICTIONS;
@@ -130,19 +126,21 @@ public class SELinuxFlags {
         return false;
     }
 
-    private static volatile Boolean skipOnEmulator;
+    private static volatile Boolean skipOnNonCustomKernels;
 
-    // needed to prevent breaking emulator builds that don't have the necessary kernel changes
-    private static boolean shouldSkipOnEmulator() {
+    // needed to prevent breaking builds that don't have the necessary kernel changes
+    private static boolean shouldSkipOnNonCustomKernels() {
         if (!Build.IS_EMULATOR) {
-            return false;
+            if (Flags.enableCustomSelinuxFlags()) {
+                return false;
+            }
         }
 
-        Boolean skip = skipOnEmulator;
+        Boolean skip = skipOnNonCustomKernels;
         if (skip == null) {
             var f = new File(getSelfProcAttrPath());
             skip = !f.exists();
-            skipOnEmulator = skip;
+            skipOnNonCustomKernels = skip;
         }
 
         return skip;
