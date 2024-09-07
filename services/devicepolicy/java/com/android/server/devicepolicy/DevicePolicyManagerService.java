@@ -359,6 +359,7 @@ import android.app.admin.WifiSsidPolicy;
 import android.app.admin.flags.Flags;
 import android.app.backup.IBackupManager;
 import android.app.compat.CompatChanges;
+import android.app.compat.gms.GmsCompat;
 import android.app.role.OnRoleHoldersChangedListener;
 import android.app.role.RoleManager;
 import android.app.trust.TrustManager;
@@ -488,6 +489,7 @@ import com.android.internal.R;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.app.LocalePicker;
+import com.android.internal.gmscompat.GmsCompatApp;
 import com.android.internal.infra.AndroidFuture;
 import com.android.internal.logging.MetricsLogger;
 import com.android.internal.messages.nano.SystemMessageProto.SystemMessage;
@@ -21471,7 +21473,18 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
                     callerPackage);
 
             maybeInstallDevicePolicyManagementRoleHolderInUser(userInfo.id);
-            maybeInstallPlay(userInfo.id, caller.getUserId(), new String[]{admin.getPackageName()});
+            // TODO: call outside service in GmsCompat somewhere that does the same as below function
+            /*
+            * Alternative:
+            * wrap the device admin component
+            * on recieve finish first install gms, etc. then continue
+            * */
+            try {
+                GmsCompatApp.iGms2Gca().setupWorkProfileGms(userInfo.id, caller.getUserId(), new String[]{admin.getPackageName()});
+            } catch (RemoteException e) {
+                // Does not happen, same process
+            }
+            // maybeInstallPlay(userInfo.id, caller.getUserId(), new String[]{admin.getPackageName()});
 
             installExistingAdminPackage(userInfo.id, admin.getPackageName());
             if (!enableAdminAndSetProfileOwner(userInfo.id, caller.getUserId(), admin)) {
@@ -21600,13 +21613,15 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
      * Check if app requires play services
      */
     private boolean requiresPlay(String pkg, int callerUserId) throws RemoteException {
+        return true;
+/*
         ApplicationInfo ai = mIPackageManager.getApplicationInfo(pkg, PackageManager.GET_META_DATA, callerUserId);
         if (ai.metaData != null) {
             int playVersion = ai.metaData.getInt("com.google.android.gms.version", -1);
             return playVersion != -1;
         }
 
-        return false;
+        return false;*/
     }
 
     /**
