@@ -38,4 +38,14 @@
 
     <string name="config_first_party_app_source_package_name">app.grapheneos.apps</string>
     <java-symbol type="string" name="config_first_party_app_source_package_name" />
+
+    <!-- Certificate digests for trusted apps that will be allowed to obtain the knownSigner
+         read additional security state permission.
+         The digest should be computed over the DER encoding of the trusted certificate
+         using the SHA-256 digest algorithm. -->
+    <string-array name="read_additional_security_state_known_signers">
+        <!-- bundled Auditor app certdigest -->
+        <item>990e04f0864b19f14f84e0e432f7a393f297ab105a22c1e1b10b442a4a62c42c</item>
+    </string-array>
+    <java-symbol type="array" name="read_additional_security_state_known_signers" />
 </resources>
