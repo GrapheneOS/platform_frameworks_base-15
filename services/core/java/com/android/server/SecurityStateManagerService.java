@@ -75,7 +75,8 @@ public class SecurityStateManagerService extends ISecurityStateManager.Stub {
     private String getSpl(String packageName) {
         if (!TextUtils.isEmpty(packageName)) {
             try {
-                return mPackageManager.getPackageInfo(packageName, 0 /* flags */).versionName;
+                final int callingUser = android.os.Binder.getCallingUserHandle().getIdentifier();
+                return mPackageManager.getPackageInfoAsUser(packageName, 0 /* flags */, callingUser).versionName;
             } catch (PackageManager.NameNotFoundException e) {
                 Slog.e(TAG, TextUtils.formatSimple("Failed to get SPL for package %s.",
                         packageName), e);
