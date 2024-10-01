@@ -9,7 +9,6 @@ import android.ext.settings.UsbPortSecurity;
 import android.os.Binder;
 import android.os.Bundle;
 import android.os.UserHandle;
-import android.service.oemlock.OemLockManager;
 
 import com.android.server.pm.UserManagerInternal;
 
@@ -20,7 +19,6 @@ public class SecurityStateManagerServiceExt {
 
     private static final String AUTO_REBOOT_TIMEOUT_KEY = "android.ext.AUTO_REBOOT_TIMEOUT";
     private static final String USB_PORT_SECURITY_MODE_KEY = "android.ext.USB_PORT_SECURITY_MODE";
-    private static final String OEM_UNLOCK_ALLOWED_KEY = "android.ext.OEM_UNLOCK_ALLOWED";
     private static final String USER_COUNT_KEY = "android.ext.USER_COUNT";
 
     static void appendSecurityStateExt(@NonNull Context ctx, @NonNull Bundle securityState) {
@@ -59,19 +57,6 @@ public class SecurityStateManagerServiceExt {
                 var users = userManagerInternal.getUsers(true, true, true);
                 int userCount = users.size();
                 securityStateExt.putInt(USER_COUNT_KEY, userCount);
-            }
-        }
-
-        {
-            long token = Binder.clearCallingIdentity();
-            try {
-                OemLockManager oemLockManager = ctx.getSystemService(OemLockManager.class);
-                if (oemLockManager != null) {
-                    boolean isOemUnlockAllowed = oemLockManager.isOemUnlockAllowedByUser();
-                    securityStateExt.putBoolean(OEM_UNLOCK_ALLOWED_KEY, isOemUnlockAllowed);
-                }
-            } finally {
-                Binder.restoreCallingIdentity(token);
             }
         }
 
