@@ -860,6 +860,7 @@ class AppErrors {
             report.anrInfo.activity = anrReport.tag;
             report.anrInfo.cause = anrReport.shortMsg;
             report.anrInfo.info = anrReport.longMsg;
+            report.anrInfo.tracesFilePath = anrReport.tracesFilePath;
         }
 
         return report;
