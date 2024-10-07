@@ -1620,6 +1620,12 @@ public class UsbManager {
     }
 
     /** @hide */
+    public static final int SET_PORT_SECURITY_STATE_RESULT_CODE_FRAMEWORK_EXCEPTION = 100; // lower values are reserved for IUsbExt error codes
+    /** @hide */
+    public static final String SET_PORT_SECURITY_STATE_EXCEPTION_KEY = "exception";
+
+    /** @hide */
+    @RequiresPermission(Manifest.permission.MANAGE_USB)
     public void setPortSecurityState(@NonNull UsbPort port,
             @android.hardware.usb.ext.PortSecurityState int state,
             @NonNull android.os.ResultReceiver statusCallback) {
