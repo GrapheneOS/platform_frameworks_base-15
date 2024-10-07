@@ -14,10 +14,15 @@ import android.util.Slog;
 class UsbPortAidlExt {
     static final String TAG = UsbPortAidlExt.class.getSimpleName();
 
-    static void setPortSecurityState(IBinder usbHal, String portName,
-                                 @android.hardware.usb.ext.PortSecurityState int state,
-                                 ResultReceiver callback) {
-        IBinder ext;
+    static void setPortSecurityState(@Nullable IBinder usbHal, String portName,
+                                     @PortSecurityState int state,
+                                     ResultReceiver callback) {
+        if (usbHal == null) {
+            sendSpssExceptionResult(new RuntimeException("USB HAL is null"), callback);
+            return;
+        }
+
+        final IBinder ext;
         try {
             ext = usbHal.getExtension();
         } catch (RemoteException e) {

@@ -144,6 +144,7 @@ public final class UsbPortAidl implements UsbPortHal {
     public void serviceDied() {
         logAndPrint(Log.ERROR, mPw, "Usb AIDL hal service died");
         synchronized (mLock) {
+            mBinder = null;
             mProxy = null;
         }
         connectToProxy(null);
@@ -461,7 +462,11 @@ public final class UsbPortAidl implements UsbPortHal {
     public void setPortSecurityState(String portName,
                                      @android.hardware.usb.ext.PortSecurityState int state,
                                      android.os.ResultReceiver callback) {
-        UsbPortAidlExt.setPortSecurityState(mBinder, portName, state, callback);
+        IBinder usbHal;
+        synchronized (mLock) {
+            usbHal = mBinder;
+        }
+        UsbPortAidlExt.setPortSecurityState(usbHal, portName, state, callback);
     }
 
     private static class HALCallback extends IUsbCallback.Stub {
