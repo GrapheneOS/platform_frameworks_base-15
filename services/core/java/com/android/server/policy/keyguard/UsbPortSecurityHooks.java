@@ -14,11 +14,13 @@ import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.ResultReceiver;
 import android.os.UserHandle;
+import android.util.Log;
 import android.util.Slog;
 
 import com.android.internal.R;
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.os.BackgroundThread;
+import com.android.server.ext.SystemErrorNotification;
 
 import java.util.ArrayList;
 import java.util.Objects;
@@ -184,13 +186,28 @@ public class UsbPortSecurityHooks {
             var resultReceiver = new ResultReceiver(null) {
                 @Override
                 protected void onReceiveResult(int resultCode, Bundle resultData) {
-                    if (resultCode != android.hardware.usb.ext.IUsbExt.NO_ERROR) {
-                        throw new IllegalStateException("setPortSecurityState failed, resultCode: " + resultCode + ", port: " + port);
+                    if (resultCode == android.hardware.usb.ext.IUsbExt.NO_ERROR) {
+                        return;
                     }
+                    var b = new StringBuilder("setPortSecurityState failed, resultCode: ");
+                    b.append(resultCode);
+                    if (resultData != null) {
+                        b.append(", resultData: ");
+                        b.append(resultData.toStringDeep());
+                    }
+                    b.append(", ");
+                    b.append(port);
+                    showErrorNotif(b.toString());
                 }
             };
 
             usbManager.setPortSecurityState(port, state, resultReceiver);
         }
+    }
+
+    private void showErrorNotif(String msg) {
+        String type = "error in USB-C port security feature";
+        String title = context.getString(R.string.usb_port_security_error_title);
+        new SystemErrorNotification(type, title, msg).show(context);
     }
 }
