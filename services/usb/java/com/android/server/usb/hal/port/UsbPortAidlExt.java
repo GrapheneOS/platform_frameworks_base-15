@@ -21,13 +21,13 @@ class UsbPortAidlExt {
         try {
             ext = usbHal.getExtension();
         } catch (RemoteException e) {
-            Slog.e(TAG, "", e);
-            throw new UnsupportedOperationException(e);
+            sendSpssExceptionResult(new RuntimeException("unable to retrieve USB HAL extension", e), callback);
+            return;
         }
 
         if (ext == null) {
-            Slog.d(TAG, "setPortSecurityState: no IUsbExt");
-            throw new UnsupportedOperationException();
+            sendSpssExceptionResult(new RuntimeException("IUsbExt is null"), callback);
+            return;
         }
 
         var halCallback = new android.hardware.usb.ext.IPortSecurityStateCallback.Stub() {
@@ -60,8 +60,19 @@ class UsbPortAidlExt {
         try {
             usbExt.setPortSecurityState(portName, state, halCallback);
         } catch (RemoteException e) {
-            Slog.e(TAG, "", e);
-            throw new android.os.ParcelableException(e);
+            sendSpssExceptionResult(new RuntimeException("IUsbExt.setPortSecurityState() failed", e), callback);
+            return;
         }
+    }
+
+    private static void sendSpssExceptionResult(Throwable e, ResultReceiver target) {
+        target.send(UsbManager.SET_PORT_SECURITY_STATE_RESULT_CODE_FRAMEWORK_EXCEPTION, createExceptionBundle(e));
+        Slog.e(TAG, "", e);
+    }
+
+    private static Bundle createExceptionBundle(Throwable e) {
+        var b = new android.os.Bundle();
+        b.putParcelable(UsbManager.SET_PORT_SECURITY_STATE_EXCEPTION_KEY, new ParcelableException(e));
+        return b;
     }
 }
