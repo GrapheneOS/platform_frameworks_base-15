@@ -15,15 +15,18 @@ import android.os.HandlerThread;
 import android.os.ResultReceiver;
 import android.os.UserHandle;
 import android.util.Log;
+import android.util.Pair;
 import android.util.Slog;
 
 import com.android.internal.R;
-import com.android.internal.annotations.GuardedBy;
-import com.android.internal.os.BackgroundThread;
+import com.android.internal.infra.AndroidFuture;
 import com.android.server.ext.SystemErrorNotification;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
 
 public class UsbPortSecurityHooks {
     private static final String TAG = UsbPortSecurityHooks.class.getSimpleName();
@@ -182,10 +185,18 @@ public class UsbPortSecurityHooks {
     private void setSecurityStateForAllPorts(int state) {
         Slog.d(TAG, "setSecurityStateForAllPorts: " + state);
 
-        for (UsbPort port : usbManager.getPorts()) {
+        List<UsbPort> ports = usbManager.getPorts();
+        AndroidFuture[] results = new AndroidFuture[ports.size()];
+
+        for (int i = 0, m = ports.size(); i < m; ++i) {
+            UsbPort port = ports.get(i);
+            var result = new AndroidFuture<Pair<Integer, Bundle>>();
+            results[i] = result;
+
             var resultReceiver = new ResultReceiver(null) {
                 @Override
                 protected void onReceiveResult(int resultCode, Bundle resultData) {
+                    result.complete(null);
                     if (resultCode == android.hardware.usb.ext.IUsbExt.NO_ERROR) {
                         return;
                     }
@@ -202,6 +213,14 @@ public class UsbPortSecurityHooks {
             };
 
             usbManager.setPortSecurityState(port, state, resultReceiver);
+            results[i] = result;
+        }
+
+        // wait for result callbacks to avoid potential race conditions
+        try {
+            CompletableFuture.allOf(results).get(5, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            showErrorNotif(Log.getStackTraceString(e));
         }
     }
 
