@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.ResultReceiver;
+import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.util.Log;
 import android.util.Pair;
@@ -185,6 +186,8 @@ public class UsbPortSecurityHooks {
     private void setSecurityStateForAllPorts(int state) {
         Slog.d(TAG, "setSecurityStateForAllPorts: " + state);
 
+        setDenyNewUsb2(state != android.hardware.usb.ext.PortSecurityState.ENABLED);
+
         List<UsbPort> ports = usbManager.getPorts();
         AndroidFuture[] results = new AndroidFuture[ports.size()];
 
@@ -221,6 +224,18 @@ public class UsbPortSecurityHooks {
             CompletableFuture.allOf(results).get(5, TimeUnit.SECONDS);
         } catch (Exception e) {
             showErrorNotif(Log.getStackTraceString(e));
+        }
+    }
+
+    private void setDenyNewUsb2(boolean enabled) {
+        String prop = "security.deny_new_usb2";
+        String val = enabled ? "1" : "0";
+        try {
+            SystemProperties.set(prop, val);
+            Slog.d(TAG, "set " + prop + " to " + val);
+        } catch (RuntimeException e) {
+            String msg = "unable to set " + prop + " to " + val + ":\n" + Log.getStackTraceString(e);
+            showErrorNotif(msg);
         }
     }
 
