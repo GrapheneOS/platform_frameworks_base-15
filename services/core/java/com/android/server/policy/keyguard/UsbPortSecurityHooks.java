@@ -11,6 +11,7 @@ import android.hardware.usb.UsbPort;
 import android.hardware.usb.UsbPortStatus;
 import android.os.Bundle;
 import android.os.Handler;
+import android.os.HandlerThread;
 import android.os.ResultReceiver;
 import android.os.UserHandle;
 import android.util.Slog;
@@ -28,11 +29,15 @@ public class UsbPortSecurityHooks {
     private static UsbPortSecurityHooks INSTANCE;
 
     private final Context context;
-    private final Handler handler = BackgroundThread.getHandler();
+    private final Handler handler;
     private final UsbManager usbManager;
 
     private UsbPortSecurityHooks(Context ctx) {
         this.context = ctx;
+        // use a dedicated thread to guarantee that the callbacks do not stall
+        var ht = new HandlerThread(TAG);
+        ht.start();
+        this.handler = ht.getThreadHandler();
         this.usbManager = Objects.requireNonNull(ctx.getSystemService(UsbManager.class));
     }
 
