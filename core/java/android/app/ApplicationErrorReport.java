@@ -16,6 +16,7 @@
 
 package android.app;
 
+import android.annotation.Nullable;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
@@ -543,6 +544,10 @@ public class ApplicationErrorReport implements Parcelable {
          */
         public String info;
 
+        /** @hide */
+        @Nullable
+        public String tracesFilePath;
+
         /**
          * Create an uninitialized instance of AnrInfo.
          */
@@ -556,6 +561,7 @@ public class ApplicationErrorReport implements Parcelable {
             activity = in.readString();
             cause = in.readString();
             info = in.readString();
+            tracesFilePath = in.readString();
         }
 
         /**
@@ -565,6 +571,7 @@ public class ApplicationErrorReport implements Parcelable {
             dest.writeString(activity);
             dest.writeString(cause);
             dest.writeString(info);
+            dest.writeString(tracesFilePath);
         }
 
         /**
