@@ -674,7 +674,7 @@ class ProcessErrorStateRecord {
             synchronized (mProcLock) {
                 // Set the app's notResponding state, and look up the errorReportReceiver
                 makeAppNotRespondingLSP(activityShortComponentName,
-                        annotation != null ? "ANR " + annotation : "ANR", info.toString());
+                        annotation != null ? "ANR " + annotation : "ANR", info.toString(), tracesFile);
                 mDialogController.setAnrController(anrController);
             }
 
@@ -693,7 +693,7 @@ class ProcessErrorStateRecord {
     }
 
     @GuardedBy({"mService", "mProcLock"})
-    private void makeAppNotRespondingLSP(String activity, String shortMsg, String longMsg) {
+    private void makeAppNotRespondingLSP(String activity, String shortMsg, String longMsg, @Nullable File tracesFile) {
         setNotResponding(true);
         // mAppErrors can be null if the AMS is constructed with injector only. This will only
         // happen in tests.
@@ -701,6 +701,11 @@ class ProcessErrorStateRecord {
             mNotRespondingReport = mService.mAppErrors.generateProcessError(mApp,
                     ActivityManager.ProcessErrorStateInfo.NOT_RESPONDING,
                     activity, shortMsg, longMsg, null);
+            // Filename of tracesFile contains ANR timestamp with millisecond precision, it's highly
+            // unlikely to be reused
+            if (tracesFile != null) {
+                mNotRespondingReport.tracesFilePath = tracesFile.getAbsolutePath();
+            }
         }
         startAppProblemLSP();
         mApp.getWindowProcessController().stopFreezingActivities();
