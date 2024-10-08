@@ -35,7 +35,7 @@ import java.util.function.Consumer;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 
-// See DropboxManager docs for more info
+// See DropBoxManager docs for more info
 public class DropBoxMonitor {
     static final String TAG = DropBoxMonitor.class.getSimpleName();
 
@@ -300,7 +300,7 @@ public class DropBoxMonitor {
 
     void showCrashNotif(DropBoxManager.Entry entry, String progName, String errorReport,
                         boolean showReportButton) {
-        SystemJournalNotif.showCrash(context, progName, errorReport, entry.getTimeMillis(),
+        SystemJournalNotif.showCrash(context, progName, errorReport, null, entry.getTimeMillis(),
                 showReportButton);
     }
 
