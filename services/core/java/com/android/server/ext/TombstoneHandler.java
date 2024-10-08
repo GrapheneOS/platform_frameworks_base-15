@@ -1,6 +1,7 @@
 package com.android.server.ext;
 
 import android.annotation.CurrentTimeMillisLong;
+import android.annotation.Nullable;
 import android.app.ActivityManagerInternal;
 import android.content.Context;
 import android.content.Intent;
@@ -15,6 +16,7 @@ import android.os.Process;
 import android.os.TombstoneWithHeadersProto;
 import android.os.UserHandle;
 import android.text.TextUtils;
+import android.util.Pair;
 import android.util.Slog;
 import android.util.proto.ProtoInputStream;
 
@@ -46,7 +48,7 @@ public class TombstoneHandler {
         try {
             byte[] protoBytes = Files.readAllBytes(protoFile.toPath());
 
-            handleTombstoneBytes(ctx, protoBytes, ts, false);
+            handleTombstoneBytes(ctx, protoBytes, protoFile, ts, false);
         } catch (Throwable e) {
             // catch everything to reduce the chance of getting into a crash loop
             Slog.e(TAG, "", e);
@@ -75,7 +77,7 @@ public class TombstoneHandler {
                 return;
             }
 
-            handleTombstoneBytes(dm.context, tombstoneBytes, entry.getTimeMillis(), true);
+            handleTombstoneBytes(dm.context, tombstoneBytes, null, entry.getTimeMillis(), true);
         } catch (Throwable e) {
             // catch everything to reduce the chance of getting into a crash loop
             Slog.e(TAG, "", e);
@@ -83,6 +85,7 @@ public class TombstoneHandler {
     }
 
     private static void handleTombstoneBytes(Context ctx, byte[] tombstoneBytes,
+            @Nullable File protoFile,
             @CurrentTimeMillisLong long timestamp, boolean isHistorical)
             throws IOException
     {
@@ -256,10 +259,11 @@ public class TombstoneHandler {
                     }
                     if (aswNotifType != -1) {
                         maybeShowAswNotification(aswNotifType, ctx, tombstone, msg,
+                                getTextTombstoneFileSpec(protoFile),
                                 packageUid, firstPackageName);
                     }
                 }
-                // rely on the standard crash dialog for non-memtag crashes
+                // rely on the standard crash dialog for other crashes
                 return;
             }
 
@@ -292,7 +296,8 @@ public class TombstoneHandler {
             }
         }
 
-        SystemJournalNotif.showCrash(ctx, progName, msg, timestamp, showReportButton);
+        SystemJournalNotif.showCrash(ctx, progName, msg, getTextTombstoneFileSpec(protoFile),
+                timestamp, showReportButton);
     }
 
     private static boolean isMemtagError(TombstoneProtos.Tombstone t) {
@@ -312,6 +317,7 @@ public class TombstoneHandler {
 
     private static void maybeShowAswNotification(int type, Context ctx, TombstoneProtos.Tombstone tombstone,
                                                  String errorReport,
+                                                 @Nullable Pair<String, Long> textTombstoneFileSpec,
                                                  int packageUid, String firstPackageName) {
         AppSwitchNotification n;
         switch (type) {
@@ -336,9 +342,44 @@ public class TombstoneHandler {
         }
         Intent i = LogViewerApp.createBaseErrorReportIntent(errorReport);
         i.putExtra(LogViewerApp.EXTRA_SOURCE_PACKAGE, firstPackageName);
+        if (textTombstoneFileSpec != null) {
+            i.putExtra(LogViewerApp.EXTRA_TEXT_TOMBSTONE_FILE_PATH, textTombstoneFileSpec.first);
+            i.putExtra(LogViewerApp.EXTRA_TEXT_TOMBSTONE_LAST_MODIFIED_TIME, textTombstoneFileSpec.second.longValue());
+        }
         n.moreInfoIntent = i;
 
         n.maybeShow();
+    }
+
+    @Nullable
+    private static Pair<String, Long> getTextTombstoneFileSpec(@Nullable File protoTombstone) {
+        if (protoTombstone == null) {
+            return null;
+        }
+
+        String protoPath = protoTombstone.getAbsolutePath();
+        String suffix = ".pb";
+        if (!protoPath.endsWith(suffix)) {
+            Slog.e(TAG, "unexpected proto tombstone path: " + protoPath);
+            return null;
+        }
+
+        String textPath = protoPath.substring(0, protoPath.length() - suffix.length());
+        File textFile = new File(textPath);
+        if (!textFile.isFile()) {
+            // text tombstone file is written before proto tombstone
+            Slog.e(TAG, "missing text tombstone, path: " +  textPath);
+            return null;
+        }
+
+        // Tombstone file can be replaced by a subsequent tombstone file. Add last modified
+        // timestamp to detect that case
+        long lastModified = textFile.lastModified();
+        if (lastModified <= 0) {
+            Slog.e(TAG, "lastModified time of " + textPath + " is " + lastModified);
+            return null;
+        }
+        return Pair.create(textPath, Long.valueOf(lastModified));
     }
 
     private static boolean shouldIgnore(TombstoneProtos.Tombstone t, TombstoneProtos.BacktraceFrame[] backtrace) {
