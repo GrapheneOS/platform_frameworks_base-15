@@ -12,6 +12,7 @@ import android.content.Intent;
 import android.ext.LogViewerApp;
 import android.os.Handler;
 import android.os.UserHandle;
+import android.util.Pair;
 
 import com.android.internal.R;
 import com.android.internal.messages.nano.SystemMessageProto;
@@ -23,10 +24,15 @@ import java.util.ArrayList;
 public class SystemJournalNotif {
 
     static void showCrash(Context ctx, String progName, String errorReport,
+                          @Nullable Pair<String, Long> textTombstoneFileSpec,
                           @CurrentTimeMillisLong long crashTimestamp, boolean showReportButton) {
         var i = LogViewerApp.createBaseErrorReportIntent(errorReport);
         i.putExtra(Intent.EXTRA_TITLE, progName + " crash");
         i.putExtra(LogViewerApp.EXTRA_SHOW_REPORT_BUTTON, showReportButton);
+        if (textTombstoneFileSpec != null) {
+            i.putExtra(LogViewerApp.EXTRA_TEXT_TOMBSTONE_FILE_PATH, textTombstoneFileSpec.first);
+            i.putExtra(LogViewerApp.EXTRA_TEXT_TOMBSTONE_LAST_MODIFIED_TIME, textTombstoneFileSpec.second.longValue());
+        }
 
         show(ctx, crashTimestamp, ctx.getString(R.string.process_crash_notif_title, progName), i);
     }
