@@ -451,7 +451,7 @@ public class StackTracesDumpHelper {
         final File anrFile = new File(tracesDir, ANR_FILE_PREFIX + formattedDate);
 
         if (anrFile.createNewFile()) {
-            FileUtils.setPermissions(anrFile.getAbsolutePath(), 0600, -1, -1); // -rw-------
+            FileUtils.setPermissions(anrFile.getAbsolutePath(), 0644, -1, -1); // -rw-r--r--
             return anrFile;
         } else {
             throw new IOException("Unable to create ANR dump file: createNewFile failed");
