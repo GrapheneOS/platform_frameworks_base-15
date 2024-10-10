@@ -5,6 +5,7 @@ import android.content.pm.ServiceInfo;
 
 import com.android.internal.gmscompat.GmcMediaProjectionService;
 import com.android.internal.gmscompat.GmsHooks;
+import com.android.internal.pm.pkg.component.ParsedPermission;
 import com.android.internal.pm.pkg.component.ParsedService;
 import com.android.internal.pm.pkg.component.ParsedServiceImpl;
 import com.android.internal.pm.pkg.component.ParsedUsesPermissionImpl;
@@ -16,6 +17,22 @@ import java.util.List;
 class GmsCoreHooks {
 
     static class ParsingHooks extends GmsCompatPkgParsingHooks {
+
+        @Override
+        public boolean shouldSkipPermissionDefinition(ParsedPermission p) {
+            switch (p.getName()) {
+                case "com.google.android.c2dm.permission.RECEIVE":
+                case "com.google.android.providers.gsf.permission.READ_GSERVICES":
+                    // These permissions are declared in GmsCompat app instead. They were moved there
+                    // because of an issue with permissions that have "normal" protectionLevel. If
+                    // the app that declares a "normal" permission is installed after an app that
+                    // requests that permission, the permission will not be granted. GmsCompat app
+                    // is a preinstalled app, it's always present.
+                    return true;
+                default:
+                    return false;
+            }
+        }
 
         @Override
         public List<ParsedUsesPermissionImpl> addUsesPermissions() {
