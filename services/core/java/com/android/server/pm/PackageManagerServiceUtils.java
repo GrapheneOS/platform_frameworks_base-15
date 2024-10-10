@@ -1343,9 +1343,15 @@ public class PackageManagerServiceUtils {
 
     public static @Nullable File preparePackageParserCache(boolean forEngBuild,
             boolean isUserDebugBuild, String incrementalVersion) {
+        // The base directory for the package parser cache lives under /data/system/.
+        final File cacheBaseDir = Environment.getPackageCacheDirectory();
+        if (true) {
+            FileUtils.deleteContentsAndDir(cacheBaseDir);
+            return null;
+        }
+
         if (!FORCE_PACKAGE_PARSED_CACHE_ENABLED) {
             if (!DEFAULT_PACKAGE_PARSER_CACHE_ENABLED) {
-                FileUtils.deleteContentsAndDir(Environment.getPackageCacheDirectory());
                 return null;
             }
 
@@ -1360,8 +1366,7 @@ public class PackageManagerServiceUtils {
             }
         }
 
-        // The base directory for the package parser cache lives under /data/system/.
-        final File cacheBaseDir = Environment.getPackageCacheDirectory();
+
         if (!FileUtils.createDir(cacheBaseDir)) {
             return null;
         }
