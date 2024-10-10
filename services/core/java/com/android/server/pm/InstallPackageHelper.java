@@ -4325,8 +4325,8 @@ final class InstallPackageHelper {
         if (!android.security.Flags.extendVbChainToUpdatedApk()) {
             return false;
         }
-
-        return true;
+        return mPm.mInjector.getSystemConfig().getPreinstallPackagesWithStrictSignatureCheck()
+            .contains(packageName);
     }
 
     /**
