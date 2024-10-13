@@ -21479,13 +21479,13 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
             * wrap the device admin component
             * on recieve finish first install gms, etc. then continue
             * */
-            try {
+            /* try {
                 // GmsCompatApp.iClientOfGmsCore2Gca()
                 GmsCompatApp.iGms2Gca().setupWorkProfileGms(userInfo.id, caller.getUserId(), new String[]{admin.getPackageName()});
             } catch (RemoteException e) {
                 // Does not happen, same process
-            }
-            // maybeInstallPlay(userInfo.id, caller.getUserId(), new String[]{admin.getPackageName()});
+            } */
+            maybeInstallPlay(userInfo.id, caller.getUserId(), new String[]{admin.getPackageName()});
 
             installExistingAdminPackage(userInfo.id, admin.getPackageName());
             if (!enableAdminAndSetProfileOwner(userInfo.id, caller.getUserId(), admin)) {
