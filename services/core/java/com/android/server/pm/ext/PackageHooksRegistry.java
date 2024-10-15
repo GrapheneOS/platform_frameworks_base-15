@@ -13,6 +13,7 @@ public class PackageHooksRegistry {
         }
 
         return switch (pkgName) {
+            case PackageId.GSF_NAME -> new GsfParsingHooks();
             case PackageId.EUICC_SUPPORT_PIXEL_NAME -> new EuiccSupportPixelHooks.ParsingHooks();
             case PackageId.G_EUICC_LPA_NAME -> new EuiccGoogleHooks.ParsingHooks();
             case PackageId.PIXEL_CAMERA_SERVICES_NAME -> new PixelCameraServicesHooks.ParsingHooks();

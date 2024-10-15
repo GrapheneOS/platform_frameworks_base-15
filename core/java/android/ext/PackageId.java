@@ -13,7 +13,7 @@ public interface PackageId {
     int UNKNOWN = 0;
 
     String GSF_NAME = "com.google.android.gsf";
-    int GSF = 1;
+    // no longer needed: int GSF = 1
 
     String GMS_CORE_NAME = "com.google.android.gms";
     int GMS_CORE = 2;

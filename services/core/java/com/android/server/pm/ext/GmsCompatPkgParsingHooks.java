@@ -26,7 +26,6 @@ public class GmsCompatPkgParsingHooks extends PackageParsingHooks {
         }
 
         return switch (pkgName) {
-            case PackageId.GSF_NAME -> new GsfParsingHooks();
             case PackageId.GMS_CORE_NAME -> new GmsCoreHooks.ParsingHooks();
             case PackageId.PLAY_STORE_NAME -> new PlayStoreHooks.ParsingHooks();
             case PackageId.G_CARRIER_SETTINGS_NAME -> new GCarrierSettingsHooks.ParsingHooks();

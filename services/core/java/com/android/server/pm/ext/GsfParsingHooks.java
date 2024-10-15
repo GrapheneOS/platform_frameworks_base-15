@@ -4,8 +4,9 @@ import android.os.Build;
 
 import com.android.internal.pm.pkg.component.ParsedPermission;
 import com.android.internal.pm.pkg.component.ParsedProvider;
+import com.android.internal.pm.pkg.parsing.PackageParsingHooks;
 
-class GsfParsingHooks extends GmsCompatPkgParsingHooks {
+class GsfParsingHooks extends PackageParsingHooks {
 
     @Override
     public boolean shouldSkipPermissionDefinition(ParsedPermission p) {

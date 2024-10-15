@@ -21,7 +21,6 @@ import android.ext.PackageId;
 /** @hide */
 public final class GmsInfo {
     // Package names for GMS apps
-    public static final String PACKAGE_GSF = PackageId.GSF_NAME; // "Google Services Framework"
     public static final String PACKAGE_GMS_CORE = PackageId.GMS_CORE_NAME; // "Play services"
     public static final String PACKAGE_PLAY_STORE = PackageId.PLAY_STORE_NAME;
 
@@ -29,6 +28,6 @@ public final class GmsInfo {
     public static final String PACKAGE_GSA = PackageId.G_SEARCH_APP_NAME;
 
     // Used for restricting accessibility of exported components, reducing the scope of broadcasts, etc.
-    // Held by GSF, GmsCore, Play Store.
+    // Held by GmsCore and Play Store.
     public static final String SIGNATURE_PROTECTED_PERMISSION = "com.google.android.providers.gsf.permission.WRITE_GSERVICES";
 }

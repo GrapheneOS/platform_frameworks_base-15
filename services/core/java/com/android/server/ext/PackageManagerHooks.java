@@ -152,7 +152,6 @@ public class PackageManagerHooks {
             AndroidPackage pkg = targetPkgSetting.getPkg();
             if (pkg != null) {
                 switch (PackageExt.get(pkg).getPackageId()) {
-                    case PackageId.GSF:
                     case PackageId.GMS_CORE:
                     case PackageId.PLAY_STORE:
                     case PackageId.EUICC_SUPPORT_PIXEL:

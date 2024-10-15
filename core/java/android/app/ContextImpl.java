@@ -2794,6 +2794,13 @@ class ContextImpl extends Context {
     @Override
     public Context createPackageContext(String packageName, int flags)
             throws NameNotFoundException {
+        if (GmsCompat.isEnabled()) {
+            Context res = GmcPackageManager.maybeOverrideGsfPackageContext(packageName);
+            if (res != null) {
+                return res;
+            }
+        }
+
         return createPackageContextAsUser(packageName, flags, mUser);
     }
 
