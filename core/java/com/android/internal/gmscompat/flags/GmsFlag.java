@@ -49,9 +49,11 @@ public class GmsFlag implements Parcelable {
     public @Nullable String[] permissions;
 
     public static final String NAMESPACE_GSERVICES = "gservices";
+    // Gservices content provider is hosted by GmsCore since Android 15. It was hosted by GSF before 15.
+    public static final String GSERVICES_CONTENT_PROVIDER_AUTHORITY = "com.google.android.gsf.gservices";
 
     public static final String GSERVICES_URI = "content://"
-            + GmsInfo.PACKAGE_GSF + '.' + NAMESPACE_GSERVICES + "/prefix";
+            + GSERVICES_CONTENT_PROVIDER_AUTHORITY + "/prefix";
 
     public static final String PHENOTYPE_URI_PREFIX = "content://"
             + GmsInfo.PACKAGE_GMS_CORE + ".phenotype/";

@@ -2227,8 +2227,6 @@ UnflaggedApi: android.ext.PackageId#GMS_CORE:
     New API must be flagged with @FlaggedApi: field android.ext.PackageId.GMS_CORE
 UnflaggedApi: android.ext.PackageId#GMS_CORE_NAME:
     New API must be flagged with @FlaggedApi: field android.ext.PackageId.GMS_CORE_NAME
-UnflaggedApi: android.ext.PackageId#GSF:
-    New API must be flagged with @FlaggedApi: field android.ext.PackageId.GSF
 UnflaggedApi: android.ext.PackageId#GSF_NAME:
     New API must be flagged with @FlaggedApi: field android.ext.PackageId.GSF_NAME
 UnflaggedApi: android.ext.PackageId#G_CAMERA:

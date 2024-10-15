@@ -134,7 +134,6 @@ public final class GmsCompat {
 
         return switch (packageId) {
             case
-                PackageId.GSF,
                 PackageId.GMS_CORE,
                 PackageId.PLAY_STORE,
                 PackageId.G_SEARCH_APP,
@@ -156,7 +155,6 @@ public final class GmsCompat {
 
         return switch (pkgName) {
             case
-                PackageId.GSF_NAME,
                 PackageId.GMS_CORE_NAME,
                 PackageId.PLAY_STORE_NAME,
                 PackageId.G_SEARCH_APP_NAME,

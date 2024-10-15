@@ -3855,6 +3855,13 @@ public class PackageInstallerSession extends IPackageInstallerSession.Stub {
         // {@link PackageLite#getTargetSdk()}
         mValidatedTargetSdk = packageLite.getTargetSdk();
 
+        if (mPackageName.equals(PackageId.GSF_NAME)) {
+            // Installation of GSF is not needed for GmsCompat. However, other apps might use
+            // package that holds the GSF package name without permission checks since GSF is a
+            // preinstalled package on GMS Android.
+            throw new PackageManagerException(INSTALL_FAILED_SESSION_INVALID, "GSF installation is not allowed");
+        }
+
         final String initiatingPackageName = mInstallSource.mInitiatingPackageName;
         if (initiatingPackageName != null && !isInstallerShell
                 && !android.util.PackageUtils.getFirstPartyAppSourcePackageName(mContext)
@@ -3873,7 +3880,6 @@ public class PackageInstallerSession extends IPackageInstallerSession.Stub {
 
             if (!skipExtraChecks) {
                 switch (mPackageName) {
-                    case PackageId.GSF_NAME:
                     case PackageId.GMS_CORE_NAME:
                     case PackageId.PLAY_STORE_NAME: {
                         if (isInstallerPlayStore) {

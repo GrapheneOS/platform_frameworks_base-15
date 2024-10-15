@@ -35,14 +35,13 @@ import android.content.pm.IPackageManager;
 import android.content.pm.InstallSourceInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageInstaller;
+import android.content.pm.PackageManager;
 import android.content.pm.SharedLibraryInfo;
 import android.content.pm.VersionedPackage;
 import android.ext.PackageId;
-import android.os.Build;
 import android.os.Process;
 import android.os.RemoteException;
 import android.os.UserHandle;
-import android.provider.Settings;
 import android.util.ArrayMap;
 import android.util.ArraySet;
 import android.util.Log;
@@ -529,7 +528,6 @@ public class GmcPackageManager extends ApplicationPackageManager {
         }
 
         switch (pkgName) {
-            case GmsInfo.PACKAGE_GSF:
             case GmsInfo.PACKAGE_GMS_CORE:
                 return false;
             default:
@@ -626,4 +624,43 @@ public class GmcPackageManager extends ApplicationPackageManager {
         }
     }
 
+    /** @see android.app.ContextImpl#createPackageContext */
+    @Nullable
+    public static Context maybeOverrideGsfPackageContext(String packageName) {
+        if (!GmsCompat.isGmsCore()) {
+            return null;
+        }
+
+        if (!PackageId.GSF_NAME.equals(packageName)) {
+            return null;
+        }
+
+        // On first launch, GmsCore attempts to migrate GSF databases into itself. GSF is a
+        // hasCode=false package since Android 15 and is not needed for fresh installs of GmsCore.
+        // If GSF is absent, GmsCore crashes when it tries to create package context for GSF as
+        // part of database migration. To prevent this crash, return GmsCore app context instead
+        // of GSF package context, which turns database migration into a no-op.
+
+        Context ctx = GmsCompat.appContext();
+        PackageManager pkgManager = ctx.getPackageManager();
+
+        try {
+            pkgManager.getApplicationInfo(packageName, 0);
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.d(TAG, "replacing GSF package context with GmsCore app context", new Throwable());
+            return ctx;
+        }
+
+        try {
+            PackageInfo pi = pkgManager.getPackageInfo(PackageId.GMS_CORE_NAME, 0);
+            if (pi.sharedUserId == null) {
+                // GmsCore has left the GSF sharedUid but GSF is still present
+                Log.d(TAG, "maybeReplaceGsfPackageName: sharedUserId is null, ignoring GSF", new Throwable());
+                return ctx;
+            }
+            return null;
+        } catch (NameNotFoundException e) {
+            throw new IllegalStateException(e);
+        }
+    }
 }

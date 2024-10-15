@@ -4912,7 +4912,6 @@ package android.ext {
     field public static final String EUICC_SUPPORT_PIXEL_NAME = "com.google.euiccpixel";
     field public static final int GMS_CORE = 2; // 0x2
     field public static final String GMS_CORE_NAME = "com.google.android.gms";
-    field public static final int GSF = 1; // 0x1
     field public static final String GSF_NAME = "com.google.android.gsf";
     field public static final int G_CAMERA = 8; // 0x8
     field public static final String G_CAMERA_NAME = "com.google.android.GoogleCamera";

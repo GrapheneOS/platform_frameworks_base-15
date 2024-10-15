@@ -12,6 +12,7 @@ import android.net.Uri;
 import android.util.ArraySet;
 import android.util.Log;
 
+import com.android.internal.gmscompat.flags.GmsFlag;
 import com.android.internal.gmscompat.util.GmcActivityUtils;
 
 import java.util.concurrent.Callable;
@@ -46,13 +47,12 @@ class BinderGca2Gms extends IGca2Gms.Stub {
             updatePhenotype(phenotypeDb, GmsHooks.config());
         }
 
-        // Gservices flags are hosted by GservicesProvider ContentProvider in
-        // "Google Services Framework" app.
+        // Gservices flags are hosted by GservicesProvider ContentProvider in GmsCore.
         // Its clients register change listeners via
         // BroadcastReceivers (com.google.gservices.intent.action.GSERVICES_CHANGED) and
         // ContentResolver#registerContentObserver().
         // Code below performs a delete of a non-existing key (key is chosen randomly).
-        // GSF will notify all of its listeners after this operation, despite database remaining
+        // GmsCore will notify all of its listeners after this operation, despite database remaining
         // unchanged. There's no other simple way to achieve the same effect (AFAIK).
         //
         // Additional values from GmsCompatConfig will be added only inside client's processes,
@@ -62,7 +62,7 @@ class BinderGca2Gms extends IGca2Gms.Stub {
         ContentValues cv = new ContentValues();
         cv.put("iquee6jo8ooquoomaeraip7gah4shee8phiet0Ahng0yeipei3", (String) null);
 
-        Uri gservicesUri = Uri.parse("content://" + GmsInfo.PACKAGE_GSF + ".gservices/override");
+        Uri gservicesUri = Uri.parse("content://" + GmsFlag.GSERVICES_CONTENT_PROVIDER_AUTHORITY + "/override");
         cr.update(gservicesUri, cv, null, null);
     }
 
