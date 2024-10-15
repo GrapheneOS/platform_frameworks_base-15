@@ -880,14 +880,26 @@ class PermissionService(private val service: AccessCheckingService) :
                                 reportError = false,
                                 "setRequestedPermissionStates"
                             )
+
+                            var extraFlagMask = 0
+                            var extraFlags = 0
+                            if (isSpecialRuntimePermission(permissionName)) {
+                                // Special runtime permissions are never set automatically pre-install
+                                // and PackageHooks checks USER_SET flag when overriding permission
+                                // state
+                                extraFlagMask = PackageManager.FLAG_PERMISSION_USER_SET
+                                extraFlags = PackageManager.FLAG_PERMISSION_USER_SET
+                            }
+
                             updatePermissionFlags(
                                 packageState.appId,
                                 userId,
                                 permissionName,
                                 VirtualDeviceManager.PERSISTENT_DEVICE_ID_DEFAULT,
                                 PackageManager.FLAG_PERMISSION_REVIEW_REQUIRED or
+                                    extraFlagMask or
                                     PackageManager.FLAG_PERMISSION_REVOKED_COMPAT,
-                                0,
+                                extraFlags,
                                 canUpdateSystemFlags = false,
                                 reportErrorForUnknownPermission = false,
                                 isPermissionRequested = true,
