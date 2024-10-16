@@ -883,8 +883,8 @@ class PermissionService(private val service: AccessCheckingService) :
 
                             var extraFlagMask = 0
                             var extraFlags = 0
-                            if (isSpecialRuntimePermission(permissionName)) {
-                                // Special runtime permissions are never set automatically pre-install
+                            if (permissionName == android.Manifest.permission.INTERNET) {
+                                // INTERNET permission is never set automatically pre-install
                                 // and PackageHooks checks USER_SET flag when overriding permission
                                 // state
                                 extraFlagMask = PackageManager.FLAG_PERMISSION_USER_SET
