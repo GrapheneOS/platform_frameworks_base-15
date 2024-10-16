@@ -2019,6 +2019,8 @@ UnflaggedApi: android.app.compat.gms.AndroidAuto#PKG_FLAG_GRANT_PERMS_FOR_WIRELE
     New API must be flagged with @FlaggedApi: field android.app.compat.gms.AndroidAuto.PKG_FLAG_GRANT_PERMS_FOR_WIRELESS_ANDROID_AUTO
 UnflaggedApi: android.app.compat.gms.GmsCompat:
     New API must be flagged with @FlaggedApi: class android.app.compat.gms.GmsCompat
+UnflaggedApi: android.app.compat.gms.GmsCompat#catchOrRethrow(SecurityException):
+    New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsCompat.catchOrRethrow(SecurityException)
 UnflaggedApi: android.app.compat.gms.GmsCompat#hasPermission(String):
     New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsCompat.hasPermission(String)
 UnflaggedApi: android.app.compat.gms.GmsCompat#isEnabled():

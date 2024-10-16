@@ -18,6 +18,7 @@ import android.os.Process;
 import android.os.RemoteException;
 import android.os.SystemProperties;
 import android.os.UserHandle;
+import android.util.Log;
 
 import com.android.internal.gmscompat.GmsHooks;
 import com.android.internal.gmscompat.GmsInfo;
@@ -310,5 +311,13 @@ public final class GmsCompat {
             return false;
         }
         return ai.enabled || matchDisabledApp;
+    }
+
+    public static void catchOrRethrow(@NonNull SecurityException se) {
+        if (isEnabled()) {
+            Log.d("GmsCompat", "caught SecurityException", se);
+            return;
+        }
+        throw se;
     }
 }
