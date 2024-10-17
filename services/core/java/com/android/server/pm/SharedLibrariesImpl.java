@@ -391,6 +391,11 @@ public final class SharedLibrariesImpl implements SharedLibrariesRead, Watchable
                 return;
             }
 
+            // Let upstream code run prune stale shared library when there's apk present.
+            if (packageState.getPkg() != null) {
+                return;
+            }
+
             // Start copy of upstream checks for stale shared libraries
             if (now - packageState.getLastUpdateTime() < maxCachePeriod) {
                 return;
