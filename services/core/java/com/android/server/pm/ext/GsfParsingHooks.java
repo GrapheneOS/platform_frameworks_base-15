@@ -10,7 +10,13 @@ class GsfParsingHooks extends PackageParsingHooks {
 
     @Override
     public boolean shouldSkipPermissionDefinition(ParsedPermission p) {
-        switch (p.getName()) {
+        String name = p.getName();
+        if (GmsCoreHooks.ParsingHooks.shouldSkipPermissionDefinition(name)) {
+            // these permissions are declared both in GSF and in GmsCore
+            return true;
+        }
+
+        switch (name) {
             // DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION is used to emulate registering a
             // receiver with RECEIVER_NOT_EXPORTED flag on OS versions older than 13:
             // https://cs.android.com/androidx/platform/frameworks/support/+/0177ceca157c815f5e5e46fe5c90e12d9faf4db3
@@ -33,9 +39,6 @@ class GsfParsingHooks extends PackageParsingHooks {
             // bug), which blocks GSF from being installed.
             // Since this permission isn't actually used for anything, removing it is safe.
             case "androidx.core.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION":
-            // see comment in GmsCoreHooks
-            case "com.google.android.c2dm.permission.RECEIVE":
-            case "com.google.android.providers.gsf.permission.READ_GSERVICES":
                 return true;
             default:
                 return false;
