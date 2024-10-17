@@ -3015,6 +3015,23 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
         return packageName + STATIC_SHARED_LIB_DELIMITER + libraryVersion;
     }
 
+    @Nullable
+    public static VersionedPackage getVersionedPackageFromMaybeStaticSharedLibPkg(
+            @NonNull PackageStateInternal packageStateInternal) {
+        final String internalPackageName = packageStateInternal.getPackageName();
+        final long libVersionCode = packageStateInternal.getVersionCode();
+        // See toStaticSharedLibraryPackageName for reasoning
+        String requiredSuffix = PackageManagerService.STATIC_SHARED_LIB_DELIMITER + libVersionCode;
+        if (!internalPackageName.endsWith(requiredSuffix)) {
+            return null;
+        }
+
+        String libPackageName = internalPackageName.substring(
+                0, internalPackageName.lastIndexOf(requiredSuffix));
+
+        return new VersionedPackage(libPackageName, libVersionCode);
+    }
+
     public void performFstrimIfNeeded() {
         mFreeStorageHelper.performFstrimIfNeeded();
     }
