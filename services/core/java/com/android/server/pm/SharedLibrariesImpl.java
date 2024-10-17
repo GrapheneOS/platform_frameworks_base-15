@@ -371,6 +371,42 @@ public final class SharedLibrariesImpl implements SharedLibrariesRead, Watchable
             }
         }
 
+        WatchedArrayMap<String, WatchedLongSparseArray<SharedLibraryInfo>> staticLibsByDeclaringPackageCached;
+        synchronized (mPm.mLock) {
+            staticLibsByDeclaringPackageCached = mStaticLibsByDeclaringPackage.snapshot();
+        }
+
+        computer.getPackageStates().forEach((internalPackageName, packageState) -> {
+            VersionedPackage libVersionedPackage =
+                    PackageManagerService.getVersionedPackageFromMaybeStaticSharedLibPkg(packageState);
+            // Method above fetch non-null VersionedPackage if the packageState is possibly a static library.
+            if (libVersionedPackage == null) {
+                return;
+            }
+
+            // Check below further verifies that it is declared as static library.
+            String libPackageName = libVersionedPackage.getPackageName();
+            long libVersionCode = libVersionedPackage.getLongVersionCode();
+            if (!staticLibsByDeclaringPackageCached.containsKey(libPackageName)) {
+                return;
+            }
+
+            // Start copy of upstream checks for stale shared libraries
+            if (now - packageState.getLastUpdateTime() < maxCachePeriod) {
+                return;
+            }
+
+            if (packageState.isSystem()) {
+                return;
+            }
+            // End copy of upstream checks for stale shared libraries
+
+            // Requires using synthetic package name to properly clear package state for
+            // static libraries. Otherwise, deletePackageX method will not be able
+            // to fetch the package state and properly remove it.
+            packagesToDelete.add(new VersionedPackage(internalPackageName, libVersionCode));
+        });
+
         final int packageCount = packagesToDelete.size();
         for (int i = 0; i < packageCount; i++) {
             final VersionedPackage pkgToDelete = packagesToDelete.get(i);
