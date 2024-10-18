@@ -384,9 +384,47 @@ public final class SharedLibrariesImpl implements SharedLibrariesRead, Watchable
                 return;
             }
 
-            // Check below further verifies that it is declared as static library.
             String libPackageName = libVersionedPackage.getPackageName();
             long libVersionCode = libVersionedPackage.getLongVersionCode();
+            final android.util.ArrayMap<String, Set<String>> allowedPackagesToBePruned;
+            allowedPackagesToBePruned = new android.util.ArrayMap<>();
+            {
+                final String validPackageName = "app.vanadium.trichromelibrary";
+                final ArraySet<String> validSha256Checksum =
+                        new ArraySet<>();
+                validSha256Checksum.add("c6adb8b83c6d4c17d292afde56fd488a51d316ff8f2c11c5410223bff8a7dbb3");
+                allowedPackagesToBePruned.put(validPackageName, validSha256Checksum);
+            }
+
+            if (!allowedPackagesToBePruned.containsKey(libPackageName)) {
+                return;
+            }
+
+            Set<String> certSha256Strings = allowedPackagesToBePruned.get(libPackageName);
+            if (certSha256Strings == null || certSha256Strings.isEmpty()) {
+                return;
+            }
+
+            var signingDetails = packageState.getSigningDetails();
+            if (signingDetails == null || signingDetails.getSignatures() == null
+                    || signingDetails.getSignatures().length == 0) {
+                return;
+            }
+
+            boolean hasValidSignature = false;
+            for (String certSha256String: certSha256Strings) {
+                byte[] validCertSha256 = HexEncoding.decode(certSha256String);
+                if (signingDetails.hasSha256Certificate(validCertSha256)) {
+                    hasValidSignature = true;
+                    break;
+                }
+            }
+
+            if (!hasValidSignature) {
+                return;
+            }
+
+            // Check below further verifies that it is declared as static library.
             if (!staticLibsByDeclaringPackageCached.containsKey(libPackageName)) {
                 return;
             }
