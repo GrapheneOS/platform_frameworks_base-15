@@ -202,8 +202,10 @@ public class BiometricPrompt implements BiometricAuthenticator, BiometricConstan
                         "Exclusively one of logo resource or logo bitmap can be set");
             }
             if (logoRes != 0) {
-                if (!GmsCompat.hasPermission(SET_BIOMETRIC_DIALOG_ADVANCED)) {
-                    return this;
+                if (GmsCompat.isEnabled()) {
+                    if (!GmsCompat.hasPermission(SET_BIOMETRIC_DIALOG_ADVANCED)) {
+                        return this;
+                    }
                 }
 
                 mPromptInfo.setLogo(logoRes,
@@ -231,8 +233,10 @@ public class BiometricPrompt implements BiometricAuthenticator, BiometricConstan
                 throw new IllegalStateException(
                         "Exclusively one of logo resource or logo bitmap can be set");
             }
-            if (!GmsCompat.hasPermission(SET_BIOMETRIC_DIALOG_ADVANCED)) {
-                return this;
+            if (GmsCompat.isEnabled()) {
+                if (!GmsCompat.hasPermission(SET_BIOMETRIC_DIALOG_ADVANCED)) {
+                    return this;
+                }
             }
             mPromptInfo.setLogo(0, logoBitmap);
             return this;
@@ -262,8 +266,10 @@ public class BiometricPrompt implements BiometricAuthenticator, BiometricConstan
                         "Logo description passed in exceeds" + MAX_LOGO_DESCRIPTION_CHARACTER_NUMBER
                                 + " character number and may be truncated.");
             }
-            if (!GmsCompat.hasPermission(SET_BIOMETRIC_DIALOG_ADVANCED)) {
-                return this;
+            if (GmsCompat.isEnabled()) {
+                if (!GmsCompat.hasPermission(SET_BIOMETRIC_DIALOG_ADVANCED)) {
+                    return this;
+                }
             }
             mPromptInfo.setLogoDescription(logoDescription);
             return this;
