@@ -8,12 +8,14 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.GosPackageState;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManagerInternal;
+import android.content.pm.VersionedPackage;
 import android.ext.PackageId;
 import android.location.HookedLocationManager;
 import android.os.Binder;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.UserHandle;
+import android.util.ArrayMap;
 import android.util.ArraySet;
 import android.util.Slog;
 
@@ -29,6 +31,10 @@ import com.android.server.pm.pkg.GosPackageStatePm;
 import com.android.server.pm.pkg.PackageStateInternal;
 
 import static java.util.Objects.requireNonNull;
+
+import java.util.Set;
+
+import libcore.util.HexEncoding;
 
 public class PackageManagerHooks {
 
@@ -132,8 +138,7 @@ public class PackageManagerHooks {
         // Always filter packages without AndroidPackage with its PackageState internal package name
         // format being the same as static shared library synthetic package name.
         if (targetPkgSetting.getPkg() == null
-                && PackageManagerService.getVersionedPackageFromMaybeStaticSharedLibPkg(
-                        targetPkgSetting) != null) {
+                && shouldFilterPotentiallyStaticLib(targetPkgSetting)) {
             return true;
         }
 
@@ -169,6 +174,55 @@ public class PackageManagerHooks {
                         return true;
                 }
             }
+        }
+
+        return false;
+    }
+
+    private static boolean shouldFilterPotentiallyStaticLib(PackageStateInternal pkgSetting) {
+        VersionedPackage libVersionedPackage =
+                PackageManagerService.getVersionedPackageFromMaybeStaticSharedLibPkg(pkgSetting);
+        // Method above fetch non-null VersionedPackage if the packageState is possibly a static library.
+        if (libVersionedPackage == null) {
+            return false;
+        }
+
+        final ArrayMap<String, Set<String>> allowedPackagesToBePruned = new ArrayMap<>();
+        {
+            final String validPackageName = "app.vanadium.trichromelibrary";
+            final ArraySet<String> validSha256Checksum =
+                    new ArraySet<>();
+            validSha256Checksum.add("c6adb8b83c6d4c17d292afde56fd488a51d316ff8f2c11c5410223bff8a7dbb3");
+            allowedPackagesToBePruned.put(validPackageName, validSha256Checksum);
+        }
+
+        String libPackageName = libVersionedPackage.getPackageName();
+        if (!allowedPackagesToBePruned.containsKey(libPackageName)) {
+            return false;
+        }
+
+        Set<String> certSha256Strings = allowedPackagesToBePruned.get(libPackageName);
+        if (certSha256Strings == null || certSha256Strings.isEmpty()) {
+            return false;
+        }
+
+        var signingDetails = pkgSetting.getSigningDetails();
+        if (signingDetails == null || signingDetails.getSignatures() == null
+                || signingDetails.getSignatures().length == 0) {
+            return false;
+        }
+
+        boolean hasValidSignature = false;
+        for (String certSha256String: certSha256Strings) {
+            byte[] validCertSha256 = HexEncoding.decode(certSha256String);
+            if (signingDetails.hasSha256Certificate(validCertSha256)) {
+                hasValidSignature = true;
+                break;
+            }
+        }
+
+        if (hasValidSignature) {
+            return true;
         }
 
         return false;
