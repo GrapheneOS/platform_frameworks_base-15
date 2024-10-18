@@ -129,6 +129,14 @@ public class PackageManagerHooks {
             }
         }
 
+        // Always filter packages without AndroidPackage with its PackageState internal package name
+        // format being the same as static shared library synthetic package name.
+        if (targetPkgSetting.getPkg() == null
+                && PackageManagerService.getVersionedPackageFromMaybeStaticSharedLibPkg(
+                        targetPkgSetting) != null) {
+            return true;
+        }
+
         if (restrictedVisibilityPackages.contains(targetPkgSetting.getPackageName())) {
             if (callingPkgSetting != null) {
                 return !callingPkgSetting.isSystem();
