@@ -63,9 +63,18 @@ public class PackageVerityExt {
     @Nullable public static AndroidPackage getSystemPackage(AndroidPackage pkg) {
         if (pkg.isStaticSharedLibrary()) {
             String name = pkg.getStaticSharedLibraryName();
+            final AndroidPackage system;
             synchronized (staticSharedLibraries) {
-                return staticSharedLibraries.get(name);
+                system = staticSharedLibraries.get(name);
             }
+            if (system != null && system.getStaticSharedLibraryVersion() == pkg.getStaticSharedLibraryVersion()) {
+                // Each version of static shared library is treated by the OS as a completely
+                // separate package with its own package state. Note that rejecting static shared
+                // libraries with mismatching version code would only delete their APKs, package
+                // state would be left behind.
+                return system;
+            }
+            return null;
         } else {
             String name = pkg.getManifestPackageName();
             synchronized (packages) {
