@@ -287,6 +287,7 @@ public class PackageInstallerActivity extends Activity {
                 if (currentDialog != null) {
                     currentDialog.dismissAllowingStateLoss();
                 }
+                bindUi();
                 initiateInstall();
             } else {
                 finish();
