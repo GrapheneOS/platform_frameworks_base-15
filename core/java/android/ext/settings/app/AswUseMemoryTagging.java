@@ -5,6 +5,7 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.GosPackageState;
 import android.content.pm.GosPackageStateBase;
+import android.ext.PackageId;
 import android.ext.settings.ExtSettings;
 
 import com.android.server.os.nano.AppCompatProtos;
@@ -37,6 +38,10 @@ public class AswUseMemoryTagging extends AppSwitch {
         }
 
         if (appInfo.isSystemApp()) {
+            switch (appInfo.packageName) {
+                case PackageId.PIXEL_CAMERA_SERVICES_NAME:
+                    return false;
+            }
             si.immutabilityReason = IR_IS_SYSTEM_APP;
             return true;
         }
