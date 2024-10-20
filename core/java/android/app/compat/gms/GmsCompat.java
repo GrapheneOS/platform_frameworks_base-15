@@ -71,7 +71,6 @@ public final class GmsCompat {
         return curPackageId == PackageId.G_CARRIER_SETTINGS;
     }
 
-    /** @hide */
     public static boolean isAndroidAuto() {
         return curPackageId == PackageId.ANDROID_AUTO;
     }

@@ -2023,6 +2023,8 @@ UnflaggedApi: android.app.compat.gms.GmsCompat#catchOrRethrow(SecurityException)
     New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsCompat.catchOrRethrow(SecurityException)
 UnflaggedApi: android.app.compat.gms.GmsCompat#hasPermission(String):
     New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsCompat.hasPermission(String)
+UnflaggedApi: android.app.compat.gms.GmsCompat#isAndroidAuto():
+    New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsCompat.isAndroidAuto()
 UnflaggedApi: android.app.compat.gms.GmsCompat#isEnabled():
     New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsCompat.isEnabled()
 UnflaggedApi: android.app.compat.gms.GmsCompat#isEnabledFor(String, int):
