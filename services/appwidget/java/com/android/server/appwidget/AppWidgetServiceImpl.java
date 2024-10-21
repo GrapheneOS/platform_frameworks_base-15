@@ -286,6 +286,8 @@ class AppWidgetServiceImpl extends IAppWidgetService.Stub implements WidgetBacku
     private int mMaxWidgetBitmapMemory;
     private boolean mIsCombinedBroadcastEnabled;
 
+    private boolean mShouldScheduleNotifyAppWidgetRemoved = true;
+
     // Mark widget lifecycle broadcasts as 'interactive'
     private Bundle mInteractiveBroadcast;
 
@@ -3387,7 +3389,7 @@ class AppWidgetServiceImpl extends IAppWidgetService.Stub implements WidgetBacku
         }
         mWidgets.remove(widget);
         onWidgetRemovedLocked(widget);
-        scheduleNotifyAppWidgetRemovedLocked(widget);
+        if (mShouldScheduleNotifyAppWidgetRemoved) scheduleNotifyAppWidgetRemovedLocked(widget);
     }
 
     private void onWidgetRemovedLocked(Widget widget) {
@@ -3802,6 +3804,7 @@ class AppWidgetServiceImpl extends IAppWidgetService.Stub implements WidgetBacku
                 // as we do not want to make host callbacks and provider broadcasts
                 // as the host and the provider will be killed.
                 if (hostInUser && (!hasProvider || providerInUser)) {
+                    mShouldScheduleNotifyAppWidgetRemoved = (userId == 0);
                     removeWidgetLocked(widget);
                     widget.host.widgets.remove(widget);
                     widget.host = null;
@@ -3818,6 +3821,7 @@ class AppWidgetServiceImpl extends IAppWidgetService.Stub implements WidgetBacku
                 Host host = mHosts.get(i);
                 if (host.getUserId() == userId) {
                     crossProfileWidgetsChanged |= !host.widgets.isEmpty();
+                    mShouldScheduleNotifyAppWidgetRemoved = (userId == 0);
                     deleteHostLocked(host);
                 }
             }
