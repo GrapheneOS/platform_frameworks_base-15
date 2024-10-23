@@ -71,7 +71,7 @@ class AppIdPermissionMigration {
         }
 
         val legacyAppIdPermissionStates =
-            permissionMigrationHelper.getLegacyPermissionStates(userId)
+            permissionMigrationHelper.getLegacyPermissionStates(userId, /* excludeSystemPackages */ false)
         val version = PackageVersionMigration.getVersion(userId)
 
         val userState = state.mutateUserState(userId)!!

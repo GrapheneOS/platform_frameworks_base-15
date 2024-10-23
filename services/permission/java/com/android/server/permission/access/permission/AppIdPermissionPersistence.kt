@@ -154,8 +154,12 @@ class AppIdPermissionPersistence {
     private fun BinaryXmlPullParser.parseAppIdPermissions(state: MutableAccessState, userId: Int) {
         val userState = state.mutateUserState(userId, WriteMode.NONE)!!
         val appIdPermissionFlags = userState.mutateAppIdPermissionFlags()
+
+        var specialRuntimePermsFixedUp = false
+
         forEachTag {
             when (tagName) {
+                TAG_APP_ID_SPECIAL_RUNTIME_PERMISSIONS_FIXED_UP -> specialRuntimePermsFixedUp = true
                 TAG_APP_ID -> parseAppId(appIdPermissionFlags)
                 else -> Slog.w(LOG_TAG, "Ignoring unknown tag $name when parsing permission state")
             }
@@ -166,6 +170,10 @@ class AppIdPermissionPersistence {
                 appIdPermissionFlags.removeAt(appIdIndex)
                 userState.requestWriteMode(WriteMode.ASYNCHRONOUS)
             }
+        }
+
+        if (!specialRuntimePermsFixedUp && SpecialRuntimePermissionFixup.maybeRun(appIdPermissionFlags, userId)) {
+            userState.requestWriteMode(WriteMode.ASYNCHRONOUS)
         }
     }
 
@@ -197,6 +205,7 @@ class AppIdPermissionPersistence {
         appIdPermissionFlags: AppIdPermissionFlags
     ) {
         tag(TAG_APP_ID_PERMISSIONS) {
+            tag(TAG_APP_ID_SPECIAL_RUNTIME_PERMISSIONS_FIXED_UP) {}
             appIdPermissionFlags.forEachIndexed { _, appId, permissionFlags ->
                 serializeAppId(appId, permissionFlags)
             }
@@ -233,6 +242,7 @@ class AppIdPermissionPersistence {
         private val LOG_TAG = AppIdPermissionPersistence::class.java.simpleName
 
         private const val TAG_APP_ID = "app-id"
+        private const val TAG_APP_ID_SPECIAL_RUNTIME_PERMISSIONS_FIXED_UP = "app-id-special-runtime-permissions-fixed-up"
         private const val TAG_APP_ID_PERMISSIONS = "app-id-permissions"
         private const val TAG_PERMISSION = "permission"
         private const val TAG_PERMISSIONS = "permissions"
