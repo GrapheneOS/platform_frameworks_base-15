@@ -2442,15 +2442,12 @@ class PermissionService(private val service: AccessCheckingService) :
                 userId
             )
             val permissionStates = ArrayMap(params.permissionStates)
-            SpecialRuntimePermUtils.getAll().forEach { perm ->
-                if (!permissionStates.contains(perm)) {
-                    val isUserSet = service.getState {
-                        with(policy) {
-                            getPermissionFlags(packageState.appId, userId, perm).hasBits(PermissionFlags.USER_SET)
+            if (params.isNewlyInstalledInUserId(userId)) {
+                SpecialRuntimePermUtils.getAll().forEach { perm ->
+                    if (!permissionStates.contains(perm)) {
+                        if (SpecialRuntimePermUtils.shouldAutoGrant(context, androidPackage.packageName, userId, perm)) {
+                            permissionStates.set(perm, PackageInstaller.SessionParams.PERMISSION_STATE_GRANTED)
                         }
-                    }
-                    if (!isUserSet && SpecialRuntimePermUtils.shouldAutoGrant(context, androidPackage.packageName, userId, perm)) {
-                        permissionStates.set(perm, PackageInstaller.SessionParams.PERMISSION_STATE_GRANTED)
                     }
                 }
             }
