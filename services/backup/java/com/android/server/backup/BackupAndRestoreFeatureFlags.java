@@ -41,7 +41,7 @@ public class BackupAndRestoreFeatureFlags {
         return DeviceConfig.getLong(
                 NAMESPACE,
                 /* name= */ "backup_transport_future_timeout_millis",
-                /* defaultValue= */ 600000); // 10 minutes
+                /* defaultValue= */ 3600000); // 1 hour
     }
 
     /** Retrieves the value of the flag "backup_transport_callback_timeout_millis". */
@@ -50,7 +50,7 @@ public class BackupAndRestoreFeatureFlags {
         return DeviceConfig.getLong(
                 NAMESPACE,
                 /* name= */ "backup_transport_callback_timeout_millis",
-                /* defaultValue= */ 300000); // 5 minutes
+                /* defaultValue= */ 1800000); // 30 minutes
     }
 
     /**
