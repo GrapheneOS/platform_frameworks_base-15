@@ -27,6 +27,7 @@ import android.annotation.SystemApi;
 import android.annotation.SystemService;
 import android.app.KeyguardManager;
 import android.app.PendingIntent;
+import android.app.compat.gms.GmsCompat;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
@@ -711,7 +712,8 @@ public class RecoverySystem {
         }
 
         RecoverySystem rs = (RecoverySystem) context.getSystemService(Context.RECOVERY_SERVICE);
-        if (!rs.requestLskf(context.getPackageName(), intentSender)) {
+        if ((GmsCompat.isEnabled() && rs == null) ||
+                !rs.requestLskf(context.getPackageName(), intentSender)) {
             throw new IOException("preparation for update failed");
         }
     }
