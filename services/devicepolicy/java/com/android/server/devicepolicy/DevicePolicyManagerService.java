@@ -21655,7 +21655,7 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
         // TODO: possibly copy permissions from existing install in managing user?
         Slogf.i(LOG_TAG, "Installing play for user " + targetUserId);
 
-        List<String> playPkgList = Arrays.asList(PackageId.GSF_NAME, PackageId.GMS_CORE_NAME, PackageId.PLAY_STORE_NAME);
+        List<String> playPkgList = Arrays.asList(PackageId.GMS_CORE_NAME, PackageId.PLAY_STORE_NAME);
 
         boolean playAllAvailableOnSystem = true;
 
