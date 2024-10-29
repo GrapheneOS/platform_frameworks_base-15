@@ -29,6 +29,7 @@ import android.content.res.XmlResourceParser;
 import android.os.Environment;
 import android.os.Process;
 import android.util.ArrayMap;
+import android.util.Log;
 import android.util.Slog;
 import android.util.Xml;
 
@@ -181,12 +182,15 @@ public class AconfigFlags {
     }
 
     private void loadAconfigDefaultValues(byte[] fileContents) throws IOException {
+        boolean shouldLog = Log.isLoggable(LOG_TAG, Log.VERBOSE);
         parsed_flags parsedFlags = parsed_flags.parseFrom(fileContents);
         for (parsed_flag flag : parsedFlags.parsedFlag) {
             String flagPackageAndName = flag.package_ + "." + flag.name;
             boolean flagValue = (flag.state == Aconfig.ENABLED);
-            Slog.v(LOG_TAG, "Read Aconfig default flag value "
-                    + flagPackageAndName + " = " + flagValue);
+            if (shouldLog) {
+                Slog.v(LOG_TAG, "Read Aconfig default flag value "
+                        + flagPackageAndName + " = " + flagValue);
+            }
             mFlagValues.put(flagPackageAndName, flagValue);
 
             Permission permission = flag.permission == Aconfig.READ_ONLY
