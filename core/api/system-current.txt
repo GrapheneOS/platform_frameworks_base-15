@@ -2140,7 +2140,6 @@ package android.app.compat.gms {
     method public static boolean isAndroidAuto();
     method public static boolean isEnabled();
     method public static boolean isEnabledFor(@NonNull android.content.pm.ApplicationInfo);
-    method public static boolean isEnabledFor(int, boolean);
     method public static boolean isEnabledFor(@NonNull String, int);
   }
 

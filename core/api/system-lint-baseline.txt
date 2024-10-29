@@ -2031,8 +2031,6 @@ UnflaggedApi: android.app.compat.gms.GmsCompat#isEnabledFor(String, int):
     New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsCompat.isEnabledFor(String,int)
 UnflaggedApi: android.app.compat.gms.GmsCompat#isEnabledFor(android.content.pm.ApplicationInfo):
     New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsCompat.isEnabledFor(android.content.pm.ApplicationInfo)
-UnflaggedApi: android.app.compat.gms.GmsCompat#isEnabledFor(int, boolean):
-    New API must be flagged with @FlaggedApi: method android.app.compat.gms.GmsCompat.isEnabledFor(int,boolean)
 UnflaggedApi: android.app.compat.gms.GmsUtils:
     New API must be flagged with @FlaggedApi: class android.app.compat.gms.GmsUtils
 UnflaggedApi: android.app.compat.gms.GmsUtils#createAppPlayStoreIntent(String):
