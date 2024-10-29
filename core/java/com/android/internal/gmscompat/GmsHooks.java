@@ -604,8 +604,9 @@ public final class GmsHooks {
 
         boolean res = stub.stubOutMethod(p);
 
-        if (Build.isDebuggable()) {
-            Log.i(TAG, res ? "intercepted" : "stubOut failed", e);
+        String logTag = "GmcDynStub";
+        if (GmsCompat.isDevBuild() || Log.isLoggable(logTag, Log.DEBUG)) {
+            Log.d(logTag, res ? "intercepted" : "stubOut failed", e);
         }
 
         return res;

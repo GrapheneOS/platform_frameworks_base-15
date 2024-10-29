@@ -57,6 +57,11 @@ public final class GmsCompat {
     }
 
     /** @hide */
+    public static boolean isDevBuild() {
+        return !Build.IS_USER;
+    }
+
+    /** @hide */
     public static boolean isGmsCore() {
         return curPackageId == PackageId.GMS_CORE;
     }
@@ -117,7 +122,7 @@ public final class GmsCompat {
     }
 
     public static boolean isEnabledFor(@NonNull ApplicationInfo app) {
-        if (Build.IS_DEBUGGABLE) {
+        if (isDevBuild()) {
             if (isTestPackage(app.packageName)) {
                 return true;
             }
@@ -147,7 +152,7 @@ public final class GmsCompat {
 
     /** @hide */
     public static boolean canBeEnabledFor(String pkgName) {
-        if (Build.IS_DEBUGGABLE) {
+        if (isDevBuild()) {
             if (isTestPackage(pkgName)) {
                 return true;
             }
@@ -192,7 +197,7 @@ public final class GmsCompat {
 
     /** @hide */
     public static boolean isEnabledFor(@NonNull String packageName, int userId, boolean matchDisabledApp) {
-        if (Build.isDebuggable()) {
+        if (isDevBuild()) {
             if (isTestPackage(packageName, userId, matchDisabledApp)) {
                 return true;
             }
@@ -284,10 +289,9 @@ public final class GmsCompat {
         return ArrayUtils.contains(testPkgs.split(","), packageName);
     }
 
-    // call only when Build.isDebuggable() is true
     /** @hide */
     public static boolean isTestPackage(String packageName, int userId, boolean matchDisabledApp) {
-        if (!Build.isDebuggable()) {
+        if (!isDevBuild()) {
             return false;
         }
         if (!isTestPackage(packageName)) {
