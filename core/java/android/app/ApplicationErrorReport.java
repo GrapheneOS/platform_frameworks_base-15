@@ -102,7 +102,7 @@ public class ApplicationErrorReport implements Parcelable {
     public String packageName;
 
     /** @hide */
-    public long packageVersion;
+    public ApplicationInfo applicationInfo;
 
     /**
      * Package name of the application which installed the application this
@@ -245,7 +245,7 @@ public class ApplicationErrorReport implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeInt(type);
         dest.writeString(packageName);
-        dest.writeLong(packageVersion);
+        applicationInfo.writeToParcel(dest, 0);
         dest.writeString(installerPackageName);
         dest.writeString(processName);
         dest.writeLong(time);
@@ -273,7 +273,7 @@ public class ApplicationErrorReport implements Parcelable {
     public void readFromParcel(Parcel in) {
         type = in.readInt();
         packageName = in.readString();
-        packageVersion = in.readLong();
+        applicationInfo = ApplicationInfo.CREATOR.createFromParcel(in);
         installerPackageName = in.readString();
         processName = in.readString();
         time = in.readLong();
@@ -736,7 +736,7 @@ public class ApplicationErrorReport implements Parcelable {
      */
     public void dump(Printer pw, String prefix) {
         pw.println(prefix + "type: " + type);
-        pw.println(prefix + "packageName: " + packageName + ":" + packageVersion);
+        pw.println(prefix + "packageName: " + packageName);
         pw.println(prefix + "installerPackageName: " + installerPackageName);
         pw.println(prefix + "processName: " + processName);
         pw.println(prefix + "time: " + time);
