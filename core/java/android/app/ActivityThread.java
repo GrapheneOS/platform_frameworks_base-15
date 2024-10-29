@@ -59,6 +59,7 @@ import android.app.backup.BackupAgent;
 import android.app.backup.BackupAnnotations.BackupDestination;
 import android.app.backup.BackupAnnotations.OperationType;
 import android.app.compat.CompatChanges;
+import android.app.compat.gms.GmsCompat;
 import android.app.sdksandbox.sandboxactivity.ActivityContextInfo;
 import android.app.sdksandbox.sandboxactivity.SdkSandboxActivityAuthority;
 import android.app.servertransaction.ActivityLifecycleItem;
@@ -231,6 +232,7 @@ import com.android.internal.annotations.GuardedBy;
 import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.app.IVoiceInteractor;
 import com.android.internal.content.ReferrerIntent;
+import com.android.internal.gmscompat.GmcDebug;
 import com.android.internal.os.BinderCallsStats;
 import com.android.internal.os.BinderInternal;
 import com.android.internal.os.RuntimeInit;
@@ -4780,6 +4782,9 @@ public final class ActivityThread extends ClientTransactionHandler
 
             sCurrentBroadcastIntent.set(data.intent);
             receiver.setPendingResult(data);
+            if (GmsCompat.isEnabled()) {
+                GmcDebug.maybeLogReceiveBroadcast(receiver, data.intent, true);
+            }
             receiver.onReceive(context.getReceiverRestrictedContext(),
                     data.intent);
         } catch (Exception e) {
@@ -5170,6 +5175,9 @@ public final class ActivityThread extends ClientTransactionHandler
                 }
                 int res;
                 if (!data.taskRemoved) {
+                    if (GmsCompat.isEnabled()) {
+                        GmcDebug.maybeLogServiceOnStartCommand(s, data.args, data.flags, data.startId);
+                    }
                     res = s.onStartCommand(data.args, data.flags, data.startId);
                 } else {
                     s.onTaskRemoved(data.args);

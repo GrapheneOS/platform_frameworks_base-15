@@ -18,6 +18,7 @@ package android.app;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.app.compat.gms.GmsCompat;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.content.BroadcastReceiver;
 import android.content.ComponentName;
@@ -61,6 +62,7 @@ import android.view.DisplayAdjustments;
 
 import com.android.internal.R;
 import com.android.internal.annotations.GuardedBy;
+import com.android.internal.gmscompat.GmcDebug;
 import com.android.internal.util.ArrayUtils;
 
 import dalvik.system.BaseDexClassLoader;
@@ -1811,6 +1813,9 @@ public final class LoadedApk {
                                 mContext.getAttributionSource());
                         setExtrasClassLoader(cl);
                         receiver.setPendingResult(this);
+                        if (GmsCompat.isEnabled()) {
+                            GmcDebug.maybeLogReceiveBroadcast(receiver, intent, false);
+                        }
                         receiver.onReceive(mContext, intent);
                     } catch (Exception e) {
                         if (ActivityThread.DEBUG_BROADCAST) Slog.i(ActivityThread.TAG,
@@ -2200,18 +2205,29 @@ public final class LoadedApk {
 
             // If there was an old service, it is now disconnected.
             if (old != null) {
+                if (GmsCompat.isEnabled()) {
+                    GmcDebug.maybeLogServiceConnCallback("onServiceDisconnected_old", name);
+                }
                 mConnection.onServiceDisconnected(name);
             }
+
+            String op;
             if (dead) {
+                op = "onBindingDied";
                 mConnection.onBindingDied(name);
             } else {
                 // If there is a new viable service, it is now connected.
                 if (service != null) {
+                    op = "onServiceConnected";
                     mConnection.onServiceConnected(name, service);
                 } else {
+                    op = "onNullBinding";
                     // The binding machinery worked, but the remote returned null from onBind().
                     mConnection.onNullBinding(name);
                 }
+            }
+            if (GmsCompat.isEnabled()) {
+                GmcDebug.maybeLogServiceConnCallback(op, name);
             }
         }
 
@@ -2225,6 +2241,10 @@ public final class LoadedApk {
                 }
                 mActiveConnections.remove(name);
                 old.binder.unlinkToDeath(old.deathMonitor, 0);
+            }
+
+            if (GmsCompat.isEnabled()) {
+                GmcDebug.maybeLogServiceConnCallback("onServiceDisconnected", name);
             }
 
             mConnection.onServiceDisconnected(name);
