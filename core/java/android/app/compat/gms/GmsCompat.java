@@ -122,16 +122,17 @@ public final class GmsCompat {
     }
 
     public static boolean isEnabledFor(@NonNull ApplicationInfo app) {
+        return isEnabledFor(app.ext().getPackageId(), app.packageName, app.isPrivilegedApp());
+    }
+
+    /** @hide */
+    public static boolean isEnabledFor(int packageId, String packageName, boolean isPrivileged) {
         if (isDevBuild()) {
-            if (isTestPackage(app.packageName)) {
+            if (isTestPackage(packageName)) {
                 return true;
             }
         }
 
-        return isEnabledFor(app.ext().getPackageId(), app.isPrivilegedApp());
-    }
-
-    public static boolean isEnabledFor(int packageId, boolean isPrivileged) {
         if (isPrivileged) {
             // don't enable GmsCompat for privileged GMS
             return false;
