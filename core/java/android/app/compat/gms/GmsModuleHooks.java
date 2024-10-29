@@ -97,7 +97,7 @@ public class GmsModuleHooks {
             return false;
         }
 
-        if (Build.isDebuggable()) {
+        if (GmsCompat.isDevBuild()) {
             Log.i(TAG, "intercepted " + origException, stackTrace);
         }
 
