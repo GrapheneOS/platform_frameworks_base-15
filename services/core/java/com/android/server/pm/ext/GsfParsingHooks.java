@@ -1,9 +1,8 @@
 package com.android.server.pm.ext;
 
-import android.os.Build;
-
 import com.android.internal.pm.pkg.component.ParsedPermission;
 import com.android.internal.pm.pkg.component.ParsedProvider;
+import com.android.internal.pm.pkg.component.ParsedUsesPermission;
 import com.android.internal.pm.pkg.parsing.PackageParsingHooks;
 
 class GsfParsingHooks extends PackageParsingHooks {
@@ -46,6 +45,14 @@ class GsfParsingHooks extends PackageParsingHooks {
     }
 
     @Override
+    public boolean shouldSkipUsesPermission(ParsedUsesPermission p) {
+        // See shouldSkipProvider(). GSF is in the same sharedUid as GmsCore, ignore all
+        // uses-permission declarations to remove misleading permission entries in App info UI for
+        // GSF.
+        return true;
+    }
+
+    @Override
     public boolean shouldSkipProvider(ParsedProvider p) {
         // On SDK 35, all GSF ContentProviders are moved to GmsCore and GSF becomes an
         // "android:hasCode=false" package, i.e. it never runs.
@@ -54,7 +61,7 @@ class GsfParsingHooks extends PackageParsingHooks {
         // updating to SDK 35 (Android 15), which leads to GmsCore breaking due to ContentProvider
         // conflicts between GSF and GmsCore.
         //
-        // As a workaround, ignore all GSF ContentProvider on SDK 35+.
-        return Build.VERSION.SDK_INT >= 35;
+        // As a workaround, ignore all GSF ContentProvider.
+        return true;
     }
 }
