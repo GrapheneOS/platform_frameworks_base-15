@@ -22,6 +22,8 @@ import static android.os.StrictMode.vmIncorrectContextUseEnabled;
 import static android.permission.flags.Flags.shouldRegisterAttributionSource;
 import static android.view.WindowManager.LayoutParams.WindowType;
 import static com.android.internal.app.ContentProviderRedirector.translateContentProviderAuthority;
+import static com.android.internal.gmscompat.GmcDebug.maybeLogSendBroadcast;
+import static com.android.internal.gmscompat.GmcDebug.maybeLogStartService;
 
 import android.Manifest;
 import android.annotation.CallbackExecutor;
@@ -104,6 +106,7 @@ import android.window.WindowTokenClient;
 import android.window.WindowTokenClientController;
 
 import com.android.internal.annotations.GuardedBy;
+import com.android.internal.gmscompat.GmcDebug;
 import com.android.internal.gmscompat.sysservice.GmcPackageManager;
 import com.android.internal.gmscompat.GmsHooks;
 import com.android.internal.gmscompat.sysservice.GmcUserManager;
@@ -1251,6 +1254,9 @@ class ContextImpl extends Context {
 
     @Override
     public void sendBroadcast(Intent intent) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, null, null, 0);
+        }
         warnIfCallingFromSystemProcess();
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         try {
@@ -1266,6 +1272,9 @@ class ContextImpl extends Context {
 
     @Override
     public void sendBroadcast(Intent intent, String receiverPermission) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, receiverPermission, null, 0);
+        }
         warnIfCallingFromSystemProcess();
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         String[] receiverPermissions = receiverPermission == null ? null
@@ -1284,6 +1293,9 @@ class ContextImpl extends Context {
 
     @Override
     public void sendBroadcastMultiplePermissions(Intent intent, String[] receiverPermissions) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, null, receiverPermissions, null, null, 0);
+        }
         warnIfCallingFromSystemProcess();
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         try {
@@ -1301,6 +1313,9 @@ class ContextImpl extends Context {
     @Override
     public void sendBroadcastMultiplePermissions(Intent intent, String[] receiverPermissions,
             Bundle options) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, null, receiverPermissions, options, null, 0);
+        }
         warnIfCallingFromSystemProcess();
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         try {
@@ -1318,6 +1333,9 @@ class ContextImpl extends Context {
     @Override
     public void sendBroadcastAsUserMultiplePermissions(Intent intent, UserHandle user,
             String[] receiverPermissions) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, null, receiverPermissions, null, null, 0);
+        }
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         try {
             intent.prepareToLeaveProcess(this);
@@ -1334,6 +1352,9 @@ class ContextImpl extends Context {
     @Override
     public void sendBroadcastMultiplePermissions(Intent intent, String[] receiverPermissions,
             String[] excludedPermissions, String[] excludedPackages, BroadcastOptions options) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, null, receiverPermissions, null, options, 0);
+        }
         warnIfCallingFromSystemProcess();
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         try {
@@ -1351,6 +1372,7 @@ class ContextImpl extends Context {
     @Override
     public void sendBroadcast(Intent intent, String receiverPermission, Bundle options) {
         if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, receiverPermission, options, 0);
             options = GmsHooks.filterBroadcastOptions(intent, options);
         }
 
@@ -1382,6 +1404,9 @@ class ContextImpl extends Context {
 
     @Override
     public void sendBroadcast(Intent intent, String receiverPermission, int appOp) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, receiverPermission, null, appOp);
+        }
         warnIfCallingFromSystemProcess();
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         String[] receiverPermissions = receiverPermission == null ? null
@@ -1405,6 +1430,9 @@ class ContextImpl extends Context {
 
     @Override
     public void sendOrderedBroadcast(Intent intent, String receiverPermission, Bundle options) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, receiverPermission, options, 0);
+        }
         warnIfCallingFromSystemProcess();
         String resolvedType = intent.resolveTypeIfNeeded(getContentResolver());
         String[] receiverPermissions = receiverPermission == null ? null
@@ -1453,6 +1481,8 @@ class ContextImpl extends Context {
             Handler scheduler, int initialCode, String initialData,
             Bundle initialExtras, Bundle options) {
         if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, receiverPermission, null, options, null, appOp,
+                    initialCode, initialData, initialExtras);
             options = GmsHooks.filterBroadcastOptions(intent, options);
         }
 
@@ -1492,6 +1522,7 @@ class ContextImpl extends Context {
     @Override
     public void sendBroadcastAsUser(Intent intent, UserHandle user) {
         if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, null, null, 0);
             user = GmcUserManager.translateUserHandle(user);
         }
 
@@ -1517,6 +1548,7 @@ class ContextImpl extends Context {
     public void sendBroadcastAsUser(Intent intent, UserHandle user, String receiverPermission,
             Bundle options) {
         if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, receiverPermission, options,  0);
             options = GmsHooks.filterBroadcastOptions(intent, options);
             user = GmcUserManager.translateUserHandle(user);
         }
@@ -1540,6 +1572,7 @@ class ContextImpl extends Context {
     public void sendBroadcastAsUser(Intent intent, UserHandle user,
             String receiverPermission, int appOp) {
         if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, receiverPermission, null, null, null, appOp);
             user = GmcUserManager.translateUserHandle(user);
         }
 
@@ -1579,6 +1612,7 @@ class ContextImpl extends Context {
             String receiverPermission, int appOp, Bundle options, BroadcastReceiver resultReceiver,
             Handler scheduler, int initialCode, String initialData, Bundle initialExtras) {
         if (GmsCompat.isEnabled()) {
+            maybeLogSendBroadcast(intent, receiverPermission, null, options, null, appOp, initialCode, initialData, initialExtras);
             options = GmsHooks.filterBroadcastOptions(intent, options);
             user = GmcUserManager.translateUserHandle(user);
         }
@@ -1984,6 +2018,9 @@ class ContextImpl extends Context {
 
     private ComponentName startServiceCommon(Intent service, boolean requireForeground,
             UserHandle user) {
+        if (GmsCompat.isEnabled()) {
+            maybeLogStartService(service, requireForeground);
+        }
         // Keep this in sync with ActivityManagerLocal.startSdkSandboxService
         try {
             validateServiceIntent(service);
@@ -2026,6 +2063,9 @@ class ContextImpl extends Context {
     }
 
     private boolean stopServiceCommon(Intent service, UserHandle user) {
+        if (GmsCompat.isEnabled()) {
+            GmcDebug.maybeLogStopService(service);
+        }
         // // Keep this in sync with ActivityManagerLocal.stopSdkSandboxService
         try {
             validateServiceIntent(service);
@@ -2181,6 +2221,7 @@ class ContextImpl extends Context {
             if (!GmsCompat.hasPermission(Manifest.permission.START_ACTIVITIES_FROM_BACKGROUND)) {
                 flags &= ~BIND_ALLOW_BACKGROUND_ACTIVITY_STARTS;
             }
+            GmcDebug.maybeLogBindService(service, conn, flags, instanceName);
         }
 
         String pkg = service.getPackage();
@@ -2242,6 +2283,9 @@ class ContextImpl extends Context {
     public void unbindService(ServiceConnection conn) {
         if (conn == null) {
             throw new IllegalArgumentException("connection is null");
+        }
+        if (GmsCompat.isEnabled()) {
+            GmcDebug.maybeLogUnbindService(conn);
         }
         if (mPackageInfo != null) {
             IServiceConnection sd = mPackageInfo.forgetServiceDispatcher(
