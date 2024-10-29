@@ -104,11 +104,26 @@ public class PackageVerityExt {
             }
         }
 
-        if (checkVersionCode && systemPkg.getLongVersionCode() >= systemPkgUpdate.getLongVersionCode()) {
-            throw new PackageManagerException(INSTALL_FAILED_UPDATE_INCOMPATIBLE,
-                    "versionCode of system image package (" + systemPkg.getLongVersionCode()
-                            + ") is >= versionCode of system package update ("
-                            + systemPkgUpdate.getLongVersionCode() + ")");
+        if (checkVersionCode) {
+            boolean shouldReject;
+            String op;
+            if (systemPkg.isStaticSharedLibrary()) {
+                // Each version of static shared library is treated by the OS as a completely
+                // separate package with its own package state. Note that rejecting static shared
+                // libraries with mismatching version code would only delete their APKs, package
+                // state would be left behind.
+                shouldReject = systemPkg.getLongVersionCode() == systemPkgUpdate.getLongVersionCode();
+                op = "==";
+            } else {
+                shouldReject = systemPkg.getLongVersionCode() >= systemPkgUpdate.getLongVersionCode();
+                op = ">=";
+            }
+            if (shouldReject) {
+                throw new PackageManagerException(INSTALL_FAILED_UPDATE_INCOMPATIBLE,
+                        "versionCode of system image package (" + systemPkg.getLongVersionCode()
+                                + ") is " + op + " versionCode of system package update ("
+                                + systemPkgUpdate.getLongVersionCode() + ")");
+            }
         }
 
         boolean checkFsVerity = true;
