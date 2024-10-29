@@ -838,7 +838,7 @@ class AppErrors {
 
         ApplicationErrorReport report = new ApplicationErrorReport();
         report.packageName = r.info.packageName;
-        report.packageVersion = r.info.longVersionCode;
+        report.applicationInfo = r.info;
         report.installerPackageName = errState.getErrorReportReceiver().getPackageName();
         report.processName = r.processName;
         report.time = timeMillis;
