@@ -19,7 +19,7 @@ public class LogViewerApp {
 
     public static final String EXTRA_ERROR_TYPE = "type";
     public static final String EXTRA_GZIPPED_MESSAGE = "gzipped_msg";
-    public static final String EXTRA_SOURCE_PACKAGE = "source_pkg";
+    public static final String EXTRA_SOURCE_APP_INFO = "source_app_info";
     public static final String EXTRA_SHOW_REPORT_BUTTON = "show_report_button";
     public static final String EXTRA_TEXT_TOMBSTONE_FILE_PATH = "text_tombstone_file_path";
     // Tombstone file path can be reused by a subsequent tombstone file, last modified timestamp is
