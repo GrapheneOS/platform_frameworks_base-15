@@ -341,7 +341,7 @@ public class TombstoneHandler {
             default -> throw new IllegalArgumentException(Integer.toString(type));
         }
         Intent i = LogViewerApp.createBaseErrorReportIntent(errorReport);
-        i.putExtra(LogViewerApp.EXTRA_SOURCE_PACKAGE, firstPackageName);
+        i.putExtra(LogViewerApp.EXTRA_SOURCE_APP_INFO, n.appInfo);
         if (textTombstoneFileSpec != null) {
             i.putExtra(LogViewerApp.EXTRA_TEXT_TOMBSTONE_FILE_PATH, textTombstoneFileSpec.first);
             i.putExtra(LogViewerApp.EXTRA_TEXT_TOMBSTONE_LAST_MODIFIED_TIME, textTombstoneFileSpec.second.longValue());
