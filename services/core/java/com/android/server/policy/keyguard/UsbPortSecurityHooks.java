@@ -13,10 +13,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.ResultReceiver;
-import android.os.SystemProperties;
 import android.os.UserHandle;
 import android.util.Log;
-import android.util.Pair;
 import android.util.Slog;
 
 import com.android.internal.R;
@@ -24,9 +22,7 @@ import com.android.internal.infra.AndroidFuture;
 import com.android.server.ext.SystemErrorNotification;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 public class UsbPortSecurityHooks {
@@ -186,56 +182,23 @@ public class UsbPortSecurityHooks {
     private void setSecurityStateForAllPorts(int state) {
         Slog.d(TAG, "setSecurityStateForAllPorts: " + state);
 
-        setDenyNewUsb2(state != android.hardware.usb.ext.PortSecurityState.ENABLED);
+        var resultFuture = new AndroidFuture();
+        var resultReceiver = new ResultReceiver(null) {
+            @Override
+            protected void onReceiveResult(int resultCode, Bundle resultData) {
+                // ignore resultCode, USB port security API implementation shows error notifications
+                // itself
+                resultFuture.complete(null);
+            }
+        };
 
-        List<UsbPort> ports = usbManager.getPorts();
-        AndroidFuture[] results = new AndroidFuture[ports.size()];
+        usbManager.setSecurityStateForAllPorts(state, resultReceiver);
 
-        for (int i = 0, m = ports.size(); i < m; ++i) {
-            UsbPort port = ports.get(i);
-            var result = new AndroidFuture<Pair<Integer, Bundle>>();
-            results[i] = result;
-
-            var resultReceiver = new ResultReceiver(null) {
-                @Override
-                protected void onReceiveResult(int resultCode, Bundle resultData) {
-                    result.complete(null);
-                    if (resultCode == android.hardware.usb.ext.IUsbExt.NO_ERROR) {
-                        return;
-                    }
-                    var b = new StringBuilder("setPortSecurityState failed, resultCode: ");
-                    b.append(resultCode);
-                    if (resultData != null) {
-                        b.append(", resultData: ");
-                        b.append(resultData.toStringDeep());
-                    }
-                    b.append(", ");
-                    b.append(port);
-                    showErrorNotif(b.toString());
-                }
-            };
-
-            usbManager.setPortSecurityState(port, state, resultReceiver);
-            results[i] = result;
-        }
-
-        // wait for result callbacks to avoid potential race conditions
+        // wait for the result callback to avoid potential race conditions
         try {
-            CompletableFuture.allOf(results).get(5, TimeUnit.SECONDS);
+            resultFuture.get(5, TimeUnit.SECONDS);
         } catch (Exception e) {
             showErrorNotif(Log.getStackTraceString(e));
-        }
-    }
-
-    private void setDenyNewUsb2(boolean enabled) {
-        String prop = "security.deny_new_usb2";
-        String val = enabled ? "1" : "0";
-        try {
-            SystemProperties.set(prop, val);
-            Slog.d(TAG, "set " + prop + " to " + val);
-        } catch (RuntimeException e) {
-            String msg = "unable to set " + prop + " to " + val + ":\n" + Log.getStackTraceString(e);
-            showErrorNotif(msg);
         }
     }
 
