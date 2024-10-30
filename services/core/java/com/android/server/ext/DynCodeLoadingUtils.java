@@ -86,7 +86,7 @@ public class DynCodeLoadingUtils {
 
         Intent i = LogViewerApp.createBaseErrorReportIntent(String.join("\n", lines));
         i.putExtra(LogViewerApp.EXTRA_ERROR_TYPE, report.type);
-        i.putExtra(LogViewerApp.EXTRA_SOURCE_PACKAGE, n.pkgName);
+        i.putExtra(LogViewerApp.EXTRA_SOURCE_APP_INFO, n.appInfo);
         return i;
     }
 
