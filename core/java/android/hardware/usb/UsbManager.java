@@ -1626,11 +1626,11 @@ public class UsbManager {
 
     /** @hide */
     @RequiresPermission(Manifest.permission.MANAGE_USB)
-    public void setPortSecurityState(@NonNull UsbPort port,
+    public void setSecurityStateForAllPorts(
             @android.hardware.usb.ext.PortSecurityState int state,
             @NonNull android.os.ResultReceiver statusCallback) {
         try {
-            mService.setPortSecurityState(port.getId(), state, statusCallback);
+            mService.setSecurityStateForAllPorts(state, statusCallback);
         } catch (RemoteException e) {
             throw e.rethrowFromSystemServer();
         }
