@@ -1,15 +1,14 @@
 package com.android.server.usb.hal.port;
 
 import android.annotation.Nullable;
-import android.hardware.usb.UsbManager;
 import android.hardware.usb.ext.IUsbExt;
 import android.hardware.usb.ext.PortSecurityState;
-import android.os.Bundle;
 import android.os.IBinder;
-import android.os.ParcelableException;
 import android.os.RemoteException;
 import android.os.ResultReceiver;
 import android.util.Slog;
+
+import static com.android.server.usb.UsbPortSecurity.sendSpssExceptionResult;
 
 class UsbPortAidlExt {
     static final String TAG = UsbPortAidlExt.class.getSimpleName();
@@ -68,16 +67,5 @@ class UsbPortAidlExt {
             sendSpssExceptionResult(new RuntimeException("IUsbExt.setPortSecurityState() failed", e), callback);
             return;
         }
-    }
-
-    private static void sendSpssExceptionResult(Throwable e, ResultReceiver target) {
-        target.send(UsbManager.SET_PORT_SECURITY_STATE_RESULT_CODE_FRAMEWORK_EXCEPTION, createExceptionBundle(e));
-        Slog.e(TAG, "", e);
-    }
-
-    private static Bundle createExceptionBundle(Throwable e) {
-        var b = new android.os.Bundle();
-        b.putParcelable(UsbManager.SET_PORT_SECURITY_STATE_EXCEPTION_KEY, new ParcelableException(e));
-        return b;
     }
 }
