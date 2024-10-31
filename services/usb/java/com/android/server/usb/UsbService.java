@@ -308,7 +308,7 @@ public class UsbService extends IUsbManager.Stub {
         }
     }
 
-    private void enforceCallingOrSelfManageUsborAndroidAuto(String message) {
+    private void enforceCallingOrSelfManageUsbOrAndroidAuto(String message) {
         try {
             mContext.enforceCallingOrSelfPermission(android.Manifest.permission.MANAGE_USB, message);
         } catch (SecurityException se) {
@@ -787,7 +787,7 @@ public class UsbService extends IUsbManager.Stub {
         Objects.requireNonNull(callback, "resetUsbPort: callback must not be null. opId:"
                 + operationId);
         /** @see android.hardware.usb.UsbManager#resetUsbPort */
-        enforceCallingOrSelfManageUsborAndroidAuto(null);
+        enforceCallingOrSelfManageUsbOrAndroidAuto(null);
 
         final long ident = Binder.clearCallingIdentity();
 
@@ -839,7 +839,7 @@ public class UsbService extends IUsbManager.Stub {
     public UsbPortStatus getPortStatus(String portId) {
         Objects.requireNonNull(portId, "portId must not be null");
         /** @see android.hardware.usb.UsbManager#getPortStatus  */
-        enforceCallingOrSelfManageUsborAndroidAuto(null);
+        enforceCallingOrSelfManageUsbOrAndroidAuto(null);
 
         final long ident = Binder.clearCallingIdentity();
         try {
@@ -868,7 +868,7 @@ public class UsbService extends IUsbManager.Stub {
         Objects.requireNonNull(portId, "portId must not be null");
         UsbPort.checkRoles(powerRole, dataRole);
         /** @see android.hardware.usb.UsbManager#setPortRoles */
-        enforceCallingOrSelfManageUsborAndroidAuto(null);
+        enforceCallingOrSelfManageUsbOrAndroidAuto(null);
 
         final long ident = Binder.clearCallingIdentity();
         try {
