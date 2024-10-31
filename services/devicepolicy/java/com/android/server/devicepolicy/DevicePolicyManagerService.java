@@ -21655,6 +21655,7 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
         // TODO: possibly copy permissions from existing install in managing user?
         Slogf.i(LOG_TAG, "Installing play for user " + targetUserId);
 
+        // NOTE: we never need to copy GSF over, since it counts as a fresh install, so existence of GSF in owner is irrelevant.
         List<String> playPkgList = Arrays.asList(PackageId.GMS_CORE_NAME, PackageId.PLAY_STORE_NAME);
 
         boolean playAllAvailableOnSystem = true;
