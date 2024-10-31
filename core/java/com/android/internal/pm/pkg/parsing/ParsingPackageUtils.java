@@ -1099,7 +1099,7 @@ public class ParsingPackageUtils {
         }
 
         if (pkg.isDeclaredHavingCode() && usesPerms.add(android.Manifest.permission.OTHER_SENSORS)) {
-            pkg.addUsesPermission(new ParsedUsesPermissionImpl(android.Manifest.permission.OTHER_SENSORS, 0));
+            pkg.addImplicitPermission(android.Manifest.permission.OTHER_SENSORS);
         }
 
         convertCompatPermissions(pkg);
