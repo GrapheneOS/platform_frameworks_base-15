@@ -24,6 +24,7 @@ import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
+import android.os.UserHandle;
 import android.text.BidiFormatter;
 import android.util.Slog;
 import android.view.LayoutInflater;
@@ -179,7 +180,7 @@ final class AppNotRespondingDialog extends BaseErrorDialog implements View.OnCli
 
             if (appErrorIntent != null) {
                 try {
-                    getContext().startActivity(appErrorIntent);
+                    getContext().startActivityAsUser(appErrorIntent, UserHandle.of(mProc.userId));
                 } catch (ActivityNotFoundException e) {
                     Slog.w(TAG, "bug report receiver dissappeared", e);
                 }
