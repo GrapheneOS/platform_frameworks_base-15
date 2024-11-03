@@ -245,7 +245,11 @@ public class ApplicationErrorReport implements Parcelable {
     public void writeToParcel(Parcel dest, int flags) {
         dest.writeInt(type);
         dest.writeString(packageName);
-        applicationInfo.writeToParcel(dest, 0);
+        ApplicationInfo appInfo = applicationInfo;
+        dest.writeBoolean(appInfo != null);
+        if (appInfo != null) {
+            appInfo.writeToParcel(dest, 0);
+        }
         dest.writeString(installerPackageName);
         dest.writeString(processName);
         dest.writeLong(time);
@@ -273,7 +277,9 @@ public class ApplicationErrorReport implements Parcelable {
     public void readFromParcel(Parcel in) {
         type = in.readInt();
         packageName = in.readString();
-        applicationInfo = ApplicationInfo.CREATOR.createFromParcel(in);
+        if (in.readBoolean()) {
+            applicationInfo = ApplicationInfo.CREATOR.createFromParcel(in);
+        }
         installerPackageName = in.readString();
         processName = in.readString();
         time = in.readLong();
