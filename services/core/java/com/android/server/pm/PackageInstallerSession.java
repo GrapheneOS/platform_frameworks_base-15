@@ -1132,8 +1132,8 @@ public class PackageInstallerSession extends IPackageInstallerSession.Stub {
 
         if (params.requireUserAction == SessionParams.USER_ACTION_NOT_REQUIRED
                 && isUpdateWithoutUserActionPermissionGranted
-                && ((isUpdateOwnershipEnforcementEnabled ? isUpdateOwner
-                : isInstallerOfRecord) || isSelfUpdate)) {
+                && (isUpdateOwnershipEnforcementEnabled ? isUpdateOwner
+                : isInstallerOfRecord)) {
             return USER_ACTION_PENDING_APK_PARSING;
         }
 
