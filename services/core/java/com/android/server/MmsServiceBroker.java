@@ -44,6 +44,7 @@ import android.telephony.SubscriptionManager;
 import android.telephony.TelephonyManager;
 import android.util.Slog;
 
+import com.android.internal.telephony.CallingPackage;
 import com.android.internal.telephony.IMms;
 import com.android.internal.telephony.TelephonyPermissions;
 import com.android.internal.telephony.util.TelephonyUtils;
@@ -360,7 +361,7 @@ public class MmsServiceBroker extends SystemService {
                     CarrierMessagingService.SERVICE_INTERFACE,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION,
                     subId);
-            getServiceGuarded().sendMessage(subId, callingPkg, contentUri, locationUrl,
+            getServiceGuarded().sendMessage(subId, new CallingPackage(Binder.getCallingUid(), callingPkg).serialize(), contentUri, locationUrl,
                     configOverrides, sentIntent, messageId, attributionTag);
         }
 
@@ -381,7 +382,7 @@ public class MmsServiceBroker extends SystemService {
                     Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION,
                     subId);
 
-            getServiceGuarded().downloadMessage(subId, callingPkg, locationUrl, contentUri,
+            getServiceGuarded().downloadMessage(subId, new CallingPackage(Binder.getCallingUid(), callingPkg).serialize(), locationUrl, contentUri,
                     configOverrides, downloadedIntent, messageId, attributionTag);
         }
 
@@ -409,7 +410,7 @@ public class MmsServiceBroker extends SystemService {
                 return FAKE_MMS_SENT_URI;
             }
             return getServiceGuarded().importMultimediaMessage(
-                    callingPkg, contentUri, messageId, timestampSecs, seen, read);
+                    new CallingPackage(Binder.getCallingUid(), callingPkg).serialize(), contentUri, messageId, timestampSecs, seen, read);
         }
 
         @Override
@@ -475,7 +476,7 @@ public class MmsServiceBroker extends SystemService {
                 // while writing the TelephonyProvider
                 return FAKE_MMS_DRAFT_URI;
             }
-            return getServiceGuarded().addMultimediaMessageDraft(callingPkg, contentUri);
+            return getServiceGuarded().addMultimediaMessageDraft(new CallingPackage(Binder.getCallingUid(), callingPkg).serialize(), contentUri);
         }
 
         @Override
