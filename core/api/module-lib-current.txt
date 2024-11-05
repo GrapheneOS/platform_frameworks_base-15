@@ -154,6 +154,15 @@ package android.content.pm {
 
 }
 
+package android.ext {
+
+  public class ConnectivityUtil {
+    method public static boolean isRegularAppWithLockdownVpnEnabled(@NonNull android.content.Context, int);
+    method public static boolean isSystem(@NonNull android.content.Context, int);
+  }
+
+}
+
 package android.ext.settings {
 
   public class ConnChecksSetting {

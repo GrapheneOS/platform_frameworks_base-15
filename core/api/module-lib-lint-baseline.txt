@@ -1789,6 +1789,12 @@ UnflaggedApi: android.companion.CompanionDeviceManager.OnTransportsChangedListen
     New API must be flagged with @FlaggedApi: method android.companion.CompanionDeviceManager.OnTransportsChangedListener.onTransportsChanged(java.util.List<android.companion.AssociationInfo>)
 UnflaggedApi: android.content.Context#REMOTE_AUTH_SERVICE:
     New API must be flagged with @FlaggedApi: field android.content.Context.REMOTE_AUTH_SERVICE
+UnflaggedApi: android.ext.ConnectivityUtil:
+    New API must be flagged with @FlaggedApi: class android.ext.ConnectivityUtil
+UnflaggedApi: android.ext.ConnectivityUtil#isRegularAppWithLockdownVpnEnabled(android.content.Context, int):
+    New API must be flagged with @FlaggedApi: method android.ext.ConnectivityUtil.isRegularAppWithLockdownVpnEnabled(android.content.Context,int)
+UnflaggedApi: android.ext.ConnectivityUtil#isSystem(android.content.Context, int):
+    New API must be flagged with @FlaggedApi: method android.ext.ConnectivityUtil.isSystem(android.content.Context,int)
 UnflaggedApi: android.ext.settings.ConnChecksSetting:
     New API must be flagged with @FlaggedApi: class android.ext.settings.ConnChecksSetting
 UnflaggedApi: android.ext.settings.ConnChecksSetting#VAL_DEFAULT:
