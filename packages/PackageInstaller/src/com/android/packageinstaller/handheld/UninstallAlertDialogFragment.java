@@ -301,11 +301,11 @@ public class UninstallAlertDialogFragment extends DialogFragment implements
             ((UninstallerActivity) getActivity()).dispatchAborted();
 
             if (which == Dialog.BUTTON_NEUTRAL) {
-                String pkg = ((UninstallerActivity) getActivity()).getDialogInfo().appInfo.packageName;
-                Intent i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
-                i.setData(Uri.fromParts("package", pkg, null));
+                UninstallerActivity.DialogInfo dialogInfo = ((UninstallerActivity) getActivity()).getDialogInfo();
+                var i = new Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                i.setData(Uri.fromParts("package", dialogInfo.appInfo.packageName, null));
                 i.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-                startActivity(i);
+                getActivity().startActivityAsUser(i, dialogInfo.user);
             }
         }
     }
