@@ -108,6 +108,7 @@ import android.widget.RemoteViews;
 
 import com.android.internal.R;
 import com.android.internal.annotations.VisibleForTesting;
+import com.android.internal.app.ContactScopes;
 import com.android.internal.graphics.ColorUtils;
 import com.android.internal.util.ArrayUtils;
 import com.android.internal.util.ContrastColorUtil;
@@ -5037,6 +5038,11 @@ public class Notification implements Parcelable
          * @deprecated use {@link #addPerson(Person)}
          */
         public Builder addPerson(String uri) {
+            if (ContactScopes.isEnabled()) {
+                // See comment in Person.Builder#setUri()
+                return this;
+            }
+
             addPerson(new Person.Builder().setUri(uri).build());
             return this;
         }
@@ -5063,6 +5069,13 @@ public class Notification implements Parcelable
          */
         @NonNull
         public Builder addPerson(Person person) {
+            if (ContactScopes.isEnabled()) {
+                if (person.getName() == null && person.getKey() == null) {
+                    // See comment in Person.Builder#setUri()
+                    return this;
+                }
+
+            }
             mPersonList.add(person);
             return this;
         }

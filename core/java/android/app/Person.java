@@ -23,6 +23,8 @@ import android.net.Uri;
 import android.os.Parcel;
 import android.os.Parcelable;
 
+import com.android.internal.app.ContactScopes;
+
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -258,6 +260,19 @@ public final class Person implements Parcelable {
          */
         @NonNull
         public Person.Builder setUri(@Nullable String uri) {
+            if (ContactScopes.isEnabled()) {
+                // The app doesn't have direct access to the contact's uri when Contact Scopes is enabled.
+                //
+                // The Person object can be attached to a notification via Notification.Builder#addPerson.
+                // Before showing a notification, system_server checks whether the calling app has
+                // permission to access all uris that are attached to that notification. system_server
+                // doesn't show notifications that fail this permission check.
+                //
+                // Before November 2024 security patches, Person uris were exempted from these checks:
+                // https://android.googlesource.com/platform/frameworks/base/+/3a240992e42dc2c7d1920a8207b00935d0558b0d
+                return this;
+            }
+
             mUri = uri;
             return this;
         }
