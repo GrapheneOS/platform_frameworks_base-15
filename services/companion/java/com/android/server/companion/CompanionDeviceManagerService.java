@@ -663,19 +663,11 @@ public class CompanionDeviceManagerService extends SystemService {
         }
 
         @Override
+        @EnforcePermission(ASSOCIATE_COMPANION_DEVICES)
         public void createAssociation(String packageName, String macAddress, int userId,
                 byte[] certificate) {
-            createAssociation_enforcePermission();
-
-            if (!getContext().getPackageManager().hasSigningCertificate(
-                    packageName, certificate, CERT_INPUT_SHA256)) {
-                Slog.e(TAG, "Given certificate doesn't match the package certificate.");
-                return;
-            }
-
             try {
-                getContext().enforceCallingOrSelfPermission(
-                        android.Manifest.permission.ASSOCIATE_COMPANION_DEVICES, "createAssociation");
+                createAssociation_enforcePermission();
             } catch (SecurityException se) {
                 String perm = android.Manifest.permission.ASSOCIATE_COMPANION_DEVICES_RESTRICTED;
                 if (getContext().checkCallingPermission(perm) != PERMISSION_GRANTED) {
@@ -700,6 +692,12 @@ public class CompanionDeviceManagerService extends SystemService {
                 } catch (PackageManager.NameNotFoundException e) {
                     throw new SecurityException(e);
                 }
+            }
+
+            if (!getContext().getPackageManager().hasSigningCertificate(
+                    packageName, certificate, CERT_INPUT_SHA256)) {
+                Slog.e(TAG, "Given certificate doesn't match the package certificate.");
+                return;
             }
 
             final MacAddress macAddressObj = MacAddress.fromString(macAddress);
