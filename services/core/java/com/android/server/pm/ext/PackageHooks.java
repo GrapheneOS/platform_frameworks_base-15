@@ -2,6 +2,7 @@ package com.android.server.pm.ext;
 
 import android.annotation.Nullable;
 import android.content.pm.PackageManager;
+import android.content.pm.PackageManagerInternal;
 import android.util.ArraySet;
 
 import com.android.server.pm.pkg.AndroidPackage;
@@ -89,5 +90,9 @@ public class PackageHooks {
     protected static long getGosPsPackageFlags(PackageUserStateInternal pkgUserState) {
         GosPackageStatePm ps = pkgUserState.getGosPackageState();
         return ps != null ? ps.packageFlags : 0L;
+    }
+
+    public boolean shouldAllowFgsWhileInUsePermission(PackageManagerInternal pm, int userId) {
+        return false;
     }
 }
