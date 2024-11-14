@@ -1520,7 +1520,7 @@ public final class Bundle extends BaseBundle implements Cloneable, Parcelable {
      * @hide
      */
     public String toStringDeep() {
-        unparcel();
+        unparcel((mFlags & FLAG_DEFUSABLE) != 0);
         return toString();
     }
 
