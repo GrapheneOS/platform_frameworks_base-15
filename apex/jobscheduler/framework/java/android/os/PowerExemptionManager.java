@@ -33,7 +33,7 @@ import android.annotation.UserHandleAware;
 import android.app.compat.gms.GmsCompat;
 import android.content.Context;
 
-import com.android.internal.gmscompat.client.ClientPriorityManager;
+import com.android.internal.gmscompat.GmsCompatApp;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -630,7 +630,7 @@ public class PowerExemptionManager {
     public void addToTemporaryAllowList(@NonNull String packageName, @ReasonCode int reasonCode,
             @Nullable String reason, long durationMs) {
         if (GmsCompat.isEnabled()) {
-            ClientPriorityManager.raiseToForeground(packageName, durationMs, reason, reasonCode);
+            GmsCompatApp.raisePackageToForeground(packageName, durationMs, reason, reasonCode);
             return;
         }
 

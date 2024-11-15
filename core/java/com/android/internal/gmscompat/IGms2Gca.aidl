@@ -43,4 +43,6 @@ interface IGms2Gca {
     void privSettingsUnregisterObserver(IContentObserver observer);
 
     Notification getMediaProjectionNotification();
+
+    void raisePackageToForeground(String targetPkg, long durationMs, @nullable String reason, int reasonCode);
 }

@@ -39,7 +39,6 @@ import android.database.Cursor;
 import android.database.MatrixCursor;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.DeadSystemRuntimeException;
 import android.os.IBinder;
@@ -57,7 +56,6 @@ import android.util.Log;
 import android.util.SparseArray;
 import android.webkit.WebView;
 
-import com.android.internal.gmscompat.client.ClientPriorityManager;
 import com.android.internal.gmscompat.client.GmsCompatClientService;
 import com.android.internal.gmscompat.flags.GmsFlag;
 import com.android.internal.gmscompat.gcarriersettings.GCarrierSettingsApp;
@@ -576,7 +574,7 @@ public final class GmsHooks {
             return options;
         }
 
-        ClientPriorityManager.raiseToForeground(targetPkg, duration,
+        GmsCompatApp.raisePackageToForeground(targetPkg, duration,
                 bo.getTemporaryAppAllowlistReason(), bo.getTemporaryAppAllowlistReasonCode());
 
         bo.setTemporaryAppAllowlist(0, PowerExemptionManager.TEMPORARY_ALLOW_LIST_TYPE_NONE,

@@ -273,6 +273,21 @@ public final class GmsCompatApp {
         return true;
     }
 
+    // Bypass some background activity restrictions (e.g. background service starts) for target
+    // package by binding to it from foreground GmsCompat app
+    public static void raisePackageToForeground(String targetPkg, long durationMs,
+                                                @Nullable String reason, int reasonCode) {
+        if (durationMs <= 0) {
+            Log.e(TAG, "invalid duration: " + durationMs, new Throwable());
+            return;
+        }
+        try {
+            GmsCompatApp.iGms2Gca().raisePackageToForeground(targetPkg, durationMs, reason, reasonCode);
+        } catch (RemoteException e) {
+            throw callFailed(e);
+        }
+    }
+
     static void maybeShowContactsSyncNotification() {
         if (GmsCompat.hasPermission(Manifest.permission.WRITE_CONTACTS)) {
             return;
