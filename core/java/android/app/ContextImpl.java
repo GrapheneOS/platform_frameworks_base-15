@@ -107,6 +107,7 @@ import android.window.WindowTokenClientController;
 
 import com.android.internal.annotations.GuardedBy;
 import com.android.internal.gmscompat.GmcDebug;
+import com.android.internal.gmscompat.GmsCompatApp;
 import com.android.internal.gmscompat.sysservice.GmcPackageManager;
 import com.android.internal.gmscompat.GmsHooks;
 import com.android.internal.gmscompat.sysservice.GmcUserManager;
@@ -2025,23 +2026,35 @@ class ContextImpl extends Context {
         try {
             validateServiceIntent(service);
             service.prepareToLeaveProcess(this);
-            ComponentName cn = ActivityManager.getService().startService(
-                    mMainThread.getApplicationThread(), service,
-                    service.resolveTypeIfNeeded(getContentResolver()), requireForeground,
-                    getOpPackageName(), getAttributionTag(), user.getIdentifier());
-            if (cn != null) {
-                if (cn.getPackageName().equals("!")) {
-                    throw new SecurityException(
-                            "Not allowed to start service " + service
-                            + " without permission " + cn.getClassName());
-                } else if (cn.getPackageName().equals("!!")) {
-                    throw new SecurityException(
-                            "Unable to start service " + service
-                            + ": " + cn.getClassName());
-                } else if (cn.getPackageName().equals("?")) {
-                    throw ServiceStartNotAllowedException.newInstance(requireForeground,
-                            "Not allowed to start service " + service + ": " + cn.getClassName());
+            ComponentName cn;
+            for (int i = 0;; ++i) {
+                cn = ActivityManager.getService().startService(
+                        mMainThread.getApplicationThread(), service,
+                        service.resolveTypeIfNeeded(getContentResolver()), requireForeground,
+                        getOpPackageName(), getAttributionTag(), user.getIdentifier());
+                if (cn != null) {
+                    if (cn.getPackageName().equals("!")) {
+                        throw new SecurityException(
+                                "Not allowed to start service " + service
+                                + " without permission " + cn.getClassName());
+                    } else if (cn.getPackageName().equals("!!")) {
+                        throw new SecurityException(
+                                "Unable to start service " + service
+                                + ": " + cn.getClassName());
+                    } else if (cn.getPackageName().equals("?")) {
+                        if (GmsCompat.isEnabled() && i == 0) {
+                            Log.d("GmsCompat", "unable to start " + service + ", requireForeground: " + requireForeground);
+                            String reason = "GmsCompat: " + service + ", requireForeground: " + requireForeground;
+                            // foreground apps are always allowed to start services
+                            GmsCompatApp.raisePackageToForeground(GmsCompat.appContext().getPackageName(),
+                                    30_000, reason, android.os.PowerExemptionManager.REASON_OTHER);
+                            continue;
+                        }
+                        throw ServiceStartNotAllowedException.newInstance(requireForeground,
+                                "Not allowed to start service " + service + ": " + cn.getClassName());
+                    }
                 }
+                break;
             }
             // If we started a foreground service in the same package, remember the stack trace.
             if (cn != null && requireForeground) {
