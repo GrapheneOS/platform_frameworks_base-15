@@ -48,6 +48,7 @@ public final class GmsCompat {
     private static boolean isGmsCore;
 
     private static boolean isEligibleForClientCompat;
+    private static boolean isInGmsCompatProcess;
 
     // Static only
     private GmsCompat() { }
@@ -85,6 +86,11 @@ public final class GmsCompat {
         return curPackageId;
     }
 
+    /** @hide */
+    public static boolean isInGmsCompatProcess() {
+        return isInGmsCompatProcess;
+    }
+
     private static Context appContext;
 
     /** @hide */
@@ -113,8 +119,13 @@ public final class GmsCompat {
         curPackageId = appInfoExt.getPackageId();
 
         if (isEnabledFor(appInfo)) {
-            isGmsCompatEnabled = true;
-            GmsHooks.init(appCtx, appInfo.packageName);
+            String processName = Application.getProcessName();
+            if (isGmsCompatProcess(processName)) {
+                isInGmsCompatProcess = true;
+            } else {
+                isGmsCompatEnabled = true;
+                GmsHooks.init(appCtx, appInfo.packageName, processName);
+            }
         }
 
         isEligibleForClientCompat = !isGmsCore() &&
@@ -323,5 +334,17 @@ public final class GmsCompat {
             return;
         }
         throw se;
+    }
+
+    private static final String GMSCOMPAT_PROCESS_SUFFIX = ":gmscompat";
+
+    /** @hide */
+    public static String gmsCompatProcessNameForPackage(String pkgName) {
+        return pkgName + GMSCOMPAT_PROCESS_SUFFIX;
+    }
+
+    /** @hide */
+    public static boolean isGmsCompatProcess(String processName) {
+        return processName.endsWith(GMSCOMPAT_PROCESS_SUFFIX);
     }
 }

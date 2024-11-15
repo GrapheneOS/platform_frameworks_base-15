@@ -88,9 +88,7 @@ public final class GmsHooks {
         return config;
     }
 
-    public static void init(Context ctx, String packageName) {
-        String processName = Application.getProcessName();
-
+    public static void init(Context ctx, String packageName, String processName) {
         if (!packageName.equals(processName)) {
             // Fix RuntimeException: Using WebView from more than one process at once with the same data
             // directory is not supported. https://crbug.com/558377

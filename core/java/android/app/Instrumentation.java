@@ -1352,8 +1352,14 @@ public class Instrumentation {
             throws InstantiationException, IllegalAccessException, 
             ClassNotFoundException {
         GmsCompat.maybeEnable(context);
-        Application app = getFactory(context.getPackageName())
-                .instantiateApplication(cl, className);
+        final Application app;
+        if (GmsCompat.isInGmsCompatProcess()) {
+            // GmsCompat process should never run app's code
+            app = new Application();
+        } else {
+            app = getFactory(context.getPackageName())
+                    .instantiateApplication(cl, className);
+        }
         app.attach(context);
         return app;
     }

@@ -8,6 +8,7 @@ import android.content.pm.ServiceInfo;
 import android.ext.PackageId;
 import android.os.Bundle;
 
+import com.android.internal.gmscompat.GmsCompatApp;
 import com.android.internal.gmscompat.client.GmsCompatClientService;
 import com.android.internal.pm.pkg.component.ParsedService;
 import com.android.internal.pm.pkg.component.ParsedServiceImpl;
@@ -38,11 +39,24 @@ public class GmsCompatPkgParsingHooks extends PackageParsingHooks {
         Bundle metadata = pkg.getMetaData();
         boolean isGmsCoreClient = metadata != null && metadata.containsKey("com.google.android.gms.version");
 
-        if (!isGmsCoreClient || PackageId.GMS_CORE_NAME.equals(pkg.getPackageName())) {
+        if (!isGmsCoreClient) {
             return null;
         }
 
-        return createService(pkg, GmsCompatClientService.class.getName());
+        ParsedServiceImpl s = createService(pkg, GmsCompatClientService.class.getName());
+        s.setPermission(GmsCompatApp.SIGNATURE_PROTECTED_PERMISSION);
+
+        String pkgName = pkg.getPackageName();
+        if (GmsCompat.canBeEnabledFor(pkgName)) {
+            // Use a separate process to avoid deadlocks in early process init. Deadlocks were
+            // caused by the app asking GmsCompat app to bind to itself synchronously from the main
+            // thread, which can never complete since service init happens on the main thread too.
+            // Binding has to be synchronous when it's required for starting a service, since
+            // otherwise the app would crash.
+            s.setProcessName(GmsCompat.gmsCompatProcessNameForPackage(pkgName));
+        }
+
+        return s;
     }
 
     @CallSuper
