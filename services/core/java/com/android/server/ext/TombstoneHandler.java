@@ -421,6 +421,20 @@ public class TombstoneHandler {
             );
         }
 
+        if ("/apex/com.google.android.hardware.biometrics.fingerprint/bin/hw/android.hardware.biometrics.fingerprint-service.goodix".equals(cmdline[0])) {
+            // rare harmless crash, fingerprint service restarts and continues to work
+            return checkBacktraceFunctionNames(backtrace, 0
+                    , "android::VectorImpl::editArrayImpl"
+                    , "goodix::EventCenter::hasUpEvt"
+                    , "goodix::DelmarSensor::checkFingerUp"
+                    , "goodix::DelmarSensor::readImage"
+                    , "goodix::CustomizedSensor::readImage"
+                    , "goodix::DelmarFingerprintCore::onAfterAuthCapture"
+                    , "goodix::CustomizedFingerprintCore::onAfterAuthCapture"
+                    , "goodix::FingerprintCore::onAuthDownEvt"
+            );
+        }
+
         return false;
     }
 
