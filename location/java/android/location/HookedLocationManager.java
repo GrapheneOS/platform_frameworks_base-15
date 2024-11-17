@@ -67,11 +67,6 @@ public class HookedLocationManager extends LocationManager {
         return provider;
     }
 
-    private boolean isMissingProvider(String provider) {
-        // getAllProviders() list is not guaranteed to be static, don't cache it
-        return !getAllProviders().contains(provider);
-    }
-
     @Override
     public boolean isProviderEnabled(@NonNull String provider) {
         provider = translateProvider(provider);
@@ -133,45 +128,5 @@ public class HookedLocationManager extends LocationManager {
         provider = translateProvider(provider);
 
         super.requestFlush(provider, pendingIntent, requestCode);
-    }
-
-
-    // Test providers do not work properly for missing underlying providers, stub them out
-
-    @Override
-    public void addTestProvider(@NonNull String provider, @NonNull ProviderProperties properties,
-                                @NonNull Set<String> extraAttributionTags) {
-        if (isMissingProvider(provider)) {
-            return;
-        }
-
-        super.addTestProvider(provider, properties, extraAttributionTags);
-    }
-
-    @Override
-    public void removeTestProvider(@NonNull String provider) {
-        if (isMissingProvider(provider)) {
-            return;
-        }
-
-        super.removeTestProvider(provider);
-    }
-
-    @Override
-    public void setTestProviderEnabled(@NonNull String provider, boolean enabled) {
-        if (isMissingProvider(provider)) {
-            return;
-        }
-
-        super.setTestProviderEnabled(provider, enabled);
-    }
-
-    @Override
-    public void setTestProviderLocation(@NonNull String provider, @NonNull Location location) {
-        if (isMissingProvider(provider)) {
-            return;
-        }
-
-        super.setTestProviderLocation(provider, location);
     }
 }
