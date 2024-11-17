@@ -20,6 +20,7 @@ import android.app.compat.gms.GmsCompat;
 import android.content.res.ApkAssets;
 import android.content.res.loader.AssetsProvider;
 import android.os.Environment;
+import android.os.IBinder;
 import android.os.ParcelFileDescriptor;
 import android.os.RemoteException;
 import android.system.ErrnoException;
@@ -27,6 +28,7 @@ import android.system.Os;
 import android.util.ArrayMap;
 import android.util.Log;
 
+import com.android.internal.annotations.GuardedBy;
 import com.android.internal.gmscompat.GmsCompatApp;
 import com.android.internal.gmscompat.GmsInfo;
 import com.android.internal.gmscompat.dynamite.server.IFileProxyService;
@@ -34,6 +36,7 @@ import com.android.internal.gmscompat.dynamite.server.IFileProxyService;
 import java.io.File;
 import java.io.FileDescriptor;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.regex.Pattern;
 
 import dalvik.system.DelegateLastClassLoader;
@@ -48,7 +51,7 @@ public final class GmsDynamiteClientHooks {
     private static volatile boolean enabled;
     private static String gmsCoreDataPrefix;
     private static ArrayMap<String, ParcelFileDescriptor> pfdCache;
-    private static IFileProxyService fileProxyService;
+    private static ArrayList<ParcelFileDescriptor> pastCachedFds;
 
     public static boolean enabled() {
         return enabled;
@@ -71,35 +74,7 @@ public final class GmsDynamiteClientHooks {
             String deDataDirectory = Environment.getDataUserDeDirectory(null, userId).getPath();
             gmsCoreDataPrefix = deDataDirectory + '/' + GmsInfo.PACKAGE_GMS_CORE + '/';
             pfdCache = new ArrayMap<>(20);
-
-            try {
-                IFileProxyService service = GmsCompatApp.iClientOfGmsCore2Gca().getDynamiteFileProxyService();
-                service.asBinder().linkToDeath(() -> {
-                    // When GMS Core gets terminated (including package updates and crashes),
-                    // processes of Dynamite clients get terminated too (same behavior on stock OS,
-                    // likely to avoid hard-to-resolve situation when client starts to load
-                    // modules from one GMS Core version and then GMS Core gets updated before the rest of the
-                    // modules are loaded).
-                    // This ensures that pfdCache never returns stale file descriptors,
-                    // because there's only two types of Dynamite modules:
-                    // - "core", included with the GMS Core package and always extracted
-                    // to the app_chimera/m directory, may have the same name on different GMS Core versions
-                    // - on-demand, downloaded on first use, each version has a unique file name
-
-                    Log.d(TAG, "FileProxyService died");
-                    // isn't reached in practice, at least on current versions (2022 Q1)
-                    System.exit(0);
-                }, 0);
-
-                fileProxyService = service;
-            } catch (Throwable e) {
-                // linkToDeath() failed,
-                // most likely because GMS Core crashed very shortly before getDynamiteFileProxyService(),
-                // which should be very rare in practice.
-                // Waiting for GMS Core to respawn is hard to do correctly, not worth the complexity increase
-                Log.e(TAG, "unable to obtain the FileProxyService", e);
-                System.exit(1);
-            }
+            pastCachedFds = new ArrayList<>();
 
             File.lastModifiedHook = GmsDynamiteClientHooks::getFileLastModified;
             DelegateLastClassLoader.modifyClassLoaderPathHook = GmsDynamiteClientHooks::maybeModifyClassLoaderPath;
@@ -203,7 +178,7 @@ public final class GmsDynamiteClientHooks {
             synchronized (cache) {
                 ParcelFileDescriptor pfd = cache.get(path);
                 if (pfd == null) {
-                    pfd = fileProxyService.openFile(path);
+                    pfd = getFileProxyService().openFile(path);
                     if (pfd == null) {
                         throw new IllegalStateException("unable to open " + path);
                     }
@@ -215,6 +190,40 @@ public final class GmsDynamiteClientHooks {
         } catch (RemoteException e) {
             // FileProxyService never forwards exceptions to minimize the information leaks,
             // this is a very rare "binder died" exception
+            throw e.rethrowAsRuntimeException();
+        }
+    }
+
+    private static volatile IFileProxyService fileProxyService;
+
+    @GuardedBy("pfdCache")
+    private static IFileProxyService getFileProxyService() {
+        IFileProxyService cache = fileProxyService;
+        if (cache != null) {
+            return cache;
+        }
+        try {
+            IFileProxyService service = GmsCompatApp.iClientOfGmsCore2Gca().getDynamiteFileProxyService();
+            fileProxyService = service;
+            IBinder.DeathRecipient serviceDeathCallback = () -> {
+                fileProxyService = null;
+                Log.d(TAG, "FileProxyService died");
+                synchronized (pfdCache) {
+                    // It's not safe to close cached file descriptors, they might still be in use
+                    // at this point. Simply clearing the cache would make cached ParcelFileDescriptors
+                    // collectable by GC, which would close the underlying file descriptors via
+                    // ParcelFileDescriptor#finalize()
+                    //
+                    // pastCachedFds list is effectively a file descriptor leak, but it's small and
+                    // rare. File descriptor count limit (RLIMIT_NOFILE) is set to 32768 as of Android 15.
+                    pastCachedFds.addAll(pfdCache.values());
+                    pfdCache.clear();
+                }
+            };
+            service.asBinder().linkToDeath(serviceDeathCallback, 0);
+            return service;
+        } catch (RemoteException e) {
+            Log.e(TAG, "unable to obtain FileProxyService", e);
             throw e.rethrowAsRuntimeException();
         }
     }
