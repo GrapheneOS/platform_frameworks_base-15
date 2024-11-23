@@ -4,6 +4,7 @@ import static android.app.AppOpsManager.MODE_ALLOWED;
 
 
 import android.app.AppOpsManager;
+import android.app.compat.gms.GmsCompat;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.IPackageManager;
 import android.content.pm.PackageManager;
@@ -29,14 +30,13 @@ public class DevicePolicyGmsHooks {
      * Check if app requires play services
      */
     private boolean requiresPlay(String pkg, int callerUserId) throws RemoteException {
-        return true;
-        /*ApplicationInfo ai = mIPackageManager.getApplicationInfo(pkg, PackageManager.GET_META_DATA, callerUserId);
+        ApplicationInfo ai = mIPackageManager.getApplicationInfo(pkg, PackageManager.GET_META_DATA, callerUserId);
         if (ai.metaData != null) {
             int playVersion = ai.metaData.getInt("com.google.android.gms.version", -1);
             return playVersion != -1;
         }
 
-        return false;*/
+        return false;
     }
 
     /**
@@ -76,9 +76,17 @@ public class DevicePolicyGmsHooks {
 
         try {
             for (final String playPkg : playPkgList) {
-                if (mIPackageManager.getApplicationInfo(playPkg, 0, callerUserId) == null) {
+                ApplicationInfo ai = mIPackageManager.getApplicationInfo(playPkg, 0, callerUserId);
+                if (ai == null) {
                     playAllAvailableOnSystem = false;
                     Slogf.w(LOG_TAG, "Play package missing: " + playPkg);
+                    continue;
+                }
+
+                // Check signature
+                if (ai.ext().getPackageId() != PackageId.PLAY_STORE && ai.ext().getPackageId() != PackageId.GMS_CORE) {
+                    playAllAvailableOnSystem = false;
+                    Slogf.w(LOG_TAG, "Play package is not passing signature checks: " + playPkg);
                 }
             }
             if (playAllAvailableOnSystem) {
@@ -103,6 +111,11 @@ public class DevicePolicyGmsHooks {
                 Slogf.w(LOG_TAG, "Play Services not installed, yet requested for profile!");
                 return;
             }
+
+            /* Signature check. If play store was already installed into profile earlier,
+            but with untrusted signature (should not happen) then this will throw */
+            ApplicationInfo aiStore = mIPackageManager.getApplicationInfo(PackageId.PLAY_STORE_NAME, 0, targetUserId);
+            assert aiStore.ext().getPackageId() == PackageId.PLAY_STORE;
 
             Slogf.d(LOG_TAG, "Granting REQUEST_INSTALL_PACKAGES to Play Store");
 
