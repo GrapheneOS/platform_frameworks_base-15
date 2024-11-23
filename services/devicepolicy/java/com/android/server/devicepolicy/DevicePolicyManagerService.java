@@ -21485,7 +21485,11 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
                 // Does not happen, same process
             } */
             DevicePolicyGmsHooks hooks = new DevicePolicyGmsHooks(mIPackageManager, mInjector.getAppOpsManager());
-            hooks.maybeInstallPlay(userInfo.id, caller.getUserId(), new String[]{admin.getPackageName()});
+            int userId = userInfo.id;
+            int callingUserId = caller.getUserId();
+            mInjector.binderWithCleanCallingIdentity(() -> {
+                hooks.maybeInstallPlay(userId, callingUserId, new String[]{admin.getPackageName()});
+            });
 
             installExistingAdminPackage(userInfo.id, admin.getPackageName());
             if (!enableAdminAndSetProfileOwner(userInfo.id, caller.getUserId(), admin)) {
