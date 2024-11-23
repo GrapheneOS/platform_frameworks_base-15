@@ -45,6 +45,4 @@ interface IGms2Gca {
     Notification getMediaProjectionNotification();
 
     void raisePackageToForeground(String targetPkg, long durationMs, @nullable String reason, int reasonCode);
-
-    boolean setupWorkProfileGms(int workUser, int callingUser, in String[] adminPkgs);
 }
