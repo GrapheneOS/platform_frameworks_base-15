@@ -21472,18 +21472,8 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
                     callerPackage);
 
             maybeInstallDevicePolicyManagementRoleHolderInUser(userInfo.id);
-            // TODO: call outside service in GmsCompat somewhere that does the same as below function
-            /*
-            * Alternative:
-            * wrap the device admin component
-            * on recieve finish first install gms, etc. then continue
-            * */
-            /* try {
-                // GmsCompatApp.iClientOfGmsCore2Gca()
-                GmsCompatApp.iGms2Gca().setupWorkProfileGms(userInfo.id, caller.getUserId(), new String[]{admin.getPackageName()});
-            } catch (RemoteException e) {
-                // Does not happen, same process
-            } */
+
+            // is this good?
             DevicePolicyGmsHooks hooks = new DevicePolicyGmsHooks(mIPackageManager, mInjector.getAppOpsManager());
             int userId = userInfo.id;
             int callingUserId = caller.getUserId();
