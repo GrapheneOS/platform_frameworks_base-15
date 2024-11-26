@@ -18336,7 +18336,9 @@ public final class Settings {
                     // stop Play Store from attempting to auto-install some system component
                     // packages, such as "Android System SafetyCore" (com.google.android.safetycore)
                     // and "Android System Key Verifier" (com.google.android.contactkeys)
-                    return 0;
+                    if (!"1".equals(getString(cr, "gmscompat_bypass_sys_component_update_stub"))) {
+                        return 0;
+                    }
                 }
             }
 
