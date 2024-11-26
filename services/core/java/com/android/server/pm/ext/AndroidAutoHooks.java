@@ -130,4 +130,11 @@ public class AndroidAutoHooks extends PackageHooks {
 
         return (pkgFlags & flags) != 0 ? PERMISSION_OVERRIDE_GRANT : PERMISSION_OVERRIDE_REVOKE;
     }
+
+    @Override
+    public boolean shouldAllowFgsWhileInUsePermission(PackageManagerInternal pm, int userId) {
+        GosPackageStatePm gosPs = pm.getGosPackageState(PackageId.ANDROID_AUTO_NAME, userId);
+        long anyOfFlags = PKG_FLAG_GRANT_PERMS_FOR_WIRED_ANDROID_AUTO | PKG_FLAG_GRANT_PERMS_FOR_WIRELESS_ANDROID_AUTO;
+        return gosPs != null && (gosPs.packageFlags & anyOfFlags) != 0;
+    }
 }
