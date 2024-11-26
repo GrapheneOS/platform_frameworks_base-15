@@ -49,6 +49,7 @@ import android.annotation.Nullable;
 import android.annotation.TestApi;
 import android.app.GrammaticalInflectionManager;
 import android.app.WindowConfiguration;
+import android.app.compat.gms.GmsCompat;
 import android.compat.annotation.UnsupportedAppUsage;
 import android.content.LocaleProto;
 import android.content.pm.ActivityInfo;
@@ -66,6 +67,7 @@ import android.util.proto.ProtoOutputStream;
 import android.util.proto.WireTypeMismatchException;
 import android.view.View;
 
+import com.android.internal.gmscompat.PlayStoreHooks;
 import com.android.internal.util.XmlUtils;
 
 import org.xmlpull.v1.XmlPullParser;
@@ -2340,6 +2342,14 @@ public final class Configuration implements Parcelable, Comparable<Configuration
      * @return The locale list.
      */
     public @NonNull LocaleList getLocales() {
+        if (GmsCompat.isPlayStore()) {
+            return PlayStoreHooks.getApplicationLocales();
+        }
+        return getLocalesInner();
+    }
+
+    /** @hide */
+    public @NonNull LocaleList getLocalesInner() {
         fixUpLocaleList();
         return mLocaleList;
     }

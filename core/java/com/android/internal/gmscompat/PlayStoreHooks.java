@@ -35,15 +35,19 @@ import android.ext.PackageId;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
+import android.os.LocaleList;
 import android.os.RemoteException;
 import android.os.storage.StorageManager;
 import android.provider.Settings;
+import android.util.ArraySet;
 import android.util.Log;
 
 import com.android.internal.gmscompat.util.GmcActivityUtils;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Locale;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.BiConsumer;
@@ -346,6 +350,35 @@ public final class PlayStoreHooks {
                 return Settings.Global.getInt(cr, "gmscompat_play_store_can_install_" + pkgName, 0) == 1;
         }
         return true;
+    }
+
+    public static LocaleList getApplicationLocales() {
+        Context ctx = GmsCompat.appContext();
+        LocaleList actualLocales = ctx.getResources().getConfiguration().getLocalesInner();
+
+        if (Settings.Global.getInt(ctx.getContentResolver(), "gmscompat_play_store_fetch_all_locales", 0) != 1) {
+            return actualLocales;
+        }
+
+        int numActualLocales = actualLocales.size();
+        ArraySet<Locale> actualLocalesSet = new ArraySet<>(numActualLocales);
+
+        Locale[] allLocales = Locale.getAvailableLocales();
+        var res = new ArrayList<Locale>(allLocales.length);
+
+        for (int i = 0; i < numActualLocales; ++i) {
+            Locale l = actualLocales.get(i);
+            res.add(l);
+            actualLocalesSet.add(l);
+        }
+
+        for (int i = 0; i < allLocales.length; ++i) {
+            Locale l = allLocales[i];
+            if (!actualLocalesSet.contains(l)) {
+                res.add(l);
+            }
+        }
+        return new LocaleList(res.toArray(new Locale[0]));
     }
 
     private PlayStoreHooks() {}
