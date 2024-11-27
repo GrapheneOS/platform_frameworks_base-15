@@ -55,7 +55,7 @@ class ChannelEditorListView(c: Context, attrs: AttributeSet) : LinearLayout(c, a
         }
 
     // The first row is for the entire app
-    private lateinit var appControlRow: AppControlView
+    lateinit var appControlRow: AppControlView
     private lateinit var channelListView: LinearLayout
     private val channelRows = mutableListOf<ChannelRow>()
 
@@ -151,6 +151,11 @@ class AppControlView(c: Context, attrs: AttributeSet) : LinearLayout(c, attrs) {
         switch = requireViewById(R.id.toggle)
 
         setOnClickListener { switch.toggle() }
+    }
+
+    fun hideSwitch() {
+        switch.visibility = View.INVISIBLE
+        isClickable = false
     }
 }
 

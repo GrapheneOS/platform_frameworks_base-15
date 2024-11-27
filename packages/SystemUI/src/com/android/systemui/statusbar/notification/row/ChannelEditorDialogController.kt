@@ -24,6 +24,7 @@ import android.app.NotificationChannelGroup
 import android.app.NotificationManager.IMPORTANCE_NONE
 import android.app.NotificationManager.Importance
 import android.content.Context
+import android.content.pm.PackageManager.NameNotFoundException
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.graphics.drawable.ColorDrawable
@@ -289,6 +290,18 @@ class ChannelEditorDialogController @Inject constructor(
                 appIcon = this@ChannelEditorDialogController.appIcon
                 appName = this@ChannelEditorDialogController.appName
                 channels = channelList
+            }
+
+            val appControlRow = listView?.appControlRow
+            val pkgName = packageName
+            if (appControlRow != null && pkgName != null) {
+                try {
+                    if (context.packageManager.getApplicationInfo(pkgName, 0).isSystemApp) {
+                        appControlRow.hideSwitch()
+                    }
+                } catch (e: NameNotFoundException) {
+                    Log.e(TAG, "", e)
+                }
             }
 
             setOnShowListener {
