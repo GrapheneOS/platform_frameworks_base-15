@@ -2342,16 +2342,15 @@ public final class Configuration implements Parcelable, Comparable<Configuration
      * @return The locale list.
      */
     public @NonNull LocaleList getLocales() {
-        if (GmsCompat.isPlayStore()) {
-            return PlayStoreHooks.getApplicationLocales();
-        }
-        return getLocalesInner();
-    }
-
-    /** @hide */
-    public @NonNull LocaleList getLocalesInner() {
         fixUpLocaleList();
-        return mLocaleList;
+        LocaleList res = mLocaleList;
+        if (GmsCompat.isPlayStore()) {
+            LocaleList override = PlayStoreHooks.overrideApplicationLocales(res, null);
+            if (override != null) {
+                res = override;
+            }
+        }
+        return res;
     }
 
     /**
