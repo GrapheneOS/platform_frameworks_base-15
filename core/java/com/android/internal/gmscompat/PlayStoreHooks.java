@@ -16,6 +16,7 @@
 
 package com.android.internal.gmscompat;
 
+import android.annotation.Nullable;
 import android.app.Activity;
 import android.app.PendingIntent;
 import android.app.compat.gms.GmsCompat;
@@ -352,13 +353,15 @@ public final class PlayStoreHooks {
         return true;
     }
 
-    public static LocaleList getApplicationLocales() {
+    @Nullable
+    public static LocaleList overrideApplicationLocales(LocaleList actualLocales, @Nullable String targetPackage) {
         Context ctx = GmsCompat.appContext();
-        LocaleList actualLocales = ctx.getResources().getConfiguration().getLocalesInner();
 
         if (Settings.Global.getInt(ctx.getContentResolver(), "gmscompat_play_store_fetch_all_locales", 0) != 1) {
-            return actualLocales;
+            return null;
         }
+
+        Log.d(TAG, "overriding locales for " + (targetPackage == null ? "self" : targetPackage), new Throwable());
 
         int numActualLocales = actualLocales.size();
         ArraySet<Locale> actualLocalesSet = new ArraySet<>(numActualLocales);
