@@ -148,15 +148,19 @@ public class LocaleManager {
     @UserHandleAware
     @NonNull
     public LocaleList getApplicationLocales(@NonNull String appPackageName) {
-        if (GmsCompat.isPlayStore()) {
-            return PlayStoreHooks.getApplicationLocales();
-        }
-
+        LocaleList res;
         try {
-            return mService.getApplicationLocales(appPackageName, mContext.getUserId());
+            res = mService.getApplicationLocales(appPackageName, mContext.getUserId());
         } catch (RemoteException e) {
             throw e.rethrowFromSystemServer();
         }
+        if (GmsCompat.isPlayStore()) {
+            LocaleList override = PlayStoreHooks.overrideApplicationLocales(res, appPackageName);
+            if (override != null) {
+                res = override;
+            }
+        }
+        return res;
     }
 
     /**
