@@ -1610,9 +1610,12 @@ public class AppOpsManager {
     public static final int OP_RECEIVE_SENSITIVE_NOTIFICATIONS =
             AppProtoEnums.APP_OP_RECEIVE_SENSITIVE_NOTIFICATIONS;
 
+    /** @hide Act as a user trusted source for installation. */
+    public static final int OP_USER_TRUSTED_SOURCE = AppProtoEnums.APP_OP_USER_TRUSTED_SOURCE;
+
     /** @hide */
     @UnsupportedAppUsage(maxTargetSdk = Build.VERSION_CODES.R, trackingBug = 170729553)
-    public static final int _NUM_OP = 149;
+    public static final int _NUM_OP = 150;
 
     /**
      * All app ops represented as strings.
@@ -1765,6 +1768,7 @@ public class AppOpsManager {
             OPSTR_UNARCHIVAL_CONFIRMATION,
             OPSTR_EMERGENCY_LOCATION,
             OPSTR_RECEIVE_SENSITIVE_NOTIFICATIONS,
+            OPSTR_USER_TRUSTED_SOURCE,
     })
     public @interface AppOpString {}
 
@@ -2502,6 +2506,10 @@ public class AppOpsManager {
     public static final String OPSTR_RECEIVE_SENSITIVE_NOTIFICATIONS =
             "android:receive_sensitive_notifications";
 
+    /** Act as user trusted source during package installation **/
+    public static final String OPSTR_USER_TRUSTED_SOURCE
+            = "android:user_trusted_source";
+
     /** {@link #sAppOpsToNote} not initialized yet for this op */
     private static final byte SHOULD_COLLECT_NOTE_OP_NOT_INITIALIZED = 0;
     /** Should not collect noting of this app-op in {@link #sAppOpsToNote} */
@@ -2586,6 +2594,7 @@ public class AppOpsManager {
             OP_SYSTEM_ALERT_WINDOW,
             OP_WRITE_SETTINGS,
             OP_GET_USAGE_STATS,
+            OP_USER_TRUSTED_SOURCE,
             OP_REQUEST_INSTALL_PACKAGES,
             OP_START_FOREGROUND,
             OP_SMS_FINANCIAL_TRANSACTIONS,
@@ -3082,6 +3091,9 @@ public class AppOpsManager {
         new AppOpInfo.Builder(OP_RECEIVE_SENSITIVE_NOTIFICATIONS,
                 OPSTR_RECEIVE_SENSITIVE_NOTIFICATIONS, "RECEIVE_SENSITIVE_NOTIFICATIONS")
                 .setDefaultMode(MODE_IGNORED).build(),
+        new AppOpInfo.Builder(OP_USER_TRUSTED_SOURCE, OPSTR_USER_TRUSTED_SOURCE, "USER_TRUSTED_SOURCE")
+                .setSwitchCode(OP_USER_TRUSTED_SOURCE)
+                .setPermission(Manifest.permission.USER_TRUSTED_SOURCE).build(),
     };
 
     // The number of longs needed to form a full bitmask of app ops

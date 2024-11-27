@@ -359,6 +359,7 @@ import android.app.admin.WifiSsidPolicy;
 import android.app.admin.flags.Flags;
 import android.app.backup.IBackupManager;
 import android.app.compat.CompatChanges;
+import android.app.compat.gms.GmsCompat;
 import android.app.role.OnRoleHoldersChangedListener;
 import android.app.role.RoleManager;
 import android.app.trust.TrustManager;
@@ -401,6 +402,7 @@ import android.content.pm.parsing.FrameworkParsingPackageUtils;
 import android.content.res.Resources;
 import android.database.ContentObserver;
 import android.database.Cursor;
+import android.ext.PackageId;
 import android.graphics.Bitmap;
 import android.hardware.usb.UsbManager;
 import android.location.Location;
@@ -584,7 +586,7 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
 
     private static final String ATTRIBUTION_TAG = "DevicePolicyManagerService";
 
-    static final boolean VERBOSE_LOG = false; // DO NOT SUBMIT WITH TRUE
+    static final boolean VERBOSE_LOG = true; // DO NOT SUBMIT WITH TRUE
 
     static final String DEVICE_POLICIES_XML = "device_policies.xml";
 
@@ -11149,7 +11151,7 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
         if (mOwners.hasDeviceOwner()) {
             return false;
         }
-        
+
         final ComponentName profileOwner = getProfileOwnerAsUser(userId);
         if (profileOwner == null) {
             return false;
@@ -11158,7 +11160,7 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
         if (isManagedProfile(userId)) {
             return false;
         }
-        
+
         return true;
     }
     private void enforceCanQueryLockTaskLocked(ComponentName who, String callerPackageName) {
@@ -12622,6 +12624,7 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
         final long id = mInjector.binderClearCallingIdentity();
         try {
             maybeInstallDevicePolicyManagementRoleHolderInUser(userHandle);
+            // maybeInstallPlay(userHandle);
 
             manageUserUnchecked(admin, profileOwner, userHandle, adminExtras,
                     /* showDisclaimer= */ true);
@@ -21470,6 +21473,14 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
 
             maybeInstallDevicePolicyManagementRoleHolderInUser(userInfo.id);
 
+            // is this good?
+            DevicePolicyGmsHooks hooks = new DevicePolicyGmsHooks(mIPackageManager, mInjector.getAppOpsManager());
+            int userId = userInfo.id;
+            int callingUserId = caller.getUserId();
+            mInjector.binderWithCleanCallingIdentity(() -> {
+                hooks.maybeInstallPlay(userId, callingUserId, new String[]{admin.getPackageName()});
+            });
+
             installExistingAdminPackage(userInfo.id, admin.getPackageName());
             if (!enableAdminAndSetProfileOwner(userInfo.id, caller.getUserId(), admin)) {
                 throw new ServiceSpecificException(
@@ -24471,7 +24482,7 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
             }
         });
     }
-    
+
     private void migrateUserControlDisabledPackagesLocked() {
         Binder.withCleanCallingIdentity(() -> {
             List<UserInfo> users = mUserManager.getUsers();

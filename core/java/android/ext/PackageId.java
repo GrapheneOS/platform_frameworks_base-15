@@ -51,4 +51,8 @@ public interface PackageId {
 
     String PIXEL_HEALTH_NAME = "com.google.android.apps.pixel.health";
     int PIXEL_HEALTH = 13;
+
+    // "Google Device Policy"
+    String DPC_NAME = "com.google.android.apps.work.clouddpc";
+    int DPC = 14;
 }
