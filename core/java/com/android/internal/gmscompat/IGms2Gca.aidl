@@ -33,6 +33,8 @@ interface IGms2Gca {
 
     oneway void maybeShowContactsSyncNotification();
 
+    oneway void maybeShowGmsCoreRestrictedBackgroundDataNotif();
+
     void onUncaughtException(in ApplicationErrorReport aer);
     GmsCompatConfig requestConfigUpdate(String reason);
 

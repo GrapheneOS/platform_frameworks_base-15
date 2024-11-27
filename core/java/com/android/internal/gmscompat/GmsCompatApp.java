@@ -22,8 +22,10 @@ import android.annotation.Nullable;
 import android.app.compat.gms.GmsCompat;
 import android.content.Context;
 import android.database.ContentObserver;
+import android.net.ConnectivityManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.provider.DeviceConfig;
@@ -68,7 +70,9 @@ public final class GmsCompatApp {
                     fileProxyService = new FileProxyService(ctx);
                     dynamiteFileProxyService = fileProxyService;
 
-                    ctx.getMainThreadHandler().postDelayed(GmsCompatApp::maybeShowContactsSyncNotification, 3000L);
+                    Handler handler = ctx.getMainThreadHandler();
+                    handler.postDelayed(GmsCompatApp::maybeShowContactsSyncNotification, 3000L);
+                    handler.postDelayed(GmsCompatApp::maybeShowGmsCoreRestrictedBackgroundDataNotif, 3000L);
                 }
                 return iGms2Gca.connectGmsCore(processName, gca2Gms, fileProxyService);
             } else {
@@ -307,6 +311,23 @@ public final class GmsCompatApp {
                 }
             }
         }, ctx.getMainThreadHandler(), true);
+    }
+
+    static final int RESTRICTED_BACKGROUND_DATA_CHECK_INTERVAL = 3 * 60_000; // 3 minutes
+
+    static void maybeShowGmsCoreRestrictedBackgroundDataNotif() {
+        Context ctx = GmsCompat.appContext();
+        var cm = ctx.getSystemService(ConnectivityManager.class);
+        if (cm.getRestrictBackgroundStatus() == ConnectivityManager.RESTRICT_BACKGROUND_STATUS_ENABLED) {
+            try {
+                iGms2Gca().maybeShowGmsCoreRestrictedBackgroundDataNotif();
+            } catch (RemoteException e) {
+                throw callFailed(e);
+            }
+        }
+
+        // there's no listener API for getRestrictBackgroundStatus(), use polling with a large interval
+        ctx.getMainThreadHandler().postDelayed(GmsCompatApp::maybeShowGmsCoreRestrictedBackgroundDataNotif, RESTRICTED_BACKGROUND_DATA_CHECK_INTERVAL);
     }
 
     private GmsCompatApp() {}
