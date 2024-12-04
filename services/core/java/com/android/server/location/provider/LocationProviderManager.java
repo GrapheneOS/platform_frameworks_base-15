@@ -1589,36 +1589,6 @@ public class LocationProviderManager extends
         }
     }
 
-    public void stopManager() {
-        synchronized (mMultiplexerLock) {
-            Preconditions.checkState(mState == STATE_STARTED);
-            mState = STATE_STOPPING;
-
-            final long identity = Binder.clearCallingIdentity();
-            try {
-                onEnabledChanged(UserHandle.USER_ALL);
-                removeRegistrationIf(key -> true);
-                mProvider.getController().stop();
-            } finally {
-                Binder.restoreCallingIdentity(identity);
-            }
-
-            mUserHelper.removeListener(mUserChangedListener);
-            mLocationSettings.unregisterLocationUserSettingsListener(mLocationUserSettingsListener);
-            mSettingsHelper.removeOnLocationEnabledChangedListener(mLocationEnabledChangedListener);
-
-            // if external entities are registering listeners it's their responsibility to
-            // unregister them before stopManager() is called
-            Preconditions.checkState(mEnabledListeners.isEmpty());
-            mProviderRequestListeners.clear();
-
-            mEnabled.clear();
-            mLastLocations.clear();
-            mStateChangedListener = null;
-            mState = STATE_STOPPED;
-        }
-    }
-
     public String getName() {
         return mName;
     }
