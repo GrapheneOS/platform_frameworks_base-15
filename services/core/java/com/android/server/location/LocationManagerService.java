@@ -392,16 +392,6 @@ public class LocationManagerService extends ILocationManager.Stub implements
         }
     }
 
-    private void removeLocationProviderManager(LocationProviderManager manager) {
-        synchronized (mProviderManagers) {
-            boolean removed = mProviderManagers.remove(manager);
-            Preconditions.checkArgument(removed);
-            manager.setMockProvider(null);
-            manager.setRealProvider(null);
-            manager.stopManager();
-        }
-    }
-
     void onSystemReady() {
         if (Build.IS_DEBUGGABLE) {
             // on debug builds, watch for location noteOps while location is off. there are some
@@ -1493,9 +1483,6 @@ public class LocationManagerService extends ILocationManager.Stub implements
             }
 
             manager.setMockProvider(null);
-            if (!manager.hasProvider()) {
-                removeLocationProviderManager(manager);
-            }
         }
     }
 
