@@ -26,30 +26,27 @@ import java.io.PrintWriter;
 
 public class FusedLocationService extends Service {
 
-    @Nullable private FusedLocationProvider mProvider;
+    private FusedLocationProvider mProvider;
+
+    @Override
+    public void onCreate() {
+        mProvider = new FusedLocationProvider(this);
+        mProvider.start();
+    }
 
     @Override
     public IBinder onBind(Intent intent) {
-        if (mProvider == null) {
-            mProvider = new FusedLocationProvider(this);
-            mProvider.start();
-        }
-
         return mProvider.getBinder();
     }
 
     @Override
     public void onDestroy() {
-        if (mProvider != null) {
-            mProvider.stop();
-            mProvider = null;
-        }
+        mProvider.stop();
+        mProvider = null;
     }
 
     @Override
     protected void dump(FileDescriptor fd, PrintWriter writer, String[] args) {
-        if (mProvider != null) {
-            mProvider.dump(writer);
-        }
+        mProvider.dump(writer);
     }
 }

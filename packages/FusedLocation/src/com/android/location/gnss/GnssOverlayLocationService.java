@@ -26,24 +26,23 @@ import java.io.PrintWriter;
 
 public class GnssOverlayLocationService extends Service {
 
-    @Nullable private GnssOverlayLocationProvider mProvider;
+    private GnssOverlayLocationProvider mProvider;
+
+    @Override
+    public void onCreate() {
+        mProvider = new GnssOverlayLocationProvider(this);
+        mProvider.start();
+    }
 
     @Override
     public IBinder onBind(Intent intent) {
-        if (mProvider == null) {
-            mProvider = new GnssOverlayLocationProvider(this);
-            mProvider.start();
-        }
-
         return mProvider.getBinder();
     }
 
     @Override
     public void onDestroy() {
-        if (mProvider != null) {
-            mProvider.stop();
-            mProvider = null;
-        }
+        mProvider.stop();
+        mProvider = null;
     }
 
     @Override
