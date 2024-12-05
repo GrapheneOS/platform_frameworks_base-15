@@ -35,6 +35,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.CheckBox;
 
 import com.android.internal.app.AlertActivity;
@@ -102,6 +103,11 @@ public class UsbDebuggingActivity extends AlertActivity
         window.setCloseOnTouchOutside(false);
 
         setupAlert();
+
+        // reduce the chance of accidental Allow button tap
+        Button allowButton = mAlert.getButton(DialogInterface.BUTTON_POSITIVE);
+        allowButton.setEnabled(false);
+        getMainThreadHandler().postDelayed(() -> allowButton.setEnabled(true), 1000);
     }
 
     @Override
