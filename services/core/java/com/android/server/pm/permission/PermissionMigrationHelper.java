@@ -48,7 +48,7 @@ public interface PermissionMigrationHelper {
      * @return legacy permissions state for a user.
      */
     @NonNull
-    Map<Integer, Map<String, LegacyPermissionState>> getLegacyPermissionStates(int userId, boolean excludeSystemPackages);
+    Map<Integer, Map<String, LegacyPermissionState>> getLegacyPermissionStates(int userId);
 
     /**
      * @return permissions file version for the given user.
