@@ -365,33 +365,10 @@ public class BackupManagerService extends IBackupManager.Stub {
     /**
      * If there is a "suppress" file for the system user, backup is inactive for ALL users.
      *
-     * Otherwise, the below logic applies:
-     *
-     * For the {@link #mDefaultBackupUserId}, backup is active by default. Backup is only
-     * deactivated if there exists a "suppress" file for the user, which can be created by calling
-     * {@link #setBackupServiceActive}.
-     *
-     * For non-main users, backup is only active if there exists an "activated" file for the user,
-     * which can also be created by calling {@link #setBackupServiceActive}.
+     * Otherwise, it is activated for all users.
      */
-    private boolean isBackupActivatedForUser(int userId) {
-        if (getSuppressFileForUser(UserHandle.USER_SYSTEM).exists()) {
-            return false;
-        }
-
-        boolean isDefaultUser = userId == mDefaultBackupUserId;
-
-        // If the default user is not the system user, we are in headless mode and the system user
-        // doesn't have an actual human user associated with it.
-        if ((userId == UserHandle.USER_SYSTEM) && !isDefaultUser) {
-            return false;
-        }
-
-        if (isDefaultUser && getSuppressFileForUser(userId).exists()) {
-            return false;
-        }
-
-        return isDefaultUser || getActivatedFileForUser(userId).exists();
+    private boolean isBackupActivatedForUser() {
+        return !getSuppressFileForUser(UserHandle.USER_SYSTEM).exists();
     }
 
     @VisibleForTesting
@@ -421,7 +398,7 @@ public class BackupManagerService extends IBackupManager.Stub {
             Slog.i(TAG, "Backup service not supported");
             return;
         }
-        if (!isBackupActivatedForUser(userId)) {
+        if (!isBackupActivatedForUser()) {
             Slog.i(TAG, "Backup not activated for user " + userId);
             return;
         }
@@ -602,7 +579,7 @@ public class BackupManagerService extends IBackupManager.Stub {
                     "isBackupServiceActive");
         }
         synchronized (mStateLock) {
-            return !mGlobalDisable && isBackupActivatedForUser(userId);
+            return !mGlobalDisable && isBackupActivatedForUser();
         }
     }
 
@@ -1806,7 +1783,7 @@ public class BackupManagerService extends IBackupManager.Stub {
             mDefaultBackupUserId = mainUser.getIdentifier();
             // We don't expect the service to be started for the old default user but we attempt to
             // stop its service to be safe.
-            if (!isBackupActivatedForUser(oldDefaultBackupUserId)) {
+            if (!isBackupActivatedForUser()) {
                 stopServiceForUser(oldDefaultBackupUserId);
             }
             Slog.i(
