@@ -188,7 +188,9 @@ public class TimeToLiveHelper {
                         timeoutKey = earliest.second;
                     }
                 }
-                mNm.timeoutNotification(timeoutKey);
+                if (timeoutKey != null) {
+                    mNm.timeoutNotification(timeoutKey);
+                }
             }
         }
     };
