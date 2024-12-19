@@ -12977,6 +12977,8 @@ public final class Settings {
         /** @hide */
         public static final String WIDEVINE_PROVISIONING_SERVER = "widevine_provisioner_server";
 
+        /** @hide */
+        public static final String GEOCODING_PROVIDER = "geocoding_provider";
         // ExtSettings END
 
         // NOTE: If you add new settings here, be sure to add them to
