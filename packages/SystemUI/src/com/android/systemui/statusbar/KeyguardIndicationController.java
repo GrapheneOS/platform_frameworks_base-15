@@ -1533,8 +1533,9 @@ public class KeyguardIndicationController {
 
         @Override
         public void onBiometricAuthenticated(int userId, BiometricSourceType biometricSourceType,
-                boolean isStrongBiometric) {
-            super.onBiometricAuthenticated(userId, biometricSourceType, isStrongBiometric);
+                boolean isStrongBiometric, SecondFactorStatus secondFactorStatus) {
+            super.onBiometricAuthenticated(userId, biometricSourceType, isStrongBiometric,
+                    secondFactorStatus);
             hideBiometricMessage();
             if (biometricSourceType == FACE) {
                 mFaceAcquiredMessageDeferral.reset();

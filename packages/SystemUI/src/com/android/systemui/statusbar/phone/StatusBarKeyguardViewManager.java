@@ -829,15 +829,32 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
      * dragging it and translation should be deferred {@see KeyguardBouncer#show(boolean, boolean)}
      */
     public void showPrimaryBouncer(boolean scrimmed) {
+        // TODO: SIM PIN/PUK insertion code does not call through here. Despite that, it might be
+        //  possible for a user with second factor enabled to complete a fingerprint auth just
+        //  after inserting a SIM with a PIN/PUK, and then KSCC#showSecurityScreen would be called
+        //  with SIM PIN/PUK prior to preparing the fullscreen bouncer. Need to verify that this is
+        //  not done.
+
         hideAlternateBouncer(false);
-        if (mKeyguardStateController.isShowing() && !isBouncerShowing()) {
-            if (SceneContainerFlag.isEnabled()) {
-                mSceneInteractorLazy.get().changeScene(
-                        Scenes.Bouncer,
-                        "primary bouncer requested"
-                );
+        if (mKeyguardStateController.isShowing()) {
+            if (!isBouncerShowing()) {
+                if (SceneContainerFlag.isEnabled()) {
+                    mSceneInteractorLazy.get().changeScene(
+                            Scenes.Bouncer,
+                            "primary bouncer requested");
+                } else {
+                    mPrimaryBouncerInteractor.show(scrimmed);
+                }
             } else {
-                mPrimaryBouncerInteractor.show(scrimmed);
+                if (SceneContainerFlag.isEnabled()) {
+                    throw new IllegalStateException(
+                            "Handle SceneContainerFlag in SBKVM#showPrimaryBouncer!");
+                }
+                // This will either dismiss the Keyguard (if KUM#getUserCanSkipBouncer is true) or
+                // display the appropriate SecurityMode in KSCC. These are the same outcomes that
+                // a caller can expect when calling #showPrimaryBouncer while the bouncer is not
+                // showing.
+                mPrimaryBouncerInteractor.notifyBouncerRequestedWhenAlreadyShowing();
             }
         }
         updateStates();

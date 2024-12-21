@@ -215,13 +215,19 @@ public class KeyguardUpdateMonitorCallback {
      */
     public void onBiometricAuthFailed(BiometricSourceType biometricSourceType) { }
 
+    // Use custom type instead of boolean in case upstream overloads/extends this callback
+    // themselves.
+    public enum SecondFactorStatus {
+        Enabled, Disabled
+    }
+
     /**
      * Called when a biometric is authenticated.
      * @param userId the user id for which the biometric sample was authenticated
      * @param biometricSourceType
      */
     public void onBiometricAuthenticated(int userId, BiometricSourceType biometricSourceType,
-            boolean isStrongBiometric) { }
+            boolean isStrongBiometric, SecondFactorStatus secondFactorStatus) { }
 
     /**
      * Called when a biometric is detected but not successfully authenticated.
