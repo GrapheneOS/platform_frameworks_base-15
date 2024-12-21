@@ -38,13 +38,15 @@ public class ExtSettings {
     public static final BoolSetting SCREENSHOT_TIMESTAMP_EXIF = new BoolSetting(
             Setting.Scope.PER_USER, Settings.Secure.SCREENSHOT_TIMESTAMP_EXIF, false);
 
-    public static final BoolSetting SCRAMBLE_LOCKSCREEN_PIN_LAYOUT = new BoolSetting(
-            Setting.Scope.PER_USER, Settings.Secure.SCRAMBLE_PIN_LAYOUT, false);
+    public static final BoolSetting SCRAMBLE_LOCKSCREEN_PIN_LAYOUT_PRIMARY = new BoolSetting(
+            Setting.Scope.PER_USER, Settings.Secure.SCRAMBLE_PIN_LAYOUT_PRIMARY, false);
+    public static final BoolSetting SCRAMBLE_LOCKSCREEN_PIN_LAYOUT_SECONDARY = new BoolSetting(
+            Setting.Scope.PER_USER, Settings.Secure.SCRAMBLE_PIN_LAYOUT_SECONDARY, false);
 
     public static final BoolSetting SCRAMBLE_SIM_PIN_LAYOUT = new BoolSetting(
             Setting.Scope.PER_USER, Settings.Secure.SCRAMBLE_SIM_PIN_LAYOUT,
             // inherit lockscreen PIN setting by default
-            SCRAMBLE_LOCKSCREEN_PIN_LAYOUT::get);
+            SCRAMBLE_LOCKSCREEN_PIN_LAYOUT_PRIMARY::get);
 
     public static final BoolSysProperty ALLOW_GOOGLE_APPS_SPECIAL_ACCESS_TO_ACCELERATORS = new BoolSysProperty(
             // also accessed in native code, in frameworks/native/cmds/servicemanager/Access.cpp
