@@ -7116,6 +7116,9 @@ public class UserManagerService extends IUserManager.Stub {
             if (nextId >= 0) {
                 return nextId;
             }
+            if (true) {
+                throw new IllegalStateException("Recycling user IDs is not allowed!");
+            }
             // All ids up to MAX_USER_ID were used. Remove all mRemovingUserIds,
             // except most recently removed
             if (mRemovingUserIds.size() > 0) {
