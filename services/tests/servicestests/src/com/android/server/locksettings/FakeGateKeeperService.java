@@ -88,6 +88,11 @@ public class FakeGateKeeperService implements IGateKeeperService {
     private ArrayMap<Integer, AuthToken> authTokenMap = new ArrayMap<>();
 
     private ArrayMap<Integer, byte[]> handleMap = new ArrayMap<>();
+    private boolean shouldReEnroll;
+
+    public void setShouldReEnroll(boolean shouldReEnroll) {
+        this.shouldReEnroll = shouldReEnroll;
+    }
 
     @Override
     public GateKeeperResponse enroll(int uid, byte[] currentPasswordHandle, byte[] currentPassword,
@@ -111,7 +116,7 @@ public class FakeGateKeeperService implements IGateKeeperService {
         VerifyHandle newHandle = new VerifyHandle(desiredPassword, newSid);
         refreshSid(uid, newSid, true);
         handleMap.put(uid, newHandle.toBytes());
-        return GateKeeperResponse.createOkResponse(newHandle.toBytes(), false);
+        return GateKeeperResponse.createOkResponse(newHandle.toBytes(), shouldReEnroll);
     }
 
     @Override
@@ -135,7 +140,7 @@ public class FakeGateKeeperService implements IGateKeeperService {
             refreshSid(uid, handle.sid, false);
             AuthToken token = new AuthToken(challenge, handle.sid);
             refreshAuthToken(uid, token);
-            return GateKeeperResponse.createOkResponse(token.toBytes(), false);
+            return GateKeeperResponse.createOkResponse(token.toBytes(), shouldReEnroll);
         } else {
             return GateKeeperResponse.createGenericResponse(GateKeeperResponse.RESPONSE_ERROR);
         }

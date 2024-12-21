@@ -213,7 +213,7 @@ public class LockPatternUtils {
 
     public static final String AUTO_PIN_CONFIRM = "lockscreen.auto_pin_confirm";
 
-    public static final String CURRENT_LSKF_BASED_PROTECTOR_ID_KEY = "sp-handle";
+    public static final String CURRENT_LSKF_BASED_PROTECTOR_ID_KEY_BASE = "sp-handle";
     public static final String PASSWORD_HISTORY_DELIMITER = ",";
 
     private static final String GSI_RUNNING_PROP = "ro.gsid.image_running";
