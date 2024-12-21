@@ -17,6 +17,7 @@
 package com.android.systemui.bouncer.shared.model
 
 import com.android.systemui.authentication.shared.model.AuthenticationMethodModel
+import com.android.systemui.authentication.shared.model.AuthenticationMethodModel.BiometricSecondFactorPin
 import com.android.systemui.authentication.shared.model.AuthenticationMethodModel.Password
 import com.android.systemui.authentication.shared.model.AuthenticationMethodModel.Pattern
 import com.android.systemui.authentication.shared.model.AuthenticationMethodModel.Pin
@@ -41,6 +42,7 @@ object BouncerMessageStrings {
             Pattern -> Pair(patternDefaultMessage(fpAuthIsAllowed), 0)
             Password -> Pair(passwordDefaultMessage(fpAuthIsAllowed), 0)
             Pin -> Pair(pinDefaultMessage(fpAuthIsAllowed), 0)
+            BiometricSecondFactorPin -> Pair(R.string.keyguard_enter_biometric_second_factor_pin, 0)
             else -> EmptyMessage
         }
     }
@@ -54,6 +56,8 @@ object BouncerMessageStrings {
             Pattern -> Pair(R.string.kg_wrong_pattern_try_again, secondaryMessage)
             Password -> Pair(R.string.kg_wrong_password_try_again, secondaryMessage)
             Pin -> Pair(R.string.kg_wrong_pin_try_again, secondaryMessage)
+            BiometricSecondFactorPin -> Pair(R.string.kg_wrong_biometric_second_factor_pin_try_again,
+                0)
             else -> EmptyMessage
         }
     }
@@ -245,6 +249,11 @@ object BouncerMessageStrings {
                 Pair(
                     R.string.kg_too_many_failed_attempts_countdown,
                     R.string.kg_primary_auth_locked_out_pin
+                )
+            BiometricSecondFactorPin ->
+                Pair(
+                    R.string.kg_too_many_failed_attempts_countdown,
+                    R.string.kg_primary_auth_locked_out_biometric_second_factor_pin
                 )
             else -> EmptyMessage
         }

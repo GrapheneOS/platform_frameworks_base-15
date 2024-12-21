@@ -280,7 +280,7 @@ class BouncerMessageInteractorTest : SysuiTestCase() {
             init()
             val bouncerMessage by collectLastValue(underTest.bouncerMessage)
 
-            underTest.onPrimaryAuthLockedOut(3)
+            underTest.onPrimaryAuthLockedOut(KeyguardSecurityModel.SecurityMode.PIN, 3)
 
             verify(countDownTimerUtil)
                 .startNewTimer(eq(3000L), eq(1000L), countDownTimerCallback.capture())
@@ -299,7 +299,7 @@ class BouncerMessageInteractorTest : SysuiTestCase() {
             init()
             val bouncerMessage by collectLastValue(underTest.bouncerMessage)
 
-            underTest.onPrimaryAuthLockedOut(3)
+            underTest.onPrimaryAuthLockedOut(KeyguardSecurityModel.SecurityMode.PIN, 3)
 
             verify(countDownTimerUtil)
                 .startNewTimer(eq(3000L), eq(1000L), countDownTimerCallback.capture())

@@ -92,6 +92,7 @@ import com.android.internal.jank.InteractionJankMonitor;
 import com.android.internal.logging.UiEvent;
 import com.android.internal.logging.UiEventLogger;
 import com.android.internal.util.UserIcons;
+import com.android.internal.widget.LockDomain;
 import com.android.internal.widget.LockPatternUtils;
 import com.android.keyguard.KeyguardSecurityModel.SecurityMode;
 import com.android.settingslib.Utils;
@@ -708,8 +709,9 @@ public class KeyguardSecurityContainer extends ConstraintLayout {
         mAlertDialog.show();
     }
 
-    void showTimeoutDialog(int userId, int timeoutMs, LockPatternUtils lockPatternUtils,
-            SecurityMode securityMode) {
+
+    void showTimeoutDialog(int userId, LockDomain lockDomain, int timeoutMs,
+            LockPatternUtils lockPatternUtils, SecurityMode securityMode) {
         int timeoutInSeconds = timeoutMs / 1000;
         int messageId = 0;
 
@@ -723,6 +725,8 @@ public class KeyguardSecurityContainer extends ConstraintLayout {
             case Password:
                 messageId = R.string.kg_too_many_failed_password_attempts_dialog_message;
                 break;
+            case BiometricSecondFactorPin:
+                messageId = R.string.kg_too_many_failed_biometric_second_factor_pin_attempts_dialog_message;
             // These don't have timeout dialogs.
             case Invalid:
             case None:
@@ -733,7 +737,7 @@ public class KeyguardSecurityContainer extends ConstraintLayout {
 
         if (messageId != 0) {
             final String message = mContext.getString(messageId,
-                    lockPatternUtils.getCurrentFailedPasswordAttempts(userId),
+                    lockPatternUtils.getCurrentFailedPasswordAttempts(userId, lockDomain),
                     timeoutInSeconds);
             showDialog(null, message);
         }

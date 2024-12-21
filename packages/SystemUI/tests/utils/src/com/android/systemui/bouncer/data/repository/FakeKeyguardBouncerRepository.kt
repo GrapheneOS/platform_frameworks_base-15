@@ -54,6 +54,9 @@ class FakeKeyguardBouncerRepository @Inject constructor() : KeyguardBouncerRepos
     override val lastShownSecurityMode: MutableStateFlow<KeyguardSecurityModel.SecurityMode> =
         MutableStateFlow(KeyguardSecurityModel.SecurityMode.Invalid)
     override var bouncerDismissActionModel: BouncerDismissActionModel? = null
+    private val _bouncerRequestedWhenAlreadyShowing = MutableStateFlow(false)
+    override val bouncerRequestedWhenAlreadyShowing =
+        _bouncerRequestedWhenAlreadyShowing.asStateFlow()
 
     override fun setPrimaryScrimmed(isScrimmed: Boolean) {
         _primaryBouncerScrimmed.value = isScrimmed
@@ -118,6 +121,11 @@ class FakeKeyguardBouncerRepository @Inject constructor() : KeyguardBouncerRepos
     override fun setLastShownSecurityMode(securityMode: KeyguardSecurityModel.SecurityMode) {
         lastShownSecurityMode.value = securityMode
     }
+
+    override fun setBouncerRequestedWhenAlreadyShowing(bouncerRequestedWhenAlreadyShowing: Boolean) {
+        _bouncerRequestedWhenAlreadyShowing.value = bouncerRequestedWhenAlreadyShowing
+    }
+
 }
 
 @Module

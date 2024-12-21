@@ -18,7 +18,9 @@ package com.android.keyguard;
 
 import static android.app.StatusBarManager.SESSION_KEYGUARD;
 import static android.content.res.Configuration.ORIENTATION_LANDSCAPE;
-
+import static com.android.internal.widget.LockDomain.Primary;
+import static com.android.internal.widget.LockDomain.Secondary;
+import static com.android.internal.widget.LockPatternUtils.StrongAuthTracker.STRONG_AUTH_REQUIRED_AFTER_LOCKOUT;
 import static com.android.keyguard.KeyguardSecurityContainer.BOUNCER_DISMISSIBLE_KEYGUARD;
 import static com.android.keyguard.KeyguardSecurityContainer.BOUNCER_DISMISS_BIOMETRIC;
 import static com.android.keyguard.KeyguardSecurityContainer.BOUNCER_DISMISS_EXTENDED_ACCESS;
@@ -28,6 +30,7 @@ import static com.android.keyguard.KeyguardSecurityContainer.BOUNCER_DISMISS_SIM
 import static com.android.keyguard.KeyguardSecurityContainer.USER_TYPE_PRIMARY;
 import static com.android.keyguard.KeyguardSecurityContainer.USER_TYPE_SECONDARY_USER;
 import static com.android.keyguard.KeyguardSecurityContainer.USER_TYPE_WORK_PROFILE;
+import static com.android.keyguard.KeyguardSecurityModel.SecurityMode.BiometricSecondFactorPin;
 import static com.android.keyguard.KeyguardSecurityModel.SecurityMode.SimPin;
 import static com.android.keyguard.KeyguardSecurityModel.SecurityMode.SimPuk;
 import static com.android.systemui.DejankUtils.whitelistIpcs;
@@ -64,6 +67,7 @@ import com.android.internal.logging.MetricsLogger;
 import com.android.internal.logging.UiEventLogger;
 import com.android.internal.logging.nano.MetricsProto;
 import com.android.internal.logging.nano.MetricsProto.MetricsEvent;
+import com.android.internal.widget.LockDomain;
 import com.android.internal.widget.LockPatternUtils;
 import com.android.keyguard.KeyguardSecurityContainer.BouncerUiEvent;
 import com.android.keyguard.KeyguardSecurityContainer.SwipeListener;
@@ -235,13 +239,16 @@ public class KeyguardSecurityContainerController extends ViewController<Keyguard
         }
 
         @Override
-        public void onAttemptLockoutStart(long seconds) {
-            mBouncerMessageInteractor.onPrimaryAuthLockedOut(seconds);
+        public void onAttemptLockoutStart(SecurityMode securityMode, long seconds) {
+            mBouncerMessageInteractor.onPrimaryAuthLockedOut(securityMode, seconds);
         }
 
         @Override
-        public void reportUnlockAttempt(int userId, boolean success, int timeoutMs) {
+        public void reportUnlockAttempt(int userId, LockDomain lockDomain, boolean success,
+                int timeoutMs) {
             if (timeoutMs == 0 && !success) {
+                // Primary here includes BiometricSecondFactorPin (because it's a PIN). It's a
+                // confusing terminology overlap that's difficult to correct downstream.
                 mBouncerMessageInteractor.onPrimaryAuthIncorrectAttempt();
             }
             int bouncerSide = SysUiStatsLog.KEYGUARD_BOUNCER_PASSWORD_ENTERED__SIDE__DEFAULT;
@@ -255,7 +262,8 @@ public class KeyguardSecurityContainerController extends ViewController<Keyguard
                 SysUiStatsLog.write(SysUiStatsLog.KEYGUARD_BOUNCER_PASSWORD_ENTERED,
                         SysUiStatsLog.KEYGUARD_BOUNCER_PASSWORD_ENTERED__RESULT__SUCCESS,
                         bouncerSide);
-                mLockPatternUtils.reportSuccessfulPasswordAttempt(userId);
+                mLockPatternUtils.reportSuccessfulPasswordAttempt(userId, lockDomain);
+
                 // Force a garbage collection in an attempt to erase any lockscreen password left in
                 // memory. Do it asynchronously with a 5-sec delay to avoid making the keyguard
                 // dismiss animation janky.
@@ -272,7 +280,7 @@ public class KeyguardSecurityContainerController extends ViewController<Keyguard
                 SysUiStatsLog.write(SysUiStatsLog.KEYGUARD_BOUNCER_PASSWORD_ENTERED,
                         SysUiStatsLog.KEYGUARD_BOUNCER_PASSWORD_ENTERED__RESULT__FAILURE,
                         bouncerSide);
-                reportFailedUnlockAttempt(userId, timeoutMs);
+                reportFailedUnlockAttempt(userId, lockDomain, timeoutMs);
             }
             mMetricsLogger.write(new LogMaker(MetricsEvent.BOUNCER)
                     .setType(success ? MetricsEvent.TYPE_SUCCESS : MetricsEvent.TYPE_FAILURE));
@@ -733,8 +741,24 @@ public class KeyguardSecurityContainerController extends ViewController<Keyguard
 
             getCurrentSecurityController(controller -> controller.onResume(reason));
         }
+
+        SecurityMode trueCurrentSecurityMode = mSecurityModel.getSecurityMode(
+                mSelectedUserInteractor.getSelectedUserId());
+
+        if (trueCurrentSecurityMode != mCurrentSecurityMode &&
+                trueCurrentSecurityMode == BiometricSecondFactorPin) {
+            // Do this here so that mCurrentSecurityMode is updated and in turn the call to
+            // #showPrimarySecurityScreen in the callback passed to #reinflateViewFlipper by
+            // KeyguardBouncerViewBinder will be a no-op. Because the controller/view for
+            // SecurityMode.BiometricSecondFactorPin was preloaded, this call won't do any async
+            // inflation (which would cause the UI to glitch). The end result is that going from
+            // successful fingerprint to biometric PIN behaves basically the same as going from 3
+            // failed fingerprints to primary PIN.
+            showPrimarySecurityScreen(false);
+        }
+
         mView.onResume(
-                mSecurityModel.getSecurityMode(mSelectedUserInteractor.getSelectedUserId()),
+                trueCurrentSecurityMode,
                 mKeyguardStateController.isFaceEnrolledAndEnabled());
     }
 
@@ -860,6 +884,9 @@ public class KeyguardSecurityContainerController extends ViewController<Keyguard
                 case Pattern:
                 case Password:
                 case PIN:
+                case BiometricSecondFactorPin:
+                    // In this context we can refer to BiometricSecondFactorPin as primary, even
+                    // though it is part of secondary auth. Confusing terminology overlap.
                     authenticatedWithPrimaryAuth = true;
                     finish = true;
                     eventSubtype = BOUNCER_DISMISS_PASSWORD;
@@ -892,6 +919,7 @@ public class KeyguardSecurityContainerController extends ViewController<Keyguard
             }
         }
         // Check for device admin specified additional security measures.
+        // bypassSecondaryLockscreen will be true when called from BiometricSecondFactorPin.
         if (finish && !bypassSecondaryLockScreen) {
             Intent secondaryLockscreenIntent =
                     mUpdateMonitor.getSecondaryLockscreenRequirement(targetUserId);
@@ -1055,7 +1083,16 @@ public class KeyguardSecurityContainerController extends ViewController<Keyguard
 
         getCurrentSecurityController(oldView -> oldView.onPause());
 
+        SecurityMode previousSecurityMode = mCurrentSecurityMode;
         mCurrentSecurityMode = securityMode;
+
+        // Remove HAT in case of SIM being inserted while on second factor screen (it's already
+        // removed in #reportFailedUnlockAttempt on too many failed attempts). The upstream
+        // behaviour is unreliable so it's possible this won't make sense in future, but is safe to
+        // leave.
+        if (previousSecurityMode == BiometricSecondFactorPin) {
+            mUpdateMonitor.clearFingerprintRecognized();
+        }
 
         getCurrentSecurityController(
                 newView -> {
@@ -1064,7 +1101,9 @@ public class KeyguardSecurityContainerController extends ViewController<Keyguard
                     configureMode();
                     mKeyguardSecurityCallback.onSecurityModeChanged(
                             securityMode, newView != null && newView.needsInput());
-
+                    if (previousSecurityMode == BiometricSecondFactorPin) {
+                        setInitialMessage();
+                    }
                 });
     }
 
@@ -1075,7 +1114,7 @@ public class KeyguardSecurityContainerController extends ViewController<Keyguard
      */
     private boolean canUseOneHandedBouncer() {
         return switch (mCurrentSecurityMode) {
-            case PIN, Pattern, SimPin, SimPuk -> getResources().getBoolean(
+            case PIN, Pattern, SimPin, SimPuk, BiometricSecondFactorPin -> getResources().getBoolean(
                     R.bool.can_use_one_handed_bouncer);
             default -> false;
         };
@@ -1100,36 +1139,54 @@ public class KeyguardSecurityContainerController extends ViewController<Keyguard
                         /* colorState= */ null, /* animated= */ true), mFalsingA11yDelegate);
     }
 
-    public void reportFailedUnlockAttempt(int userId, int timeoutMs) {
+    public void reportFailedUnlockAttempt(int userId, LockDomain lockDomain, int timeoutMs) {
         // +1 for this time
-        final int failedAttempts = mLockPatternUtils.getCurrentFailedPasswordAttempts(userId) + 1;
-
+        int failedAttempts = mLockPatternUtils.getCurrentFailedPasswordAttempts(userId,
+                lockDomain) + 1;
         if (DEBUG) Log.d(TAG, "reportFailedPatternAttempt: #" + failedAttempts);
 
-        final int failedAttemptsBeforeWipe =
-                mDevicePolicyManager.getMaximumFailedPasswordsForWipe(null, userId);
+        if (lockDomain == Primary) {
+            final int failedAttemptsBeforeWipe =
+                    mDevicePolicyManager.getMaximumFailedPasswordsForWipe(null, userId);
 
-        final int remainingBeforeWipe = failedAttemptsBeforeWipe > 0
-                ? (failedAttemptsBeforeWipe - failedAttempts)
-                : Integer.MAX_VALUE; // because DPM returns 0 if no restriction
-        if (remainingBeforeWipe < LockPatternUtils.FAILED_ATTEMPTS_BEFORE_WIPE_GRACE) {
-            // The user has installed a DevicePolicyManager that requests a
-            // user/profile to be wiped N attempts. Once we get below the grace period,
-            // we post this dialog every time as a clear warning until the deletion
-            // fires. Check which profile has the strictest policy for failed password
-            // attempts.
-            final int expiringUser =
-                    mDevicePolicyManager.getProfileWithMinimumFailedPasswordsForWipe(userId);
-            Integer mainUser = mSelectedUserInteractor.getMainUserId();
-            showMessageForFailedUnlockAttempt(
-                    userId, expiringUser, mainUser, remainingBeforeWipe, failedAttempts);
+            final int remainingBeforeWipe = failedAttemptsBeforeWipe > 0
+                    ? (failedAttemptsBeforeWipe - failedAttempts)
+                    : Integer.MAX_VALUE; // because DPM returns 0 if no restriction
+            if (remainingBeforeWipe < LockPatternUtils.FAILED_ATTEMPTS_BEFORE_WIPE_GRACE) {
+                // The user has installed a DevicePolicyManager that requests a
+                // user/profile to be wiped N attempts. Once we get below the grace period,
+                // we post this dialog every time as a clear warning until the deletion
+                // fires. Check which profile has the strictest policy for failed password
+                // attempts.
+                final int expiringUser =
+                        mDevicePolicyManager.getProfileWithMinimumFailedPasswordsForWipe(userId);
+                Integer mainUser = mSelectedUserInteractor.getMainUserId();
+                showMessageForFailedUnlockAttempt(
+                        userId, expiringUser, mainUser, remainingBeforeWipe, failedAttempts);
+            }
         }
-        mLockPatternUtils.reportFailedPasswordAttempt(userId);
+
+        // Do this here so that #onDevicePolicyManagerStateChanged triggered by
+        // LPU#reportFailedPasswordAttempt is guaranteed to get the primary security mode. Can't
+        // rely on strong auth being set as it is async.
+        if (lockDomain == Secondary && timeoutMs > 0) {
+            int strongAuth = mUpdateMonitor.getStrongAuthTracker().getStrongAuthForUser(userId);
+            if ((strongAuth & STRONG_AUTH_REQUIRED_AFTER_LOCKOUT) == 0) {
+                // This is needed to prevent the possibility of fingerprint listening while the
+                // update is still pending.
+                mUpdateMonitor.setUserWaitingForStrongAuthUpdateAfterSecondFactorLockout(userId,
+                        true);
+            }
+            mUpdateMonitor.clearFingerprintRecognized();
+        }
+
+        mLockPatternUtils.reportFailedPasswordAttempt(userId, lockDomain);
+
         if (timeoutMs > 0) {
-            mLockPatternUtils.reportPasswordLockout(timeoutMs, userId);
-            if (!com.android.systemui.Flags.revampedBouncerMessages()) {
-                mView.showTimeoutDialog(userId, timeoutMs, mLockPatternUtils,
-                        mSecurityModel.getSecurityMode(userId));
+            mLockPatternUtils.reportPasswordLockout(timeoutMs, userId, lockDomain);
+            if (lockDomain == Secondary) {
+                mView.showTimeoutDialog(userId, lockDomain, timeoutMs, mLockPatternUtils,
+                        mCurrentSecurityMode);
             }
         }
     }
@@ -1215,6 +1272,11 @@ public class KeyguardSecurityContainerController extends ViewController<Keyguard
         mView.reloadColors();
     }
 
+    public void setBouncerBindMessageViewCallback(
+            KeyguardSecurityViewFlipperController.OnViewInflatedCallback callback) {
+        mSecurityViewFlipperController.setBouncerBindMessageViewCallback(callback);
+    }
+
     /**
      * Reinflate the view flipper child view.
      */
@@ -1223,9 +1285,47 @@ public class KeyguardSecurityContainerController extends ViewController<Keyguard
         mSecurityViewFlipperController.clearViews();
         mSecurityViewFlipperController.asynchronouslyInflateView(mCurrentSecurityMode,
                 mKeyguardSecurityCallback, (controller) -> {
-                mView.updateSecurityViewFlipper();
-                onViewInflatedListener.onViewInflated(controller);
-            });
+                    mView.updateSecurityViewFlipper();
+                    // In some upstream cases, #reinflateViewFlipper is executed immediately after
+                    // #showSecurityScreen. As a result of our KSVFC clear counter, the callback is
+                    // not guaranteed to execute. Adding these here guarantees they will be
+                    // executed. This was sometimes noticed when switching users with one using a
+                    // password and other PIN. The code has been improved upstream but the issue
+                    // could still occur.
+                    configureMode();
+                    mKeyguardSecurityCallback.onSecurityModeChanged(
+                            mCurrentSecurityMode,controller != null && controller.needsInput());
+                    onViewInflatedListener.onViewInflated(controller);
+                });
+
+        if (mCurrentSecurityMode == SecurityMode.Invalid) {
+            return;
+        }
+
+        // TODO: This preloading causes a focus issue for BiometricSecondFactorPin because
+        //  the #onViewAttached of the primary runs (in the background) after #onResume of the
+        //  BiometricSecondFactorPin. Issue occurs at mView.addView(view) in KSVFC. Crude fix is
+        //  making the PasswordEntry not focusable until the call to #onResume, which won't occur
+        //  for the background mode.
+
+        if (mCurrentSecurityMode == SecurityMode.BiometricSecondFactorPin) {
+            // When BiometricSecondFactorPin is hidden (including after success), fingerprints are
+            // cleared which results in the security mode going back to primary. To avoid creating
+            // duplicate views/controllers in #onPause, we preload the primary. This has the added
+            // advantage that we can switch from BiometricSecondFactorPin to primary security mode
+            // (after too many incorrect attempts) without requiring async inflation.
+            // This is probably not strictly necessary now that we have callback queuing, but it
+            // doesn't hurt.
+            int currentUser = mSelectedUserInteractor.getSelectedUserId();
+            SecurityMode primarySecurityMode = mSecurityModel.getSecurityMode(currentUser, Primary);
+            mSecurityViewFlipperController.asynchronouslyInflateView(
+                    primarySecurityMode, mKeyguardSecurityCallback, (c) -> {});
+        } else {
+            // Preload the biometric second factor so that we can call #showPrimarySecurityScreen
+            // in #onResume without requiring async inflation.
+            mSecurityViewFlipperController.asynchronouslyInflateView(
+                    SecurityMode.BiometricSecondFactorPin, mKeyguardSecurityCallback, (c) -> {});
+        }
     }
 
     /**

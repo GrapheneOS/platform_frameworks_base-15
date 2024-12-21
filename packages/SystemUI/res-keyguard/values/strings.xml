@@ -24,6 +24,12 @@
     <!-- Instructions telling the user to enter their PIN password to unlock the keyguard [CHAR LIMIT=48] -->
     <string name="keyguard_enter_pin">Enter PIN</string>
 
+    <!-- Instructions telling the user to enter their biometric second factor PIN password to unlock the keyguard [CHAR LIMIT=30] -->
+    <string name="keyguard_enter_your_biometric_second_factor_pin">Enter your second factor PIN</string>
+
+    <!-- Instructions telling the user to enter their biometric second factor PIN password to unlock the keyguard [CHAR LIMIT=48] -->
+    <string name="keyguard_enter_biometric_second_factor_pin">Enter second factor PIN</string>
+
     <!-- Instructions telling the user to enter their pattern to unlock the keyguard [CHAR LIMIT=30] -->
     <string name="keyguard_enter_your_pattern">Enter your pattern</string>
 
@@ -133,6 +139,12 @@
     <!-- Message shown when user enters wrong PIN  [CHAR LIMIT=48] -->
     <string name="kg_wrong_pin_try_again">Wrong PIN. Try again.</string>
 
+    <!-- Message shown when user enters wrong biometric second factor PIN -->
+    <string name="kg_wrong_biometric_second_factor_pin">Wrong second factor PIN</string>
+
+    <!-- Message shown when user enters wrong biometric second factor PIN [CHAR LIMIT=48] -->
+    <string name="kg_wrong_biometric_second_factor_pin_try_again">Wrong second factor PIN. Try again.</string>
+
     <!-- Message shown when user enters wrong PIN/password/pattern below the main message, for ex: "Wrong PIN. Try again" in line 1 and the following text in line 2.  [CHAR LIMIT=70] -->
     <string name="kg_wrong_input_try_fp_suggestion">Or unlock with fingerprint</string>
 
@@ -208,6 +220,11 @@
     <!-- Message shown when primary auth is locked out after too many attempts [CHAR LIMIT=70]  -->
     <string name="kg_primary_auth_locked_out_pin">Too many attempts with incorrect PIN</string>
 
+    <!-- Message shown when primary auth is locked out after too many attempts. Here primary refers
+         to it being a PIN, although biometric auth is secondary. Confusing terminology overlap.
+         [CHAR LIMIT=70]  -->
+    <string name="kg_primary_auth_locked_out_biometric_second_factor_pin">Too many attempts with incorrect second factor PIN</string>
+
     <!-- Message shown when primary auth is locked out after too many attempts [CHAR LIMIT=70]  -->
     <string name="kg_primary_auth_locked_out_pattern">Too many attempts with incorrect pattern</string>
 
@@ -244,6 +261,11 @@
     <string name="kg_too_many_failed_pin_attempts_dialog_message">
         You have incorrectly typed your PIN <xliff:g id="number">%1$d</xliff:g> times.
         \n\nTry again in <xliff:g id="number">%2$d</xliff:g> seconds.
+    </string>
+    <!-- Message shown in dialog when max number of attempts are reached for biometric second factor PIN screen of keyguard -->
+    <string name="kg_too_many_failed_biometric_second_factor_pin_attempts_dialog_message">
+        You have incorrectly typed your second factor PIN <xliff:g id="number">%1$d</xliff:g> times.
+        \n\nMust use primary authentication now.
     </string>
     <!-- Message shown in dialog when max number of attempts are reached for password screen of keyguard -->
     <string name="kg_too_many_failed_password_attempts_dialog_message">
