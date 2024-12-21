@@ -56,6 +56,7 @@ import android.telephony.data.ApnSetting;
 import com.android.internal.infra.AndroidFuture;
 import android.app.admin.DevicePolicyState;
 import android.app.admin.EnforcingAdmin;
+import com.android.internal.widget.LockDomain;
 
 import java.util.List;
 
@@ -106,7 +107,7 @@ interface IDevicePolicyManager {
     int getRequiredPasswordComplexity(String callerPackageName, boolean parent);
     int getAggregatedPasswordComplexityForUser(int userId, boolean deviceWideOnly);
     boolean isUsingUnifiedPassword(in ComponentName admin);
-    int getCurrentFailedPasswordAttempts(String callerPackageName, int userHandle, boolean parent);
+    int getCurrentFailedPasswordAttempts(String callerPackageName, in LockDomain lockDomain, int userHandle, boolean parent);
     int getProfileWithMinimumFailedPasswordsForWipe(int userHandle, boolean parent);
 
     void setMaximumFailedPasswordsForWipe(
@@ -171,9 +172,9 @@ interface IDevicePolicyManager {
     void forceRemoveActiveAdmin(in ComponentName policyReceiver, int userHandle);
     boolean hasGrantedPolicy(in ComponentName policyReceiver, int usesPolicy, int userHandle);
 
-    void reportPasswordChanged(in PasswordMetrics metrics, int userId);
-    void reportFailedPasswordAttempt(int userHandle, boolean parent);
-    void reportSuccessfulPasswordAttempt(int userHandle);
+    void reportPasswordChanged(in PasswordMetrics metrics, int userId, in LockDomain lockDomain);
+    void reportFailedPasswordAttempt(int userHandle, in LockDomain lockDomain, boolean parent);
+    void reportSuccessfulPasswordAttempt(int userHandle, in LockDomain lockDomain);
     void reportFailedBiometricAttempt(int userHandle);
     void reportSuccessfulBiometricAttempt(int userHandle);
     void reportKeyguardDismissed(int userHandle);
