@@ -1201,6 +1201,10 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
 
     private void handleFaceAuthenticated(int authUserId, boolean isStrongBiometric) {
         Trace.beginSection("KeyGuardUpdateMonitor#handlerFaceAuthenticated");
+        if (true) {
+            throw new IllegalStateException(
+                    "Face authentication support has not been added to Graphene's MFA!");
+        }
         if (mGoingToSleep) {
             mLogger.d("Aborted successful auth because device is going to sleep.");
             return;
