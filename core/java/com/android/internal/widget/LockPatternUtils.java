@@ -24,6 +24,8 @@ import static android.app.admin.DevicePolicyManager.PASSWORD_QUALITY_SOMETHING;
 import static android.app.admin.DevicePolicyManager.PASSWORD_QUALITY_UNSPECIFIED;
 import static android.security.Flags.reportPrimaryAuthAttempts;
 import static android.security.Flags.shouldTrustManagerListenForPrimaryAuth;
+import static com.android.internal.widget.LockPatternUtils.ThrowIfUserNotExist.DoNotThrow;
+import static com.android.internal.widget.LockPatternUtils.ThrowIfUserNotExist.DoThrow;
 
 import android.annotation.IntDef;
 import android.annotation.NonNull;
@@ -42,6 +44,7 @@ import android.content.ContentResolver;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.content.pm.UserInfo;
+import android.content.pm.UserProperties;
 import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
@@ -911,7 +914,7 @@ public class LockPatternUtils {
      */
     public void setSeparateProfileChallengeEnabled(int userHandle, boolean enabled,
             LockscreenCredential profilePassword) {
-        if (!isCredentialSharableWithParent(userHandle)) {
+        if (!isCredentialSharableWithParent(userHandle, DoNotThrow)) {
             return;
         }
         try {
@@ -930,7 +933,8 @@ public class LockPatternUtils {
      * credential is not shareable with its parent, or a non-profile user.
      */
     public boolean isSeparateProfileChallengeEnabled(int userHandle) {
-        return isCredentialSharableWithParent(userHandle) && hasSeparateChallenge(userHandle);
+        return isCredentialSharableWithParent(userHandle, DoNotThrow) &&
+                hasSeparateChallenge(userHandle);
     }
 
     /**
@@ -940,7 +944,8 @@ public class LockPatternUtils {
      * credential is not shareable with its parent, or a non-profile user.
      */
     public boolean isProfileWithUnifiedChallenge(int userHandle) {
-        return isCredentialSharableWithParent(userHandle) && !hasSeparateChallenge(userHandle);
+        return isCredentialSharableWithParent(userHandle, DoNotThrow) &&
+                !hasSeparateChallenge(userHandle);
     }
 
     /**
@@ -965,8 +970,24 @@ public class LockPatternUtils {
         return info != null && info.isManagedProfile();
     }
 
-    private boolean isCredentialSharableWithParent(int userHandle) {
-        return getUserManager(userHandle).isCredentialSharableWithParent();
+    public enum ThrowIfUserNotExist {
+        DoThrow, DoNotThrow
+    }
+
+    public boolean isCredentialSharableWithParent(int userHandle,
+            ThrowIfUserNotExist throwIfUserNotExist) {
+        UserProperties props;
+        try {
+            props = getUserManager().getUserProperties(UserHandle.of(userHandle));
+        } catch (IllegalArgumentException e) {
+            if (throwIfUserNotExist == DoThrow) {
+                throw e;
+            }
+            return false;
+        }
+        return props.isCredentialShareableWithParent();
+    }
+
     }
 
     /**
