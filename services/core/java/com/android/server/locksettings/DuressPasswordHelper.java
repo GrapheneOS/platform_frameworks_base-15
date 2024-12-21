@@ -33,7 +33,7 @@ public class DuressPasswordHelper {
         this.spManager = spManager;
     }
 
-    void onVerifyCredentialResult(@Nullable VerifyCredentialResponse res, @Nullable LockscreenCredential credential) {
+    protected void onVerifyCredentialResult(@Nullable VerifyCredentialResponse res, @Nullable LockscreenCredential credential) {
         if (res != null && res.getResponseCode() == VerifyCredentialResponse.RESPONSE_OK) {
             return;
         }
@@ -66,7 +66,7 @@ public class DuressPasswordHelper {
         }
     }
 
-    void setDuressCredentials(LockscreenCredential ownerCredential,
+    protected void setDuressCredentials(LockscreenCredential ownerCredential,
                                  LockscreenCredential pin, LockscreenCredential password) {
         Objects.requireNonNull(ownerCredential, "ownerCredential");
         Objects.requireNonNull(pin, "pin");
@@ -88,7 +88,7 @@ public class DuressPasswordHelper {
         DuressCredentials.create(spManager, pin, password).save(lockSettingsStorage);
     }
 
-    boolean hasDuressCredentials(LockscreenCredential ownerCredential) {
+    protected boolean hasDuressCredentials(LockscreenCredential ownerCredential) {
         checkOwnerCredential(ownerCredential);
         return DuressCredentials.maybeGet(lockSettingsStorage) != null;
     }

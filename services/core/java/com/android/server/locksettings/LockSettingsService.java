@@ -594,6 +594,13 @@ public class LockSettingsService extends ILockSettings.Stub {
                     getHandler(getServiceThread()), getUserManagerInternal());
         }
 
+        public DuressPasswordHelper getDuressPasswordHelper(LockSettingsService lockSettingsService,
+                LockSettingsStorage lockSettingsStorage,
+                SyntheticPasswordManager syntheticPasswordManager) {
+            return new DuressPasswordHelper(lockSettingsService, lockSettingsStorage,
+                    syntheticPasswordManager);
+        }
+
         public int binderGetCallingUid() {
             return Binder.getCallingUid();
         }
@@ -691,7 +698,7 @@ public class LockSettingsService extends ILockSettings.Stub {
 
         LocalServices.addService(LockSettingsInternal.class, new LocalService());
 
-        duressPasswordHelper = new DuressPasswordHelper(this, mStorage, mSpManager);
+        duressPasswordHelper = injector.getDuressPasswordHelper(this, mStorage, mSpManager);
     }
 
     private void updateActivatedEncryptionNotifications(String reason) {
