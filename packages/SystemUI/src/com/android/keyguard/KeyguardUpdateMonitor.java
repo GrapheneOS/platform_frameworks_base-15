@@ -2642,6 +2642,12 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
                     return;
                 }
             }
+            // Calling #startListeningForFingerprint while in BIOMETRIC_STATE_RUNNING is wrong
+            // because starting the new detect/authenticate will trigger an error on the existing
+            // detect/authenticate and #handleFingerprintError will set the cancel signal to null
+            // and state to BIOMETRIC_STATE_STOPPED. Upstream's implementation is caught by their
+            // own bug catcher, mLogger.logUnexpectedFpCancellationSignalState().
+            stopListeningForFingerprint();
             startListeningForFingerprint(runDetect);
         }
     }
