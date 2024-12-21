@@ -668,6 +668,37 @@ public class FingerprintManager implements BiometricAuthenticator, BiometricFing
     }
 
     /**
+     * Add a pending hardware auth token to KeyStore. This should only be called after biometric
+     * second factor has succeeded.
+     * @hide
+     */
+    @RequiresPermission(USE_BIOMETRIC_INTERNAL)
+    public void addPendingAuthTokenToKeyStore(final int userId) {
+        if (mService != null) {
+            try {
+                mService.addPendingAuthTokenToKeyStore(userId);
+            } catch (RemoteException e) {
+                Slog.w(TAG, "Remote exception while adding pending auth token to KeyStore", e);
+            }
+        }
+    }
+
+    /**
+     * Clear all pending auth tokens.
+     * @hide
+     */
+    @RequiresPermission(USE_BIOMETRIC_INTERNAL)
+    public void clearPendingAuthTokens() {
+        if (mService != null) {
+            try {
+                mService.clearPendingAuthTokens();
+            } catch (RemoteException e) {
+                Slog.w(TAG, "Remote exception while clearing pending auth tokens", e);
+            }
+        }
+    }
+
+    /**
      * Uses the fingerprint hardware to detect for the presence of a finger, without giving details
      * about accept/reject/lockout.
      * @hide

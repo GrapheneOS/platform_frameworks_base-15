@@ -245,16 +245,25 @@ public abstract class AuthenticationClient<T, O extends AuthenticateOptions>
             // For BP, BiometricService will add the authToken to Keystore.
             if (!isBiometricPrompt()) {
                 if (mIsStrongBiometric) {
+                    // It would be preferable to withhold this until second factor has succeeded,
+                    // but being time bound adds difficulty.
                     mBiometricManager.resetLockoutTimeBound(getToken(),
                             getContext().getOpPackageName(),
                             getSensorId(), getTargetUserId(), byteToken);
                 }
 
-                final int result = KeyStoreAuthorization.getInstance().addAuthToken(byteToken);
-                if (result != 0) {
-                    Slog.d(TAG, "Error adding auth token : " + result);
+                boolean isSecondFactorEnabled = getBiometricContext().getLockPatternUtils()
+                        .isBiometricSecondFactorEnabled(getTargetUserId());
+                if (isSecondFactorEnabled) {
+                    getBiometricContext().getAuthTokenStore().storePendingAuthToken(
+                            getTargetUserId(), byteToken);
                 } else {
-                    Slog.d(TAG, "addAuthToken succeeded");
+                    final int result = getBiometricContext().getKeyStore().addAuthToken(byteToken);
+                    if (result != 0 /* success */) {
+                        Slog.d(TAG, "Error adding auth token : " + result);
+                    } else {
+                        Slog.d(TAG, "addAuthToken succeeded");
+                    }
                 }
             } else {
                 Slog.d(TAG, "Skipping addAuthToken");
