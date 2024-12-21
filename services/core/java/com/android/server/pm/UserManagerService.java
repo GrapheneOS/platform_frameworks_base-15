@@ -221,8 +221,6 @@ public class UserManagerService extends IUserManager.Stub {
     // For Multiple Users on Multiple Displays
     static final boolean DBG_MUMD = false; // DO NOT SUBMIT WITH TRUE
     private static final boolean DBG_WITH_STACKTRACE = false; // DO NOT SUBMIT WITH TRUE
-    // Can be used for manual testing of id recycling
-    private static final boolean RELEASE_DELETED_USER_ID = false; // DO NOT SUBMIT WITH TRUE
 
     private static final String TAG_NAME = "name";
     private static final String TAG_ACCOUNT = "account";
@@ -6602,11 +6600,6 @@ public class UserManagerService extends IUserManager.Stub {
         // Remove user file(s)
         getUserFile(userId).delete();
         updateUserIds();
-        if (RELEASE_DELETED_USER_ID) {
-            synchronized (mUsersLock) {
-                mRemovingUserIds.delete(userId);
-            }
-        }
     }
 
     /**
@@ -7115,6 +7108,9 @@ public class UserManagerService extends IUserManager.Stub {
             nextId = scanNextAvailableIdLocked();
             if (nextId >= 0) {
                 return nextId;
+            }
+            if (true) {
+                throw new IllegalStateException("Recycling user IDs is not allowed!");
             }
             // All ids up to MAX_USER_ID were used. Remove all mRemovingUserIds,
             // except most recently removed
