@@ -68,12 +68,14 @@ import android.platform.test.annotations.Presubmit;
 import android.platform.test.flag.junit.CheckFlagsRule;
 import android.platform.test.flag.junit.DeviceFlagsValueProvider;
 import android.platform.test.flag.junit.SetFlagsRule;
+import android.security.KeyStoreAuthorization;
 import android.testing.TestableContext;
 
 import androidx.test.filters.SmallTest;
 import androidx.test.platform.app.InstrumentationRegistry;
 
 import com.android.internal.R;
+import com.android.internal.widget.LockPatternUtils;
 import com.android.server.biometrics.log.BiometricContext;
 import com.android.server.biometrics.log.BiometricLogger;
 import com.android.server.biometrics.log.CallbackWithProbe;
@@ -82,6 +84,7 @@ import com.android.server.biometrics.log.Probe;
 import com.android.server.biometrics.sensors.AuthSessionCoordinator;
 import com.android.server.biometrics.sensors.AuthenticationClient;
 import com.android.server.biometrics.sensors.AuthenticationStateListeners;
+import com.android.server.biometrics.sensors.BiometricAuthTokenStore;
 import com.android.server.biometrics.sensors.ClientMonitorCallback;
 import com.android.server.biometrics.sensors.ClientMonitorCallbackConverter;
 import com.android.server.biometrics.sensors.LockoutTracker;
@@ -137,6 +140,12 @@ public class FingerprintAuthenticationClientTest {
     private BiometricLogger mBiometricLogger;
     @Mock
     private BiometricContext mBiometricContext;
+    @Mock
+    private LockPatternUtils mLockPatternUtils;
+    @Mock
+    private BiometricAuthTokenStore mBiometricAuthTokenStore;
+    @Mock
+    private KeyStoreAuthorization mKeyStoreAuthorization;
     @Mock
     private BiometricManager mBiometricManager;
     @Mock
@@ -198,6 +207,9 @@ public class FingerprintAuthenticationClientTest {
                 new CallbackWithProbe<>(mLuxProbe, i.getArgument(0)));
         when(mBiometricContext.updateContext(any(), anyBoolean())).thenAnswer(
                 i -> i.getArgument(0));
+        when(mBiometricContext.getLockPatternUtils()).thenReturn(mLockPatternUtils);
+        when(mBiometricContext.getAuthTokenStore()).thenReturn(mBiometricAuthTokenStore);
+        when(mBiometricContext.getKeyStore()).thenReturn(mKeyStoreAuthorization);
     }
 
     @Test
@@ -677,6 +689,36 @@ public class FingerprintAuthenticationClientTest {
 
         verify(mLockoutTracker).resetFailedAttemptsForUser(true, USER_ID);
         verify(mLockoutTracker, never()).addFailedAttemptForUser(anyInt());
+    }
+
+    @Test
+    public void testOnAuthenticated_secondFactorEnabled_storesPendingAuthToken()
+            throws RemoteException {
+        final FingerprintAuthenticationClient client = createClient(1 /* version */,
+                true /* allowBackgroundAuthentication */, false /* isBiometricPrompt */,
+                mClientMonitorCallbackConverter, mLockoutTracker);
+
+        when(mLockPatternUtils.isBiometricSecondFactorEnabled(anyInt())).thenReturn(true);
+
+        client.onAuthenticated(new Fingerprint("friendly", 1 /* fingerId */,
+                2 /* deviceId */), true /* authenticated */, new ArrayList<>());
+
+        verify(mBiometricAuthTokenStore).storePendingAuthToken(eq(USER_ID), any());
+    }
+
+    @Test
+    public void testOnAuthenticated_secondFactorDisabled_addsAuthToken() throws RemoteException {
+        final FingerprintAuthenticationClient client = createClient(1 /* version */,
+                true /* allowBackgroundAuthentication */, false /* isBiometricPrompt */,
+                mClientMonitorCallbackConverter, mLockoutTracker);
+
+        when(mLockPatternUtils.isBiometricSecondFactorEnabled(anyInt())).thenReturn(false);
+
+        client.onAuthenticated(new Fingerprint("friendly", 1 /* fingerId */,
+                2 /* deviceId */), true /* authenticated */, new ArrayList<>());
+
+        // Refer to BiometricServiceTest#testAuthenticate_happyPathWithoutConfirmation.
+        verify(mKeyStoreAuthorization).addAuthToken(any(byte[].class));
     }
 
     @Test

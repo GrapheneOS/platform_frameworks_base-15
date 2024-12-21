@@ -61,6 +61,15 @@ interface IFingerprintService {
     long authenticate(IBinder token, long operationId, IFingerprintServiceReceiver receiver,
             in FingerprintAuthenticateOptions options);
 
+    // Add a pending hardware auth token to KeyStore. This should only be called after biometric
+    // second factor has succeeded.
+    @EnforcePermission("USE_BIOMETRIC_INTERNAL")
+    int addPendingAuthTokenToKeyStore(int userId);
+
+    // Clear all pending auth tokens.
+    @EnforcePermission("USE_BIOMETRIC_INTERNAL")
+    void clearPendingAuthTokens();
+
     // Uses the fingerprint hardware to detect for the presence of a finger, without giving details
     // about accept/reject/lockout. A requestId is returned that can be used to cancel this
     // operation.

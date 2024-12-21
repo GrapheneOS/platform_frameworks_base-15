@@ -355,6 +355,20 @@ public class FingerprintService extends SystemService {
                     restricted, statsClient, isKeyguard);
         }
 
+        @android.annotation.EnforcePermission(android.Manifest.permission.USE_BIOMETRIC_INTERNAL)
+        @Override // Binder call
+        public int addPendingAuthTokenToKeyStore(final int userId) {
+            super.addPendingAuthTokenToKeyStore_enforcePermission();
+            return mBiometricContext.getAuthTokenStore().addPendingAuthTokenToKeyStore(userId);
+        }
+
+        @android.annotation.EnforcePermission(android.Manifest.permission.USE_BIOMETRIC_INTERNAL)
+        @Override // Binder call
+        public void clearPendingAuthTokens() {
+            super.clearPendingAuthTokens_enforcePermission();
+            mBiometricContext.getAuthTokenStore().clearPendingAuthTokens();
+        }
+
         private long authenticateWithPrompt(
                 final long operationId,
                 @NonNull final FingerprintSensorPropertiesInternal props,

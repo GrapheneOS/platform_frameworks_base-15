@@ -32,7 +32,9 @@ import static android.hardware.fingerprint.FingerprintSensorProperties.TYPE_POWE
 import static com.android.internal.util.FrameworkStatsLog.AUTH_DEPRECATED_APIUSED__DEPRECATED_API__API_FINGERPRINT_MANAGER_AUTHENTICATE;
 import static com.android.internal.util.FrameworkStatsLog.AUTH_DEPRECATED_APIUSED__DEPRECATED_API__API_FINGERPRINT_MANAGER_HAS_ENROLLED_FINGERPRINTS;
 import static com.android.internal.util.FrameworkStatsLog.AUTH_DEPRECATED_APIUSED__DEPRECATED_API__API_FINGERPRINT_MANAGER_IS_HARDWARE_DETECTED;
+import static java.util.Objects.requireNonNull;
 
+import android.annotation.CheckResult;
 import android.annotation.FlaggedApi;
 import android.annotation.IntDef;
 import android.annotation.NonNull;
@@ -664,6 +666,45 @@ public class FingerprintManager implements BiometricAuthenticator, BiometricFing
                         getErrorString(mContext, FINGERPRINT_ERROR_HW_UNAVAILABLE,
                                 0 /* vendorCode */));
             }
+        }
+    }
+
+    /** @hide */ public static final int SUCCESS = 0;
+    /** @hide */ public static final int ERROR_NO_PENDING_AUTH_TOKEN = 1;
+    /** @hide */ public static final int ERROR_UNABLE_TO_ADD_AUTH_TOKEN_TO_KEYSTORE = 2;
+
+    /** @hide */
+    @IntDef({SUCCESS, ERROR_NO_PENDING_AUTH_TOKEN, ERROR_UNABLE_TO_ADD_AUTH_TOKEN_TO_KEYSTORE})
+    @Retention(RetentionPolicy.SOURCE)
+    public @interface AddPendingAuthTokenResult {}
+
+    /**
+     * Add a pending hardware auth token to KeyStore. This should only be called after biometric
+     * second factor has succeeded.
+     * @hide
+     */
+    @RequiresPermission(USE_BIOMETRIC_INTERNAL)
+    @CheckResult
+    public @AddPendingAuthTokenResult int addPendingAuthTokenToKeyStore(final int userId) {
+        IFingerprintService service = requireNonNull(mService, "mService");
+        try {
+            return service.addPendingAuthTokenToKeyStore(userId);
+        } catch (RemoteException e) {
+            throw e.rethrowFromSystemServer();
+        }
+    }
+
+    /**
+     * Clear all pending auth tokens.
+     * @hide
+     */
+    @RequiresPermission(USE_BIOMETRIC_INTERNAL)
+    public void clearPendingAuthTokens() {
+        IFingerprintService service = requireNonNull(mService, "mService");
+        try {
+            service.clearPendingAuthTokens();
+        } catch (RemoteException e) {
+            throw e.rethrowFromSystemServer();
         }
     }
 
