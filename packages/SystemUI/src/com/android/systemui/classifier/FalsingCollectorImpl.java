@@ -130,7 +130,8 @@ class FalsingCollectorImpl implements FalsingCollector {
                 @Override
                 public void onBiometricAuthenticated(int userId,
                         BiometricSourceType biometricSourceType,
-                        boolean isStrongBiometric) {
+                        boolean isStrongBiometric,
+                        SecondFactorStatus secondFactorStatus) {
                     if (userId == mUserInteractor.get().getSelectedUserId()
                             && biometricSourceType == BiometricSourceType.FACE) {
                         mFalsingDataProvider.setJustUnlockedWithFace(true);
