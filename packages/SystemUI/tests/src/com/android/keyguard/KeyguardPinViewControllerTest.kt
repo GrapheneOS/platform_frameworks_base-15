@@ -25,6 +25,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.filters.SmallTest
 import com.android.internal.logging.UiEventLogger
 import com.android.internal.util.LatencyTracker
+import com.android.internal.widget.LockDomain.Secondary
 import com.android.internal.widget.LockPatternUtils
 import com.android.internal.widget.LockscreenCredential
 import com.android.keyguard.KeyguardPinViewController.PinBouncerUiEvent
@@ -52,6 +53,7 @@ import org.mockito.ArgumentCaptor
 import org.mockito.ArgumentMatchers.anyBoolean
 import org.mockito.ArgumentMatchers.anyInt
 import org.mockito.ArgumentMatchers.anyString
+import org.mockito.ArgumentMatchers.eq
 import org.mockito.Captor
 import org.mockito.Mock
 import org.mockito.Mockito
@@ -61,6 +63,8 @@ import org.mockito.Mockito.`when`
 import org.mockito.MockitoAnnotations
 
 @SmallTest
+// TODO: Was unable to get JUnitParamsRunner working. Could remove lots of duplicate tests with
+//  a parameterised runner. Haven't tried ParameterizedAndroidJunit4.
 @RunWith(AndroidJUnit4::class)
 // collectFlow in KeyguardPinBasedInputViewController.onViewAttached calls JavaAdapter.CollectFlow,
 // which calls View.onRepeatWhenAttached, which requires being run on main thread.
@@ -75,7 +79,7 @@ class KeyguardPinViewControllerTest : SysuiTestCase() {
 
     @Mock private lateinit var keyguardUpdateMonitor: KeyguardUpdateMonitor
 
-    @Mock private lateinit var securityMode: SecurityMode
+    private var securityMode: SecurityMode = SecurityMode.PIN
 
     @Mock private lateinit var lockPatternUtils: LockPatternUtils
 
@@ -125,6 +129,7 @@ class KeyguardPinViewControllerTest : SysuiTestCase() {
         `when`(mockKeyguardPinView.findViewById<NumPadButton>(R.id.delete_button))
             .thenReturn(deleteButton)
         `when`(mockKeyguardPinView.findViewById<View>(R.id.key_enter)).thenReturn(enterButton)
+        `when`(mockKeyguardPinView.context).thenReturn(mContext)
         // For posture tests:
         `when`(mockKeyguardPinView.buttons).thenReturn(arrayOf())
         `when`(lockPatternUtils.getPinLength(anyInt())).thenReturn(6)
@@ -247,6 +252,25 @@ class KeyguardPinViewControllerTest : SysuiTestCase() {
     }
 
     @Test
+    fun testOnViewAttached_secondaryWithAutoPinConfirmationFailedPasswordAttemptsLessThan5() {
+        `when`(featureFlags.isEnabled(Flags.AUTO_PIN_CONFIRMATION)).thenReturn(true)
+        `when`(lockPatternUtils.getPinLength(anyInt(), eq(Secondary))).thenReturn(6)
+        `when`(lockPatternUtils.isAutoPinConfirmEnabled(anyInt(), eq(Secondary))).thenReturn(true)
+        `when`(lockPatternUtils.getCurrentFailedPasswordAttempts(anyInt(), eq(Secondary)))
+            .thenReturn(3)
+        `when`(passwordTextView.text).thenReturn("")
+
+        securityMode = SecurityMode.BiometricSecondFactorPin
+        val pinViewController = constructPinViewController(mockKeyguardPinView)
+        pinViewController.onViewAttached()
+
+        verify(deleteButton).visibility = View.INVISIBLE
+        verify(enterButton).visibility = View.INVISIBLE
+        verify(passwordTextView).setUsePinShapes(true)
+        verify(passwordTextView).setIsPinHinting(true)
+    }
+
+    @Test
     fun testOnViewAttached_withAutoPinConfirmationFailedPasswordAttemptsMoreThan5() {
         val pinViewController = constructPinViewController(mockKeyguardPinView)
         `when`(featureFlags.isEnabled(Flags.AUTO_PIN_CONFIRMATION)).thenReturn(true)
@@ -255,6 +279,25 @@ class KeyguardPinViewControllerTest : SysuiTestCase() {
         `when`(lockPatternUtils.getCurrentFailedPasswordAttempts(anyInt())).thenReturn(6)
         `when`(passwordTextView.text).thenReturn("")
 
+        pinViewController.onViewAttached()
+
+        verify(deleteButton).visibility = View.VISIBLE
+        verify(enterButton).visibility = View.VISIBLE
+        verify(passwordTextView).setUsePinShapes(true)
+        verify(passwordTextView).setIsPinHinting(false)
+    }
+
+    @Test
+    fun testOnViewAttached_secondaryWithAutoPinConfirmationFailedPasswordAttemptsMoreThan5() {
+        `when`(featureFlags.isEnabled(Flags.AUTO_PIN_CONFIRMATION)).thenReturn(true)
+        `when`(lockPatternUtils.getPinLength(anyInt(), eq(Secondary))).thenReturn(6)
+        `when`(lockPatternUtils.isAutoPinConfirmEnabled(anyInt(), eq(Secondary))).thenReturn(true)
+        `when`(lockPatternUtils.getCurrentFailedPasswordAttempts(anyInt(), eq(Secondary)))
+            .thenReturn(6)
+        `when`(passwordTextView.text).thenReturn("")
+
+        securityMode = SecurityMode.BiometricSecondFactorPin
+        val pinViewController = constructPinViewController(mockKeyguardPinView)
         pinViewController.onViewAttached()
 
         verify(deleteButton).visibility = View.VISIBLE
@@ -273,6 +316,17 @@ class KeyguardPinViewControllerTest : SysuiTestCase() {
     }
 
     @Test
+    fun handleLockout_secondaryReadsNumberOfErrorAttempts() {
+        securityMode = SecurityMode.BiometricSecondFactorPin
+
+        val pinViewController = constructPinViewController(mockKeyguardPinView)
+
+        pinViewController.handleAttemptLockout(0)
+
+        verify(lockPatternUtils).getCurrentFailedPasswordAttempts(anyInt(), eq(Secondary))
+    }
+
+    @Test
     fun onUserInput_autoConfirmation_attemptsUnlock() {
         val pinViewController = constructPinViewController(mockKeyguardPinView)
         whenever(featureFlags.isEnabled(Flags.AUTO_PIN_CONFIRMATION)).thenReturn(true)
@@ -283,6 +337,24 @@ class KeyguardPinViewControllerTest : SysuiTestCase() {
         whenever(mockKeyguardPinView.enteredCredential)
             .thenReturn(LockscreenCredential.createPin("000000"))
 
+        pinViewController.onUserInput()
+
+        verify(uiEventLogger).log(PinBouncerUiEvent.ATTEMPT_UNLOCK_WITH_AUTO_CONFIRM_FEATURE)
+        verify(keyguardUpdateMonitor).setCredentialAttempted()
+    }
+
+    @Test
+    fun onUserInput_secondaryAutoConfirmation_attemptsUnlock() {
+        whenever(featureFlags.isEnabled(Flags.AUTO_PIN_CONFIRMATION)).thenReturn(true)
+        whenever(lockPatternUtils.getPinLength(anyInt(), eq(Secondary))).thenReturn(6)
+        whenever(lockPatternUtils.isAutoPinConfirmEnabled(anyInt(), eq(Secondary))).thenReturn(true)
+        whenever(passwordTextView.text).thenReturn("000000")
+        whenever(enterButton.visibility).thenReturn(View.INVISIBLE)
+        whenever(mockKeyguardPinView.enteredCredential)
+                .thenReturn(LockscreenCredential.createPin("000000"))
+
+            securityMode = SecurityMode.BiometricSecondFactorPin
+        val pinViewController = constructPinViewController(mockKeyguardPinView)
         pinViewController.onUserInput()
 
         verify(uiEventLogger).log(PinBouncerUiEvent.ATTEMPT_UNLOCK_WITH_AUTO_CONFIRM_FEATURE)

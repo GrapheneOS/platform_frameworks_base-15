@@ -16,6 +16,7 @@
 
 package com.android.keyguard;
 
+import static com.android.internal.widget.LockDomain.Primary;
 import static com.android.systemui.flags.Flags.LOCKSCREEN_ENABLE_LANDSCAPE;
 
 import android.view.View;
@@ -24,6 +25,7 @@ import com.android.internal.logging.UiEvent;
 import com.android.internal.logging.UiEventLogger;
 import com.android.internal.util.LatencyTracker;
 import com.android.internal.widget.LockPatternUtils;
+import com.android.internal.widget.WrappedLockPatternUtils;
 import com.android.keyguard.KeyguardSecurityModel.SecurityMode;
 import com.android.keyguard.domain.interactor.KeyguardKeyboardInteractor;
 import com.android.systemui.bouncer.ui.helper.BouncerHapticPlayer;
@@ -40,7 +42,7 @@ public class KeyguardPinViewController
     private final DevicePostureController mPostureController;
     private final DevicePostureController.Callback mPostureCallback = posture ->
             mView.onDevicePostureChanged(posture);
-    private LockPatternUtils mLockPatternUtils;
+    private WrappedLockPatternUtils mLockPatternUtils;
     private final FeatureFlags mFeatureFlags;
     private static final int DEFAULT_PIN_LENGTH = 6;
     private static final int MIN_FAILED_PIN_ATTEMPTS = 5;
@@ -71,7 +73,7 @@ public class KeyguardPinViewController
                 keyguardKeyboardInteractor, bouncerHapticPlayer, userActivityNotifier);
         mKeyguardUpdateMonitor = keyguardUpdateMonitor;
         mPostureController = postureController;
-        mLockPatternUtils = lockPatternUtils;
+        mLockPatternUtils = new WrappedLockPatternUtils(lockPatternUtils, mLockDomain);
         mFeatureFlags = featureFlags;
         view.setIsLockScreenLandscapeEnabled(mFeatureFlags.isEnabled(LOCKSCREEN_ENABLE_LANDSCAPE));
         mBackspaceKey = view.findViewById(R.id.delete_button);
@@ -210,6 +212,15 @@ public class KeyguardPinViewController
         @Override
         public int getId() {
             return mId;
+        }
+    }
+
+    @Override
+    protected int getInitialMessageResId() {
+        if (mLockDomain == Primary) {
+            return super.getInitialMessageResId();
+        } else {
+            return R.string.keyguard_enter_your_biometric_second_factor_pin;
         }
     }
 }

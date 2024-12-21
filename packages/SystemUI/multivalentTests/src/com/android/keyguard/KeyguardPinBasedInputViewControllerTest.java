@@ -114,6 +114,7 @@ public class KeyguardPinBasedInputViewControllerTest extends SysuiTestCase {
         when(mPinBasedInputView.findViewById(R.id.key_enter))
                 .thenReturn(mOkButton);
 
+        when(mPinBasedInputView.getContext()).thenReturn(getContext());
         when(mPinBasedInputView.getResources()).thenReturn(getContext().getResources());
         when(mPasswordEntry.getLayoutParams()).thenReturn(mPasswordEntryLayoutParams);
         KeyguardKeyboardInteractor keyguardKeyboardInteractor =

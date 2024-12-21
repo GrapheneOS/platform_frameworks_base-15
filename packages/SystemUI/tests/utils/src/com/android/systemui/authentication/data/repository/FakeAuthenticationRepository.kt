@@ -215,6 +215,9 @@ class FakeAuthenticationRepository(
                 is AuthenticationMethodModel.Pattern -> SecurityMode.Pattern
                 is AuthenticationMethodModel.None -> SecurityMode.None
                 is AuthenticationMethodModel.Sim -> SecurityMode.SimPin
+                is AuthenticationMethodModel.BiometricSecondFactorPin ->
+                    SecurityMode.BiometricSecondFactorPin
+                else -> SecurityMode.Invalid
             }
         }
 

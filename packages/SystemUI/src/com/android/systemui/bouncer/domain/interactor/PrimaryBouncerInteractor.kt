@@ -105,6 +105,8 @@ constructor(
     val panelExpansionAmount: Flow<Float> = repository.panelExpansionAmount
     val lastShownSecurityMode: Flow<KeyguardSecurityModel.SecurityMode> =
         repository.lastShownSecurityMode
+    val bouncerRequestedWhenAlreadyShowing: Flow<Boolean> =
+        repository.bouncerRequestedWhenAlreadyShowing.filter { it }
 
     /** 0f = bouncer fully hidden. 1f = bouncer fully visible. */
     val bouncerExpansion: Flow<Float> =
@@ -190,6 +192,14 @@ constructor(
         }
     }
 
+    fun notifyBouncerRequestedWhenAlreadyShowing() {
+        repository.setBouncerRequestedWhenAlreadyShowing(true)
+    }
+
+    fun notifyBouncerRequestedWhenAlreadyShowingHandled() {
+        repository.setBouncerRequestedWhenAlreadyShowing(false)
+    }
+
     /** Sets the correct bouncer states to hide the bouncer. */
     fun hide() {
         Trace.beginSection("KeyguardBouncer#hide")
@@ -209,6 +219,7 @@ constructor(
         repository.setPrimaryShow(false)
         repository.setPanelExpansion(EXPANSION_HIDDEN)
         primaryBouncerCallbackInteractor.dispatchVisibilityChanged(View.INVISIBLE)
+        keyguardUpdateMonitor.clearFingerprintRecognized()
         Trace.endSection()
     }
 

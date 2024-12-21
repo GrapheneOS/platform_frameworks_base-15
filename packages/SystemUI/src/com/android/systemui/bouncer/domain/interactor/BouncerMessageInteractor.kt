@@ -143,7 +143,8 @@ constructor(
             override fun onBiometricAuthenticated(
                 userId: Int,
                 biometricSourceType: BiometricSourceType?,
-                isStrongBiometric: Boolean
+                isStrongBiometric: Boolean,
+                secondFactorStatus: SecondFactorStatus,
             ) {
                 repository.setMessage(defaultMessage, biometricSourceType)
             }
@@ -175,9 +176,10 @@ constructor(
                 val isTrustUsuallyManaged = trustRepository.isCurrentUserTrustUsuallyManaged.value
                 val trustOrBiometricsAvailable =
                     (isTrustUsuallyManaged || biometricsEnrolledAndEnabled)
-                return@map if (
-                    trustOrBiometricsAvailable && flags.isPrimaryAuthRequiredAfterReboot
-                ) {
+
+                return@map if (currentSecurityMode == SecurityMode.BiometricSecondFactorPin) {
+                    defaultMessage
+                } else if (trustOrBiometricsAvailable && flags.isPrimaryAuthRequiredAfterReboot) {
                     if (wasRebootedForMainlineUpdate) {
                         BouncerMessageStrings.authRequiredForMainlineUpdate(
                                 currentSecurityMode.toAuthModel()
@@ -261,16 +263,33 @@ constructor(
                 }
             }
 
-    fun onPrimaryAuthLockedOut(secondsBeforeLockoutReset: Long) {
+    fun onPrimaryAuthLockedOut(securityMode: SecurityMode, secondsBeforeLockoutReset: Long) {
         if (!Flags.revampedBouncerMessages()) return
 
+        // TODO: It's possible to change second factor while there is an active countdown. Need to
+        //  cancel the countdown in that case. See LockPatternUtils#getLockoutAttemptDeadline.
+        // TODO: It is common for multiple countdowns to be created for same user/security mode.
+        //  This is an upstream bug and can cause glitches with the countdown display.
         val callback =
             object : CountDownTimerCallback {
+                val userId = currentUserId
+                val securityMode = securityMode
+
+                private fun shouldSetMessage(): Boolean {
+                    return userRepository.getSelectedUserInfo().id == userId &&
+                        currentSecurityMode == securityMode
+                }
+
                 override fun onFinish() {
-                    repository.setMessage(defaultMessage)
+                    if (shouldSetMessage()) {
+                        repository.setMessage(defaultMessage)
+                    }
                 }
 
                 override fun onTick(millisUntilFinished: Long) {
+                    if (!shouldSetMessage()) {
+                        return
+                    }
                     val secondsRemaining = (millisUntilFinished / 1000.0).roundToInt()
                     val message =
                         BouncerMessageStrings.primaryAuthLockedOut(
@@ -435,5 +454,6 @@ private fun SecurityMode.toAuthModel(): AuthenticationMethodModel {
         SecurityMode.PIN -> AuthenticationMethodModel.Pin
         SecurityMode.SimPin -> AuthenticationMethodModel.Sim
         SecurityMode.SimPuk -> AuthenticationMethodModel.Sim
+        SecurityMode.BiometricSecondFactorPin -> AuthenticationMethodModel.BiometricSecondFactorPin
     }
 }

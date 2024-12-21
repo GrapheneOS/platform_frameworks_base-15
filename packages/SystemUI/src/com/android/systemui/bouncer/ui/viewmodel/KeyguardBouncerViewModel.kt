@@ -61,6 +61,13 @@ constructor(
     /** Observe whether keyguard is authenticated already. */
     val keyguardAuthenticated: Flow<Boolean> = interactor.keyguardAuthenticatedBiometrics
 
+    val bouncerRequestedWhenAlreadyShowing: Flow<Boolean> =
+        interactor.bouncerRequestedWhenAlreadyShowing
+
+    fun notifyBouncerRequestedWhenAlreadyShowingHandled() {
+        interactor.notifyBouncerRequestedWhenAlreadyShowingHandled()
+    }
+
     /** Observe whether we want to update resources. */
     fun notifyUpdateResources() {
         interactor.notifyUpdatedResources()
