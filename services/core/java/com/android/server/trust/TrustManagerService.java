@@ -19,6 +19,7 @@ package com.android.server.trust;
 import static android.security.Flags.shouldTrustManagerListenForPrimaryAuth;
 import static android.service.trust.GrantTrustResult.STATUS_UNLOCKED_BY_GRANT;
 import static android.service.trust.TrustAgentService.FLAG_GRANT_TRUST_TEMPORARY_AND_RENEWABLE;
+import static com.android.internal.widget.LockDomain.Secondary;
 
 import android.Manifest;
 import android.annotation.NonNull;
@@ -84,6 +85,7 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.content.PackageMonitor;
 import com.android.internal.infra.AndroidFuture;
 import com.android.internal.util.DumpUtils;
+import com.android.internal.widget.LockDomain;
 import com.android.internal.widget.LockPatternUtils;
 import com.android.internal.widget.LockSettingsInternal;
 import com.android.internal.widget.LockSettingsStateListener;
@@ -261,12 +263,18 @@ public class TrustManagerService extends SystemService {
     private final LockSettingsStateListener mLockSettingsStateListener =
             new LockSettingsStateListener() {
                 @Override
-                public void onAuthenticationSucceeded(int userId) {
+                public void onAuthenticationSucceeded(int userId, LockDomain lockDomain) {
+                    if (lockDomain == Secondary) {
+                        return;
+                    }
                     mHandler.obtainMessage(MSG_DISPATCH_UNLOCK_ATTEMPT, 1, userId).sendToTarget();
                 }
 
                 @Override
-                public void onAuthenticationFailed(int userId) {
+                public void onAuthenticationFailed(int userId, LockDomain lockDomain) {
+                    if (lockDomain == Secondary) {
+                        return;
+                    }
                     mHandler.obtainMessage(MSG_DISPATCH_UNLOCK_ATTEMPT, 0, userId).sendToTarget();
                 }
             };
