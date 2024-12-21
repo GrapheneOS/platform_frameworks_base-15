@@ -19,6 +19,7 @@ package com.android.server.locksettings;
 import static android.content.Context.USER_SERVICE;
 
 import static com.android.internal.annotations.VisibleForTesting.Visibility.PACKAGE;
+import static com.android.internal.widget.LockDomain.Primary;
 import static com.android.internal.widget.LockPatternUtils.isSpecialUserId;
 
 import android.annotation.Nullable;
@@ -44,6 +45,7 @@ import com.android.internal.annotations.VisibleForTesting;
 import com.android.internal.util.ArrayUtils;
 import com.android.internal.util.IndentingPrintWriter;
 import com.android.internal.util.Preconditions;
+import com.android.internal.widget.LockDomain;
 import com.android.internal.widget.LockPatternUtils;
 import com.android.server.LocalServices;
 import com.android.server.pdb.PersistentDataBlockManagerInternal;
@@ -125,8 +127,10 @@ class LockSettingsStorage {
     }
 
     @VisibleForTesting
-    public boolean isAutoPinConfirmSettingEnabled(int userId) {
-        return getBoolean(LockPatternUtils.AUTO_PIN_CONFIRM, false, userId);
+    public boolean isAutoPinConfirmSettingEnabled(int userId, LockDomain lockDomain) {
+        String key = lockDomain == Primary ? LockPatternUtils.AUTO_PIN_CONFIRM :
+                LockPatternUtils.AUTO_PIN_CONFIRM_SECONDARY;
+        return getBoolean(key, false, userId);
     }
 
     @VisibleForTesting

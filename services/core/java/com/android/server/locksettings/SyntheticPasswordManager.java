@@ -16,6 +16,8 @@
 
 package com.android.server.locksettings;
 
+import static com.android.internal.widget.LockDomain.Primary;
+import static com.android.internal.widget.LockDomain.Secondary;
 import static com.android.internal.widget.LockPatternUtils.CREDENTIAL_TYPE_NONE;
 import static com.android.internal.widget.LockPatternUtils.CREDENTIAL_TYPE_PASSWORD_OR_PIN;
 import static com.android.internal.widget.LockPatternUtils.CREDENTIAL_TYPE_PIN;
@@ -57,6 +59,7 @@ import com.android.internal.util.ArrayUtils;
 import com.android.internal.util.Preconditions;
 import com.android.internal.widget.ICheckCredentialProgressCallback;
 import com.android.internal.widget.IWeakEscrowTokenRemovedListener;
+import com.android.internal.widget.LockDomain;
 import com.android.internal.widget.LockPatternUtils;
 import com.android.internal.widget.LockscreenCredential;
 import com.android.internal.widget.VerifyCredentialResponse;
@@ -81,7 +84,7 @@ import java.util.Set;
  * A class that manages a user's synthetic password (SP) ({@link #SyntheticPassword}), along with a
  * set of SP protectors that are independent ways that the SP is protected.
  *
- * Invariants for SPs:
+ * Invariants for primary SPs:
  *
  *  - A user's SP never changes, but SP protectors can be added and removed.  There is always a
  *    protector that protects the SP with the user's Lock Screen Knowledge Factor (LSKF), a.k.a.
@@ -100,8 +103,16 @@ import java.util.Set;
  *    generates a HardwareAuthToken (but only when the user has LSKF).  That HardwareAuthToken can
  *    be provided to KeyMint to authorize the use of the user's authentication-bound Keystore keys.
  *
+ * Invariants for secondary SPs:
+ *
+ *  - Because we require the user to verify only their primary LSKF when setting secondary, it is
+ *    not currently possible to maintain a persistent secondary SP between secondary LSKF changes.
+ *    We could overcome this by storing the secondary SP encrypted by a subkey of the primary SP
+ *    but it's not done for now. Main reason to use secondary SP instead of a null value is to avoid
+ *    having to add additional conditionals to protector handling.
+ *
  * Files stored on disk for each user:
- *   For the SP itself, stored under NULL_PROTECTOR_ID:
+ *   For the primary SP itself, stored under NULL_PROTECTOR_ID:
  *     SP_HANDLE_NAME: GateKeeper password handle of a password derived from the SP.  Only exists
  *                     while the LSKF is nonempty.
  *     SP_E0_NAME, SP_P1_NAME: Information needed to create and use escrow token-based protectors.
@@ -110,7 +121,7 @@ import java.util.Set;
  *                              encrypted using a secret derived from the SP using
  *                              PERSONALIZATION_AUTHSECRET_ENCRYPTION_KEY.
  *
- *     For each protector, stored under the corresponding protector ID:
+ *     For each primary and secondary protector, stored under the corresponding protector ID:
  *       SP_BLOB_NAME: The encrypted SP secret (the SP itself or the P0 value).  Always exists.
  *       PASSWORD_DATA_NAME: Data used for LSKF verification, such as the scrypt salt and
  *                           parameters.  Only exists for LSKF-based protectors.  Doesn't exist when
@@ -513,6 +524,9 @@ class SyntheticPasswordManager {
     private volatile IWeaver mWeaver;
     private WeaverConfig mWeaverConfig;
     private PasswordSlotManager mPasswordSlotManager;
+    // Set this to false until Weaver has enough slots to support a second factor for each possible
+    // user/profile that supports second factor.
+    private boolean mUseWeaverForSecondaryProtectors;
 
     private final UserManager mUserManager;
 
@@ -520,11 +534,18 @@ class SyntheticPasswordManager {
             new RemoteCallbackList<>();
 
     public SyntheticPasswordManager(Context context, LockSettingsStorage storage,
-            UserManager userManager, PasswordSlotManager passwordSlotManager) {
+            UserManager userManager, PasswordSlotManager passwordSlotManager,
+            boolean useWeaverForSecondaryProtectors) {
         mContext = context;
         mStorage = storage;
         mUserManager = userManager;
         mPasswordSlotManager = passwordSlotManager;
+        mUseWeaverForSecondaryProtectors = useWeaverForSecondaryProtectors;
+    }
+
+    @VisibleForTesting
+    public void setUseWeaverForSecondaryProtectors(boolean useWeaverForSecondaryProtectors) {
+        mUseWeaverForSecondaryProtectors = useWeaverForSecondaryProtectors;
     }
 
     private boolean isDeviceProvisioned() {
@@ -762,9 +783,15 @@ class SyntheticPasswordManager {
         // Remove potential persistent state (in RPMB), to prevent them from accumulating and
         // causing problems.
         try {
-            gatekeeper.clearSecureUserId(fakeUserId(userId));
-        } catch (RemoteException ignore) {
-            Slog.w(TAG, "Failed to clear SID from gatekeeper");
+            gatekeeper.clearSecureUserId(fakeUserId(userId, Primary));
+        } catch (RemoteException e) {
+            Slog.w(TAG, "Failed to clear primary SID from gatekeeper", e);
+        }
+
+        try {
+            gatekeeper.clearSecureUserId(fakeUserId(userId, Secondary));
+        } catch (RemoteException e) {
+            Slog.w(TAG, "Failed to clear secondary SID from gatekeeper", e);
         }
     }
 
@@ -823,10 +850,14 @@ class SyntheticPasswordManager {
      * handles this.  This makes it so that all the user's initial SP state files, including the
      * initial LSKF-based protector, are efficiently created with only a single {@link syncState()}.
      */
-    SyntheticPassword newSyntheticPassword(int userId) {
-        clearSidForUser(userId);
+    SyntheticPassword newSyntheticPassword(int userId, LockDomain lockDomain) {
+        if (lockDomain == Primary) {
+            clearSidForUser(userId);
+        }
         SyntheticPassword result = SyntheticPassword.create();
-        saveEscrowData(result, userId);
+        if (lockDomain == Primary) {
+            saveEscrowData(result, userId);
+        }
         return result;
     }
 
@@ -1002,11 +1033,13 @@ class SyntheticPasswordManager {
      * @throws IllegalStateException on failure
      */
     public long createLskfBasedProtector(IGateKeeperService gatekeeper,
-            LockscreenCredential credential, SyntheticPassword sp, int userId) {
+            LockscreenCredential credential, LockDomain lockDomain, SyntheticPassword sp,
+            int userId) {
         long protectorId = generateProtectorId();
+
         int pinLength = PIN_LENGTH_UNAVAILABLE;
         if (isAutoPinConfirmationFeatureAvailable()) {
-            pinLength = derivePinLength(credential.size(), credential.isPin(), userId);
+            pinLength = derivePinLength(credential.size(), credential.isPin(), userId, lockDomain);
         }
         // There's no need to store password data about an empty LSKF.
         PasswordData pwd = credential.isNone() ? null :
@@ -1015,10 +1048,11 @@ class SyntheticPasswordManager {
         long sid = GateKeeper.INVALID_SECURE_USER_ID;
         final byte[] protectorSecret;
 
-        Slogf.i(TAG, "Creating LSKF-based protector %016x for user %d", protectorId, userId);
+        Slogf.i(TAG, "Creating LSKF-based protector %016x for user %d; primary %b", protectorId,
+                userId, lockDomain == Primary);
 
         final IWeaver weaver = getWeaverService();
-        if (weaver != null) {
+        if (weaver != null && (lockDomain == Primary || mUseWeaverForSecondaryProtectors)) {
             // Weaver is available, so make the protector use it to verify the LSKF.  Do this even
             // if the LSKF is empty, as that gives us support for securely deleting the protector.
             int weaverSlot = getNextAvailableWeaverSlot();
@@ -1031,8 +1065,11 @@ class SyntheticPasswordManager {
             }
             saveWeaverSlot(weaverSlot, protectorId, userId);
             mPasswordSlotManager.markSlotInUse(weaverSlot);
-            // No need to pass in quality since the credential type already encodes sufficient info
-            synchronizeWeaverFrpPassword(pwd, 0, userId, weaverSlot);
+            if (lockDomain == Primary) {
+                // No need to pass in quality since the credential type already encodes sufficient
+                // info
+                synchronizeWeaverFrpPassword(pwd, 0, userId, weaverSlot);
+            }
 
             protectorSecret = transformUnderWeaverSecret(stretchedLskf, weaverSecret);
         } else {
@@ -1048,14 +1085,14 @@ class SyntheticPasswordManager {
                 // In case GK enrollment leaves persistent state around (in RPMB), this will nuke
                 // them to prevent them from accumulating and causing problems.
                 try {
-                    gatekeeper.clearSecureUserId(fakeUserId(userId));
+                    gatekeeper.clearSecureUserId(fakeUserId(userId, lockDomain));
                 } catch (RemoteException ignore) {
                     Slog.w(TAG, "Failed to clear SID from gatekeeper");
                 }
                 Slogf.i(TAG, "Enrolling LSKF for user %d into Gatekeeper", userId);
                 GateKeeperResponse response;
                 try {
-                    response = gatekeeper.enroll(fakeUserId(userId), null, null,
+                    response = gatekeeper.enroll(fakeUserId(userId, lockDomain), null, null,
                             stretchedLskfToGkPassword(stretchedLskf));
                 } catch (RemoteException e) {
                     throw new IllegalStateException("Failed to enroll LSKF for new SP protector"
@@ -1071,7 +1108,9 @@ class SyntheticPasswordManager {
             protectorSecret = transformUnderSecdiscardable(stretchedLskf,
                     createSecdiscardable(protectorId, userId));
             // No need to pass in quality since the credential type already encodes sufficient info
-            synchronizeGatekeeperFrpPassword(pwd, 0, userId);
+            if (lockDomain == Primary) {
+                synchronizeGatekeeperFrpPassword(pwd, 0, userId);
+            }
         }
         if (!credential.isNone()) {
             saveState(PASSWORD_DATA_NAME, pwd.toBytes(), protectorId, userId);
@@ -1083,9 +1122,10 @@ class SyntheticPasswordManager {
         return protectorId;
     }
 
-    private int derivePinLength(int sizeOfCredential, boolean isPinCredential, int userId) {
+    private int derivePinLength(int sizeOfCredential, boolean isPinCredential, int userId,
+            LockDomain lockDomain) {
         if (!isPinCredential
-                || !mStorage.isAutoPinConfirmSettingEnabled(userId)
+                || !mStorage.isAutoPinConfirmSettingEnabled(userId, lockDomain)
                 || sizeOfCredential < LockPatternUtils.MIN_AUTO_PIN_REQUIREMENT_LENGTH) {
             return PIN_LENGTH_UNAVAILABLE;
         }
@@ -1102,7 +1142,7 @@ class SyntheticPasswordManager {
 
             GateKeeperResponse response;
             try {
-                response = gatekeeper.verifyChallenge(fakeUserId(persistentData.userId),
+                response = gatekeeper.verifyChallenge(fakeUserId(persistentData.userId, Primary),
                         0 /* challenge */, pwd.passwordHandle,
                         stretchedLskfToGkPassword(stretchedLskf));
             } catch (RemoteException e) {
@@ -1375,6 +1415,13 @@ class SyntheticPasswordManager {
     public AuthenticationResult unlockLskfBasedProtector(IGateKeeperService gatekeeper,
             long protectorId, @NonNull LockscreenCredential credential, int userId,
             ICheckCredentialProgressCallback progressCallback) {
+        return unlockLskfBasedProtector(gatekeeper, protectorId, credential, Primary, userId,
+                progressCallback);
+    }
+
+    public AuthenticationResult unlockLskfBasedProtector(IGateKeeperService gatekeeper,
+            long protectorId, @NonNull LockscreenCredential credential, LockDomain lockDomain,
+            int userId, ICheckCredentialProgressCallback progressCallback) {
         AuthenticationResult result = new AuthenticationResult();
 
         if (protectorId == SyntheticPasswordManager.NULL_PROTECTOR_ID) {
@@ -1436,7 +1483,8 @@ class SyntheticPasswordManager {
                 byte[] gkPassword = stretchedLskfToGkPassword(stretchedLskf);
                 GateKeeperResponse response;
                 try {
-                    response = gatekeeper.verifyChallenge(fakeUserId(userId), 0L,
+                    response = gatekeeper.verifyChallenge(fakeUserId(userId,
+                                    lockDomain), 0L,
                             pwd.passwordHandle, gkPassword);
                 } catch (RemoteException e) {
                     Slog.e(TAG, "gatekeeper verify failed", e);
@@ -1449,7 +1497,8 @@ class SyntheticPasswordManager {
                     if (response.getShouldReEnroll()) {
                         GateKeeperResponse reenrollResponse;
                         try {
-                            reenrollResponse = gatekeeper.enroll(fakeUserId(userId),
+                            reenrollResponse = gatekeeper.enroll(fakeUserId(userId,
+                                            lockDomain),
                                     pwd.passwordHandle, gkPassword, gkPassword);
                         } catch (RemoteException e) {
                             Slog.w(TAG, "Fail to invoke gatekeeper.enroll", e);
@@ -1463,7 +1512,9 @@ class SyntheticPasswordManager {
                             pwd.credentialType = credential.getType();
                             saveState(PASSWORD_DATA_NAME, pwd.toBytes(), protectorId, userId);
                             syncState(userId);
-                            synchronizeGatekeeperFrpPassword(pwd, 0, userId);
+                            if (lockDomain == Primary) {
+                                synchronizeGatekeeperFrpPassword(pwd, 0, userId);
+                            }
                         } else {
                             Slog.w(TAG, "Fail to re-enroll user password for user " + userId);
                             // continue the flow anyway
@@ -1498,8 +1549,15 @@ class SyntheticPasswordManager {
         result.syntheticPassword = unwrapSyntheticPasswordBlob(protectorId,
                 PROTECTOR_TYPE_LSKF_BASED, protectorSecret, sid, userId);
 
-        // Perform verifyChallenge to refresh auth tokens for GK if user password exists.
-        result.gkResponse = verifyChallenge(gatekeeper, result.syntheticPassword, 0L, userId);
+        if (lockDomain == Primary) {
+            // Perform verifyChallenge to refresh auth tokens for GK if user password exists.
+            result.gkResponse = verifyChallenge(gatekeeper, result.syntheticPassword, 0L,
+                    userId);
+        } else if (credential.isNone()) {
+            result.gkResponse = null;
+        } else {
+            result.gkResponse = VerifyCredentialResponse.OK;
+        }
 
         // Upgrade case: store the metrics if the device did not have stored metrics before, should
         // only happen once on old protectors.
@@ -1519,7 +1577,7 @@ class SyntheticPasswordManager {
      * @return true/false depending on whether PIN length has been saved on disk
      */
     public boolean refreshPinLengthOnDisk(PasswordMetrics passwordMetrics,
-            long protectorId, int userId) {
+            long protectorId, int userId, LockDomain lockDomain) {
         if (!isAutoPinConfirmationFeatureAvailable()) {
             return false;
         }
@@ -1531,7 +1589,7 @@ class SyntheticPasswordManager {
 
         PasswordData pwd = PasswordData.fromBytes(pwdDataBytes);
         int pinLength = derivePinLength(passwordMetrics.length,
-                passwordMetrics.credType == CREDENTIAL_TYPE_PIN, userId);
+                passwordMetrics.credType == CREDENTIAL_TYPE_PIN, userId, lockDomain);
         if (pwd.pinLength != pinLength) {
             pwd.pinLength = pinLength;
             saveState(PASSWORD_DATA_NAME, pwd.toBytes(), protectorId, userId);
@@ -1922,8 +1980,15 @@ class SyntheticPasswordManager {
     }
 
     @VisibleForTesting
-    static int fakeUserId(int userId) {
-        return 100000 + userId;
+    static int fakeUserId(int userId, LockDomain lockDomain) {
+        if (userId < 0 || userId > android.os.UserHandle.MAX_SECONDARY_USER_ID) {
+            throw new IllegalArgumentException();
+        }
+        int domainRange = 100_000;
+        if (domainRange < android.os.UserHandle.MAX_SECONDARY_USER_ID) {
+            throw new IllegalStateException("unexpected value of UserHandle.MAX_SECONDARY_USER_ID");
+        }
+        return 100_000 + userId + (lockDomain == Primary ? 0 : domainRange);
     }
 
     private String getProtectorKeyAlias(long protectorId) {
