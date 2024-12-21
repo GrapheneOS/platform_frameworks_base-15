@@ -2566,17 +2566,18 @@ public class LockSettingsService extends ILockSettings.Stub {
         if (reportPrimaryAuthAttempts()) {
             final boolean success =
                     response.getResponseCode() == VerifyCredentialResponse.RESPONSE_OK;
-            notifyLockSettingsStateListeners(success, userId);
+            notifyLockSettingsStateListeners(success, userId, lockDomain);
         }
         return response;
     }
 
-    private void notifyLockSettingsStateListeners(boolean success, int userId) {
+    private void notifyLockSettingsStateListeners(boolean success, int userId,
+            LockDomain lockDomain) {
         for (LockSettingsStateListener listener : mLockSettingsStateListeners) {
             if (success) {
-                listener.onAuthenticationSucceeded(userId);
+                listener.onAuthenticationSucceeded(userId, lockDomain);
             } else {
-                listener.onAuthenticationFailed(userId);
+                listener.onAuthenticationFailed(userId, lockDomain);
             }
         }
     }
