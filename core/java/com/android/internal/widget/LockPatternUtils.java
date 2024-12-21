@@ -2077,4 +2077,19 @@ public class LockPatternUtils {
             throw e.rethrowFromSystemServer();
         }
     }
+
+    public static final int BIOMETRIC_KEYGUARD_ON = 1;
+    public static final int BIOMETRIC_KEYGUARD_OFF = 0;
+    public static final int BIOMETRIC_KEYGUARD_DEFAULT = BIOMETRIC_KEYGUARD_ON;
+    public boolean isBiometricKeyguardEnabled(int userId) {
+        return Settings.Secure.getIntForUser(mContext.getContentResolver(),
+                Settings.Secure.BIOMETRIC_KEYGUARD_ENABLED, BIOMETRIC_KEYGUARD_DEFAULT, userId)
+                == BIOMETRIC_KEYGUARD_ON;
+    }
+
+    public boolean setBiometricKeyguardEnabled(int userId, boolean enabled) {
+        return Settings.Secure.putIntForUser(mContext.getContentResolver(),
+                Settings.Secure.BIOMETRIC_KEYGUARD_ENABLED, enabled ? BIOMETRIC_KEYGUARD_ON :
+                        BIOMETRIC_KEYGUARD_OFF, userId);
+    }
 }
