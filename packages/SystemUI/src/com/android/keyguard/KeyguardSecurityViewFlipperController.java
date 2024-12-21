@@ -17,7 +17,7 @@
 package com.android.keyguard;
 
 import static android.content.res.Configuration.ORIENTATION_LANDSCAPE;
-
+import static com.android.internal.widget.LockDomain.Secondary;
 import static com.android.systemui.flags.Flags.LOCKSCREEN_ENABLE_LANDSCAPE;
 
 import android.util.Log;
@@ -35,7 +35,9 @@ import com.android.systemui.res.R;
 import com.android.systemui.util.ViewController;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -56,6 +58,19 @@ public class KeyguardSecurityViewFlipperController
     private final EmergencyButtonController.Factory mEmergencyButtonControllerFactory;
     private final Factory mKeyguardSecurityViewControllerFactory;
     private final FeatureFlags mFeatureFlags;
+
+    private KeyguardSecurityViewFlipperController.OnViewInflatedCallback
+            mBouncerBindMessageViewCallback;
+    // Because we now have multiple security modes, it can happen that #getSecurityView gets called
+    // consecutively and issues multiple inflation requests for the same view. We prevent this
+    // from happening by preloading security modes in KSCC#reinflateViewFlipper, but this map
+    // provides us with additional assurance that there are no race conditions and also gives us the
+    // option to avoid/reduce preloading if it becomes necessary.
+    private final Map<SecurityMode, List<OnViewInflatedCallback>> mInflationCallbacks =
+            new HashMap<>();
+    // This counter allows us to discard views that are being async inflated when #clearViews is
+    // called.
+    private int mClearCounter = 0;
 
     @Inject
     protected KeyguardSecurityViewFlipperController(KeyguardSecurityViewFlipper view,
@@ -82,6 +97,11 @@ public class KeyguardSecurityViewFlipperController
 
     }
 
+    protected void setBouncerBindMessageViewCallback(
+            KeyguardSecurityViewFlipperController.OnViewInflatedCallback callback) {
+        mBouncerBindMessageViewCallback = callback;
+    }
+
     public void reset() {
         for (KeyguardInputViewController<KeyguardInputView> child : mChildren) {
             child.reset();
@@ -90,6 +110,8 @@ public class KeyguardSecurityViewFlipperController
 
     /** Handles density or font scale changes. */
     public void clearViews() {
+        mInflationCallbacks.clear();
+        mClearCounter += 1;
         mView.removeAllViews();
         mChildren.clear();
     }
@@ -120,14 +142,41 @@ public class KeyguardSecurityViewFlipperController
     public void asynchronouslyInflateView(SecurityMode securityMode,
             KeyguardSecurityCallback keyguardSecurityCallback,
             @Nullable OnViewInflatedCallback onViewInflatedListener) {
+        if (mInflationCallbacks.containsKey(securityMode)) {
+            List<OnViewInflatedCallback> callbacks = mInflationCallbacks.get(securityMode);
+            callbacks.addLast(onViewInflatedListener);
+            return;
+        } else {
+            mInflationCallbacks.put(securityMode, new ArrayList<>());
+        }
+
         int layoutId = mFeatureFlags.isEnabled(LOCKSCREEN_ENABLE_LANDSCAPE)
                 ? getLayoutIdFor(securityMode) : getLegacyLayoutIdFor(securityMode);
         if (layoutId != 0) {
             if (DEBUG) {
                 Log.v(TAG, "inflating on bg thread id = " + layoutId + " .");
             }
+            int clearCounterPreInflate = mClearCounter;
             mAsyncLayoutInflater.inflate(layoutId, mView,
                     (view, resId, parent) -> {
+                        // Without this, #clearViews would not clear views that are being async
+                        // inflated. This fixes an upstream bug that is noticeable downstream when
+                        // switching profiles as we async inflate multiple security modes in
+                        // advance.
+                        if (clearCounterPreInflate != mClearCounter) {
+                            return;
+                        }
+                        if (securityMode == SecurityMode.BiometricSecondFactorPin) {
+                            ((KeyguardPINView) view).setLockDomain(Secondary);
+                            // By default, view ID is set to R.id.keyguard_pin_view for both regular
+                            // and BSF PIN layouts.
+                            // Use a distinct ID to prevent rest of the code from breaking due to
+                            // duplicate IDs.
+                            //
+                            // 0x8000_0000 ID is outside the range of automatically defined view ID constants.
+                            view.setId(0x8000_0000);
+                        }
+
                         mView.addView(view);
                         KeyguardInputViewController<KeyguardInputView> childController =
                                 mKeyguardSecurityViewControllerFactory.create(
@@ -148,6 +197,16 @@ public class KeyguardSecurityViewFlipperController
                                 updateConstraints(useSplitBouncer);
                             }
                         }
+
+                        if (mBouncerBindMessageViewCallback != null) {
+                            mBouncerBindMessageViewCallback.onViewInflated(childController);
+                        }
+
+                        List<OnViewInflatedCallback> callbacks = mInflationCallbacks.get(
+                                securityMode);
+                        for (OnViewInflatedCallback callback : callbacks) {
+                            callback.onViewInflated(childController);
+                        }
                     });
         }
     }
@@ -156,7 +215,9 @@ public class KeyguardSecurityViewFlipperController
         // TODO (b/297863911, b/297864907) - implement motion layout for other bouncers
         switch (securityMode) {
             case Pattern: return R.layout.keyguard_pattern_motion_layout;
-            case PIN: return R.layout.keyguard_pin_motion_layout;
+            case PIN:
+            case BiometricSecondFactorPin:
+                return R.layout.keyguard_pin_motion_layout;
             case Password: return R.layout.keyguard_password_motion_layout;
             case SimPin: return R.layout.keyguard_sim_pin_view;
             case SimPuk: return R.layout.keyguard_sim_puk_view;
@@ -168,7 +229,9 @@ public class KeyguardSecurityViewFlipperController
     private int getLegacyLayoutIdFor(SecurityMode securityMode) {
         switch (securityMode) {
             case Pattern: return R.layout.keyguard_pattern_view;
-            case PIN: return R.layout.keyguard_pin_view;
+            case PIN:
+            case BiometricSecondFactorPin:
+                return R.layout.keyguard_pin_view;
             case Password: return R.layout.keyguard_password_view;
             case SimPin: return R.layout.keyguard_sim_pin_view;
             case SimPuk: return R.layout.keyguard_sim_puk_view;

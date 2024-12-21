@@ -57,6 +57,18 @@ object KeyguardBouncerViewBinder {
         val securityContainerController: KeyguardSecurityContainerController =
             componentFactory.create(view).securityContainerController
         securityContainerController.init()
+        // This ensures we get messages on all bouncers, as opposed to only the one which is
+        // inflated in the foreground by the viewModel.isShowing.collect coroutine. This was
+        // originally needed to fix an upstream bug but they resolved a race condition caused by
+        // multiple KSCC#reinflateViewFlipper calls being made in succession.
+        securityContainerController.setBouncerBindMessageViewCallback {
+            bouncerLogger.bindingBouncerMessageView()
+            it.bindMessageView(
+                bouncerMessageInteractor,
+                messageAreaControllerFactory,
+                bouncerLogger
+            )
+        }
         val delegate =
             object : BouncerViewDelegate {
                 override fun isFullScreenBouncer(): Boolean {
@@ -126,6 +138,20 @@ object KeyguardBouncerViewBinder {
                                     securityContainerController.onBouncerVisibilityChanged(
                                         /* isVisible= */ true
                                     )
+                                    // Because KSCC#reinflateViewFlipper calls KSVFC#clearViews, the
+                                    // ViewFlipper will only have a child controller for the
+                                    // current security mode. If this call then changes the security
+                                    // mode, this call and the subsequent calls in this callback
+                                    // will erroneously create multiple views/controllers for the
+                                    // new security mode. For biometric second factor, we set the
+                                    // security mode in KSCC#onResume so that this call is a no-op.
+                                    // An important note is that, even with the callback queueing
+                                    // functionality (which ensures only a single view is created
+                                    // for each security mode) we added to
+                                    // KeyguardSecurityViewFlipperController, this still gives a
+                                    // buggy UI as this callback expects the security mode to remain
+                                    // as the one that was inflated. The multiple views being
+                                    // created is just a confirmation/indication that it's incorrect.
                                     securityContainerController.showPrimarySecurityScreen(
                                         /* turningOff= */ false
                                     )
@@ -133,12 +159,6 @@ object KeyguardBouncerViewBinder {
                                     securityContainerController.appear()
                                     securityContainerController.onResume(
                                         KeyguardSecurityView.SCREEN_ON
-                                    )
-                                    bouncerLogger.bindingBouncerMessageView()
-                                    it.bindMessageView(
-                                        bouncerMessageInteractor,
-                                        messageAreaControllerFactory,
-                                        bouncerLogger
                                     )
                                 }
                             } else {
@@ -228,6 +248,17 @@ object KeyguardBouncerViewBinder {
                         viewModel
                             .observeOnIsBackButtonEnabled { view.systemUiVisibility }
                             .collect { view.systemUiVisibility = it }
+                    }
+
+                    launch {
+                        viewModel.bouncerRequestedWhenAlreadyShowing.collect {
+                            // This will be a no-op except for when fingerprint authenticated
+                            // while the primary bouncer is showing. It would seem this is only
+                            // possible for non-UDFPS devices, but there might be edge cases or bugs
+                            // where UDFPS is displayed on top of primary bouncer.
+                            securityContainerController.showPrimarySecurityScreen(false)
+                            viewModel.notifyBouncerRequestedWhenAlreadyShowingHandled()
+                        }
                     }
 
                     awaitCancellation()

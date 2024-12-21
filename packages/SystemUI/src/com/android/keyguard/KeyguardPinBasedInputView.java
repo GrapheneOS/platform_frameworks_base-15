@@ -194,6 +194,9 @@ public abstract class KeyguardPinBasedInputView extends KeyguardAbsKeyInputView 
         mButtons[7] = findViewById(R.id.key7);
         mButtons[8] = findViewById(R.id.key8);
         mButtons[9] = findViewById(R.id.key9);
+        for (NumPadKey button : mButtons) {
+            button.setRoot(this);
+        }
 
         mPasswordEntry.requestFocus();
         super.onFinishInflate();

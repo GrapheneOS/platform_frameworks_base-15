@@ -16,6 +16,7 @@
 
 package com.android.keyguard;
 
+import static com.android.keyguard.KeyguardSecurityModel.SecurityMode.BiometricSecondFactorPin;
 import static com.android.systemui.Flags.pinInputFieldStyledFocusState;
 import static com.android.systemui.util.kotlin.JavaAdapterKt.collectFlow;
 
@@ -95,9 +96,14 @@ public abstract class KeyguardPinBasedInputViewController<T extends KeyguardPinB
 
         Context ctx = view.getContext().getApplicationContext();
         int userId = mSelectedUserInteractor.getSelectedUserId();
-        BoolSetting setting = this instanceof KeyguardPinViewController ?
-                ExtSettings.SCRAMBLE_LOCKSCREEN_PIN_LAYOUT :
-                ExtSettings.SCRAMBLE_SIM_PIN_LAYOUT;
+        BoolSetting setting;
+        if (this instanceof KeyguardPinViewController) {
+            setting = securityMode == BiometricSecondFactorPin ?
+                    ExtSettings.SCRAMBLE_LOCKSCREEN_PIN_LAYOUT_SECONDARY :
+                    ExtSettings.SCRAMBLE_LOCKSCREEN_PIN_LAYOUT_PRIMARY;
+        } else {
+            setting = ExtSettings.SCRAMBLE_SIM_PIN_LAYOUT;
+        }
         view.setupPinScrambling(setting.get(ctx, userId));
     }
 
@@ -106,7 +112,8 @@ public abstract class KeyguardPinBasedInputViewController<T extends KeyguardPinB
         super.onViewAttached();
 
         boolean showAnimations = !mLockPatternUtils
-                .isPinEnhancedPrivacyEnabled(mSelectedUserInteractor.getSelectedUserId());
+                .isPinEnhancedPrivacyEnabled(mSelectedUserInteractor.getSelectedUserId(),
+                        mLockDomain);
         mPasswordEntry.setShowPassword(showAnimations);
         for (NumPadKey button : mView.getButtons()) {
             button.setOnTouchListener((v, event) -> {
