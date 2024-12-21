@@ -830,14 +830,24 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
      */
     public void showPrimaryBouncer(boolean scrimmed) {
         hideAlternateBouncer(false);
-        if (mKeyguardStateController.isShowing() && !isBouncerShowing()) {
-            if (SceneContainerFlag.isEnabled()) {
-                mSceneInteractorLazy.get().changeScene(
-                        Scenes.Bouncer,
-                        "primary bouncer requested"
-                );
+        if (mKeyguardStateController.isShowing()) {
+            if (!isBouncerShowing()) {
+                if (SceneContainerFlag.isEnabled()) {
+                    mSceneInteractorLazy.get().changeScene(
+                            Scenes.Bouncer,
+                            "primary bouncer requested");
+                } else {
+                    mPrimaryBouncerInteractor.show(scrimmed);
+                }
             } else {
-                mPrimaryBouncerInteractor.show(scrimmed);
+                // This is a no-op unless the SecurityMode has changed, which can only occur when
+                // doing fp auth with second factor enabled, or inserting a SIM PIN. The latter
+                // case doesn't call this method, although it could in the future and would need to
+                // be reviewed. In theory it might be possible to open the bouncer, insert a SIM PIN
+                // then quickly do a fp auth. This could result in this path being taken with the
+                // SecurityMode as SimPin, which is not tested or understood. Unclear if this could
+                // be a path to exploiting the lockscreen.
+                mPrimaryBouncerInteractor.notifyBouncerRequestedWhenAlreadyShowing();
             }
         }
         updateStates();

@@ -26,6 +26,7 @@ import androidx.test.filters.SmallTest
 import com.android.dx.mockito.inline.extended.ExtendedMockito.mockitoSession
 import com.android.keyguard.KeyguardUpdateMonitor
 import com.android.keyguard.KeyguardUpdateMonitorCallback
+import com.android.keyguard.KeyguardUpdateMonitorCallback.SecondFactorStatus
 import com.android.keyguard.logging.KeyguardLogger
 import com.android.systemui.Flags
 import com.android.systemui.Flags.FLAG_LIGHT_REVEAL_MIGRATION
@@ -41,6 +42,7 @@ import com.android.systemui.statusbar.commandline.CommandRegistry
 import com.android.systemui.statusbar.phone.BiometricUnlockController
 import com.android.systemui.statusbar.policy.ConfigurationController
 import com.android.systemui.statusbar.policy.KeyguardStateController
+import com.android.systemui.user.domain.interactor.SelectedUserInteractor
 import com.android.systemui.util.leak.RotationUtils
 import com.android.systemui.util.mockito.any
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -95,6 +97,8 @@ class AuthRippleControllerTest : SysuiTestCase() {
     private lateinit var lightRevealScrim: LightRevealScrim
     @Mock
     private lateinit var fpSensorProp: FingerprintSensorPropertiesInternal
+    @Mock
+    private lateinit var selectedUserInteractor: SelectedUserInteractor
 
     private val facePropertyRepository = FakeFacePropertyRepository()
     private val displayMetrics = DisplayMetrics()
@@ -133,6 +137,7 @@ class AuthRippleControllerTest : SysuiTestCase() {
             lightRevealScrim,
             authRippleInteractor,
             facePropertyRepository,
+            selectedUserInteractor,
             rippleView,
         )
         controller.init()
@@ -179,7 +184,8 @@ class AuthRippleControllerTest : SysuiTestCase() {
         captor.value.onBiometricAuthenticated(
             0 /* userId */,
             BiometricSourceType.FINGERPRINT /* type */,
-            false /* isStrongBiometric */)
+            false /* isStrongBiometric */,
+            SecondFactorStatus.Disabled)
 
         // THEN no ripple
         verify(rippleView, never()).startUnlockedRipple(any())
@@ -201,7 +207,8 @@ class AuthRippleControllerTest : SysuiTestCase() {
         captor.value.onBiometricAuthenticated(
             0 /* userId */,
             BiometricSourceType.FINGERPRINT /* type */,
-            false /* isStrongBiometric */)
+            false /* isStrongBiometric */,
+            SecondFactorStatus.Disabled)
 
         // THEN no ripple
         verify(rippleView, never()).startUnlockedRipple(any())
@@ -218,7 +225,8 @@ class AuthRippleControllerTest : SysuiTestCase() {
         captor.value.onBiometricAuthenticated(
             0 /* userId */,
             BiometricSourceType.FACE /* type */,
-            false /* isStrongBiometric */)
+            false /* isStrongBiometric */,
+            SecondFactorStatus.Disabled)
         verify(rippleView, never()).startUnlockedRipple(any())
     }
 
@@ -233,7 +241,8 @@ class AuthRippleControllerTest : SysuiTestCase() {
         captor.value.onBiometricAuthenticated(
             0 /* userId */,
             BiometricSourceType.FINGERPRINT /* type */,
-            false /* isStrongBiometric */)
+            false /* isStrongBiometric */,
+            SecondFactorStatus.Disabled)
         verify(rippleView, never()).startUnlockedRipple(any())
     }
 

@@ -19,6 +19,7 @@ package com.android.systemui.statusbar.phone;
 import static android.app.StatusBarManager.DISABLE2_SYSTEM_ICONS;
 import static android.app.StatusBarManager.DISABLE_SYSTEM_INFO;
 
+import static com.android.keyguard.KeyguardUpdateMonitorCallback.SecondFactorStatus.Disabled;
 import static com.android.systemui.Flags.updateUserSwitcherBackground;
 import static com.android.systemui.statusbar.StatusBarState.KEYGUARD;
 import static com.android.systemui.util.kotlin.JavaAdapterKt.collectFlow;
@@ -197,10 +198,15 @@ public class KeyguardStatusBarViewController extends ViewController<KeyguardStat
                 public void onBiometricAuthenticated(
                         int userId,
                         BiometricSourceType biometricSourceType,
-                        boolean isStrongBiometric) {
+                        boolean isStrongBiometric,
+                        SecondFactorStatus secondFactorStatus) {
+                    // mFirstBypassAttempt should only be true on devices that have face auth
+                    // enabled. We're trying not to handle callbacks for face auth as they can't be
+                    // tested, but in this case we will be cautious and add the check in case there
+                    // is some edge case where this conditional is true for fingerprint auth.
                     if (mFirstBypassAttempt
-                            && mKeyguardUpdateMonitor.isUnlockingWithBiometricAllowed(
-                                    isStrongBiometric)) {
+                            && mKeyguardUpdateMonitor.isUnlockingWithBiometricAllowedSafe(
+                                    isStrongBiometric) && secondFactorStatus == Disabled) {
                         mDelayShowingKeyguardStatusBar = true;
                     }
                 }
