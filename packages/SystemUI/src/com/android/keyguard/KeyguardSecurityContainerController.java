@@ -525,6 +525,10 @@ public class KeyguardSecurityContainerController extends ViewController<Keyguard
         showPrimarySecurityScreen(false);
 
         if (SceneContainerFlag.isEnabled()) {
+            if (true) {
+                throw new IllegalStateException(
+                        "Compose bouncer support has not been added to Graphene's MFA!");
+            }
             // When the scene framework says that the lockscreen has been dismissed, dismiss the
             // keyguard here, revealing the underlying app or launcher:
             mSceneTransitionCollectionJob = mJavaAdapter.get().alwaysCollectFlow(
