@@ -51,6 +51,8 @@ import java.util.Set;
 import java.util.function.Function;
 
 class DevicePolicyData {
+    private static final String TAG_FAILED_BIOMETRIC_SECOND_FACTOR_ATTEMPTS =
+            "failed-biometric-second-factor-attempts";
     private static final String TAG_ACCEPTED_CA_CERTIFICATES = "accepted-ca-certificate";
     private static final String TAG_LOCK_TASK_COMPONENTS = "lock-task-component";
     private static final String TAG_LOCK_TASK_FEATURES = "lock-task-features";
@@ -103,6 +105,7 @@ class DevicePolicyData {
     private static final boolean VERBOSE_LOG = false; // DO NOT SUBMIT WITH TRUE
 
     int mFailedPasswordAttempts = 0;
+    int mFailedBiometricSecondFactorAttempts = 0;
     boolean mPasswordValidAtLastCheckpoint = true;
 
     final @UserIdInt int mUserId;
@@ -296,6 +299,13 @@ class DevicePolicyData {
                 out.startTag(null, "failed-password-attempts");
                 out.attributeInt(null, "value", policyData.mFailedPasswordAttempts);
                 out.endTag(null, "failed-password-attempts");
+            }
+
+            if (policyData.mFailedBiometricSecondFactorAttempts != 0) {
+                out.startTag(null, TAG_FAILED_BIOMETRIC_SECOND_FACTOR_ATTEMPTS);
+                out.attributeInt(null, "value",
+                        policyData.mFailedBiometricSecondFactorAttempts);
+                out.endTag(null, TAG_FAILED_BIOMETRIC_SECOND_FACTOR_ATTEMPTS);
             }
 
             for (int i = 0; i < policyData.mAcceptedCaCertificates.size(); i++) {
@@ -544,6 +554,9 @@ class DevicePolicyData {
                     }
                 } else if ("failed-password-attempts".equals(tag)) {
                     policy.mFailedPasswordAttempts = parser.getAttributeInt(null, "value");
+                } else if (TAG_FAILED_BIOMETRIC_SECOND_FACTOR_ATTEMPTS.equals(tag)) {
+                    policy.mFailedBiometricSecondFactorAttempts =
+                            parser.getAttributeInt(null, "value");
                 } else if ("password-owner".equals(tag)) {
                     policy.mPasswordOwner = parser.getAttributeInt(null, "value");
                 } else if (TAG_ACCEPTED_CA_CERTIFICATES.equals(tag)) {
