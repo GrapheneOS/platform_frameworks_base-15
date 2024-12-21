@@ -19,7 +19,7 @@ package com.android.server.adaptiveauth;
 import static android.adaptiveauth.Flags.FLAG_ENABLE_ADAPTIVE_AUTH;
 import static android.adaptiveauth.Flags.FLAG_REPORT_BIOMETRIC_AUTH_ATTEMPTS;
 import static android.security.Flags.FLAG_REPORT_PRIMARY_AUTH_ATTEMPTS;
-
+import static com.android.internal.widget.LockDomain.Primary;
 import static com.android.internal.widget.LockPatternUtils.StrongAuthTracker.SOME_AUTH_REQUIRED_AFTER_ADAPTIVE_AUTH_REQUEST;
 import static com.android.server.adaptiveauth.AdaptiveAuthService.MAX_ALLOWED_FAILED_AUTH_ATTEMPTS;
 
@@ -46,8 +46,8 @@ import android.platform.test.flag.junit.SetFlagsRule;
 import androidx.test.InstrumentationRegistry;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.filters.SmallTest;
-import androidx.test.runner.AndroidJUnit4;
 
+import com.android.internal.widget.LockDomain;
 import com.android.internal.widget.LockPatternUtils;
 import com.android.internal.widget.LockSettingsInternal;
 import com.android.internal.widget.LockSettingsStateListener;
@@ -65,12 +65,15 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import junitparams.JUnitParamsRunner;
+import junitparams.Parameters;
+
 /**
  * atest FrameworksServicesTests:AdaptiveAuthServiceTest
  */
 @Presubmit
 @SmallTest
-@RunWith(AndroidJUnit4.class)
+@RunWith(JUnitParamsRunner.class)
 public class AdaptiveAuthServiceTest {
     @Rule
     public final SetFlagsRule mSetFlagsRule = new SetFlagsRule();
@@ -124,6 +127,8 @@ public class AdaptiveAuthServiceTest {
         LocalServices.removeServiceForTest(UserManagerInternal.class);
         LocalServices.addService(UserManagerInternal.class, mUserManager);
 
+        when(mLockPatternUtils.isBiometricSecondFactorEnabled(PRIMARY_USER_ID)).thenReturn(false);
+
         mAdaptiveAuthService = new AdaptiveAuthService(mContext, mLockPatternUtils);
         mAdaptiveAuthService.init();
 
@@ -145,9 +150,11 @@ public class AdaptiveAuthServiceTest {
     }
 
     @Test
-    public void testReportAuthAttempt_primaryAuthSucceeded()
+    @Parameters({ "Primary", "Secondary" })
+    public void testReportAuthAttempt_primaryAuthSucceeded(LockDomain lockDomain)
             throws RemoteException {
-        mLockSettingsStateListenerCaptor.getValue().onAuthenticationSucceeded(PRIMARY_USER_ID);
+        mLockSettingsStateListenerCaptor.getValue().onAuthenticationSucceeded(PRIMARY_USER_ID,
+                lockDomain);
         waitForAuthCompletion();
 
         verifyNotLockDevice(DEFAULT_COUNT_FAILED_AUTH_ATTEMPTS /* expectedCntFailedAttempts */,
@@ -155,23 +162,28 @@ public class AdaptiveAuthServiceTest {
     }
 
     @Test
-    public void testReportAuthAttempt_primaryAuthFailed_once()
+    @Parameters({ "Primary", "Secondary" })
+    public void testReportAuthAttempt_primaryAuthFailed_once(LockDomain lockDomain)
             throws RemoteException {
-        mLockSettingsStateListenerCaptor.getValue().onAuthenticationFailed(PRIMARY_USER_ID);
+        mLockSettingsStateListenerCaptor.getValue().onAuthenticationFailed(PRIMARY_USER_ID,
+                lockDomain);
         waitForAuthCompletion();
 
         verifyNotLockDevice(1 /* expectedCntFailedAttempts */, PRIMARY_USER_ID);
     }
 
     @Test
-    public void testReportAuthAttempt_primaryAuthFailed_multiple_deviceCurrentlyLocked()
+    @Parameters({ "Primary", "Secondary" })
+    public void testReportAuthAttempt_primaryAuthFailed_multiple_deviceCurrentlyLocked(
+            LockDomain lockDomain)
             throws RemoteException {
         // Device is currently locked and Keyguard is showing
         when(mKeyguardManager.isDeviceLocked(PRIMARY_USER_ID)).thenReturn(true);
         when(mKeyguardManager.isKeyguardLocked()).thenReturn(true);
 
         for (int i = 0; i < MAX_ALLOWED_FAILED_AUTH_ATTEMPTS; i++) {
-            mLockSettingsStateListenerCaptor.getValue().onAuthenticationFailed(PRIMARY_USER_ID);
+            mLockSettingsStateListenerCaptor.getValue().onAuthenticationFailed(PRIMARY_USER_ID,
+                    lockDomain);
         }
         waitForAuthCompletion();
 
@@ -180,14 +192,17 @@ public class AdaptiveAuthServiceTest {
     }
 
     @Test
-    public void testReportAuthAttempt_primaryAuthFailed_multiple_deviceCurrentlyNotLocked()
+    @Parameters({ "Primary", "Secondary" })
+    public void testReportAuthAttempt_primaryAuthFailed_multiple_deviceCurrentlyNotLocked(
+            LockDomain lockDomain)
             throws RemoteException {
         // Device is currently not locked and Keyguard is not showing
         when(mKeyguardManager.isDeviceLocked(PRIMARY_USER_ID)).thenReturn(false);
         when(mKeyguardManager.isKeyguardLocked()).thenReturn(false);
 
         for (int i = 0; i < MAX_ALLOWED_FAILED_AUTH_ATTEMPTS; i++) {
-            mLockSettingsStateListenerCaptor.getValue().onAuthenticationFailed(PRIMARY_USER_ID);
+            mLockSettingsStateListenerCaptor.getValue().onAuthenticationFailed(PRIMARY_USER_ID,
+                    lockDomain);
         }
         waitForAuthCompletion();
 
@@ -210,6 +225,27 @@ public class AdaptiveAuthServiceTest {
             throws RemoteException {
         mAuthenticationStateListenerCaptor.getValue().onAuthenticationFailed(
                 authFailedInfo(PRIMARY_USER_ID));
+        waitForAuthCompletion();
+
+        verifyNotLockDevice(1 /* expectedCntFailedAttempts */, PRIMARY_USER_ID);
+    }
+
+    @Test
+    public void testReportAuthAttempt_biometricAuthWithSecondFactorEnabled_doesNotResetCounter()
+            throws RemoteException {
+        when(mLockPatternUtils.isBiometricSecondFactorEnabled(PRIMARY_USER_ID)).thenReturn(true);
+        // Device is currently locked and Keyguard is showing
+        when(mKeyguardManager.isDeviceLocked(PRIMARY_USER_ID)).thenReturn(true);
+        when(mKeyguardManager.isKeyguardLocked()).thenReturn(true);
+
+        mAuthenticationStateListenerCaptor.getValue().onAuthenticationFailed(
+                authFailedInfo(PRIMARY_USER_ID));
+        waitForAuthCompletion();
+
+        verifyNotLockDevice(1 /* expectedCntFailedAttempts */, PRIMARY_USER_ID);
+
+        mAuthenticationStateListenerCaptor.getValue().onAuthenticationSucceeded(
+                authSuccessInfo(PRIMARY_USER_ID));
         waitForAuthCompletion();
 
         verifyNotLockDevice(1 /* expectedCntFailedAttempts */, PRIMARY_USER_ID);
@@ -249,7 +285,9 @@ public class AdaptiveAuthServiceTest {
     }
 
     @Test
-    public void testReportAuthAttempt_biometricAuthFailedThenPrimaryAuthSucceeded()
+    @Parameters({ "Primary", "Secondary" })
+    public void testReportAuthAttempt_biometricAuthFailedThenPrimaryAuthSucceeded(
+            LockDomain lockDomain)
             throws RemoteException {
         // Three failed biometric auth attempts
         for (int i = 0; i < 3; i++) {
@@ -257,7 +295,8 @@ public class AdaptiveAuthServiceTest {
                     authFailedInfo(PRIMARY_USER_ID));
         }
         // One successful primary auth attempt
-        mLockSettingsStateListenerCaptor.getValue().onAuthenticationSucceeded(PRIMARY_USER_ID);
+        mLockSettingsStateListenerCaptor.getValue().onAuthenticationSucceeded(PRIMARY_USER_ID,
+                lockDomain);
         waitForAuthCompletion();
 
         verifyNotLockDevice(DEFAULT_COUNT_FAILED_AUTH_ATTEMPTS /* expectedCntFailedAttempts */,
@@ -265,11 +304,14 @@ public class AdaptiveAuthServiceTest {
     }
 
     @Test
-    public void testReportAuthAttempt_primaryAuthFailedThenBiometricAuthSucceeded()
+    @Parameters({ "Primary", "Secondary" })
+    public void testReportAuthAttempt_primaryAuthFailedThenBiometricAuthSucceeded(
+            LockDomain lockDomain)
             throws RemoteException {
         // Three failed primary auth attempts
         for (int i = 0; i < 3; i++) {
-            mLockSettingsStateListenerCaptor.getValue().onAuthenticationFailed(PRIMARY_USER_ID);
+            mLockSettingsStateListenerCaptor.getValue().onAuthenticationFailed(PRIMARY_USER_ID,
+                    lockDomain);
         }
         // One successful biometric auth attempt
         mAuthenticationStateListenerCaptor.getValue().onAuthenticationSucceeded(
@@ -281,11 +323,14 @@ public class AdaptiveAuthServiceTest {
     }
 
     @Test
-    public void testReportAuthAttempt_primaryAuthAndBiometricAuthFailed_primaryUser()
+    @Parameters({ "Primary", "Secondary" })
+    public void testReportAuthAttempt_primaryAuthAndBiometricAuthFailed_primaryUser(
+            LockDomain lockDomain)
             throws RemoteException {
         // Three failed primary auth attempts
         for (int i = 0; i < 3; i++) {
-            mLockSettingsStateListenerCaptor.getValue().onAuthenticationFailed(PRIMARY_USER_ID);
+            mLockSettingsStateListenerCaptor.getValue().onAuthenticationFailed(PRIMARY_USER_ID,
+                    lockDomain);
         }
         // Two failed biometric auth attempts
         for (int i = 0; i < 2; i++) {
@@ -303,7 +348,8 @@ public class AdaptiveAuthServiceTest {
         // Three failed primary auth attempts
         for (int i = 0; i < 3; i++) {
             mLockSettingsStateListenerCaptor.getValue()
-                    .onAuthenticationFailed(MANAGED_PROFILE_USER_ID);
+                    .onAuthenticationFailed(MANAGED_PROFILE_USER_ID,
+                            Primary);
         }
         // Two failed biometric auth attempts
         for (int i = 0; i < 2; i++) {
