@@ -267,6 +267,8 @@ import static android.security.keystore.AttestationUtils.USE_INDIVIDUAL_ATTESTAT
 
 import static com.android.internal.logging.nano.MetricsProto.MetricsEvent.PROVISIONING_ENTRY_POINT_ADB;
 import static com.android.internal.util.ConcurrentUtils.DIRECT_EXECUTOR;
+import static com.android.internal.widget.LockDomain.Primary;
+import static com.android.internal.widget.LockDomain.Secondary;
 import static com.android.internal.widget.LockPatternUtils.CREDENTIAL_TYPE_NONE;
 import static com.android.internal.widget.LockPatternUtils.StrongAuthTracker.SOME_AUTH_REQUIRED_AFTER_ADAPTIVE_AUTH_REQUEST;
 import static com.android.internal.widget.LockPatternUtils.StrongAuthTracker.STRONG_AUTH_REQUIRED_AFTER_DPM_LOCK_NOW;
@@ -519,6 +521,7 @@ import com.android.internal.util.FunctionalUtils.ThrowingSupplier;
 import com.android.internal.util.JournaledFile;
 import com.android.internal.util.Preconditions;
 import com.android.internal.util.StatLogger;
+import com.android.internal.widget.LockDomain;
 import com.android.internal.widget.LockPatternUtils;
 import com.android.internal.widget.LockSettingsInternal;
 import com.android.internal.widget.LockscreenCredential;
@@ -5847,10 +5850,18 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
         }
     }
 
+    private boolean checkUserSupportsBiometricSecondFactorIfSecondary(int userHandle,
+            LockDomain lockDomain) {
+        if (lockDomain == Primary) {
+            return true;
+        }
+        return mInjector.binderWithCleanCallingIdentity(() ->
+                mLockPatternUtils.checkUserSupportsBiometricSecondFactor(userHandle));
+    }
 
     @Override
-    public int getCurrentFailedPasswordAttempts(
-            String callerPackageName, int userHandle, boolean parent) {
+    public int getCurrentFailedPasswordAttempts(String callerPackageName, LockDomain lockDomain,
+            int userHandle, boolean parent) {
         if (!mLockPatternUtils.hasSecureLockScreen()) {
             return 0;
         }
@@ -5858,6 +5869,9 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
 
         final CallerIdentity caller = getCallerIdentity();
         Preconditions.checkCallAuthorization(hasFullCrossUsersPermission(caller, userHandle));
+        if (!checkUserSupportsBiometricSecondFactorIfSecondary(userHandle, lockDomain)) {
+            return 0;
+        }
 
         synchronized (getLockObject()) {
             if (!isSystemUid(caller)) {
@@ -5875,8 +5889,10 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
             }
 
             DevicePolicyData policy = getUserDataUnchecked(getCredentialOwner(userHandle, parent));
-
-            return policy.mFailedPasswordAttempts;
+            if (lockDomain == Primary) {
+                return policy.mFailedPasswordAttempts;
+            }
+            return policy.mFailedBiometricSecondFactorAttempts;
         }
     }
 
@@ -8439,15 +8455,19 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
     }
 
     @Override
-    public void reportPasswordChanged(PasswordMetrics metrics, @UserIdInt int userId) {
+    public void reportPasswordChanged(PasswordMetrics metrics, @UserIdInt int userId,
+            LockDomain lockDomain) {
         if (!mHasFeature || !mLockPatternUtils.hasSecureLockScreen()) {
             return;
         }
 
         final CallerIdentity caller = getCallerIdentity();
         Preconditions.checkCallAuthorization(isSystemUid(caller));
+        if (!checkUserSupportsBiometricSecondFactorIfSecondary(userId, lockDomain)) {
+            return;
+        }
         // Managed Profile password can only be changed when it has a separate challenge.
-        if (!isSeparateProfileChallengeEnabled(userId)) {
+        if (lockDomain == Primary && !isSeparateProfileChallengeEnabled(userId)) {
             Preconditions.checkCallAuthorization(!isManagedProfile(userId), "You can "
                     + "not set the active password for a managed profile, userId = %d", userId);
         }
@@ -8456,22 +8476,29 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
         final ArraySet<Integer> affectedUserIds = new ArraySet<>();
 
         synchronized (getLockObject()) {
-            policy.mFailedPasswordAttempts = 0;
-            affectedUserIds.add(userId);
-            affectedUserIds.addAll(updatePasswordValidityCheckpointLocked(
-                    userId, /* parent */ false));
-            affectedUserIds.addAll(updatePasswordExpirationsLocked(userId));
-            setExpirationAlarmCheckLocked(mContext, userId, /* parent */ false);
+            if (lockDomain == Primary) {
+                policy.mFailedPasswordAttempts = 0;
+                affectedUserIds.add(userId);
+                affectedUserIds.addAll(updatePasswordValidityCheckpointLocked(
+                        userId, /* parent */ false));
+                affectedUserIds.addAll(updatePasswordExpirationsLocked(userId));
+                setExpirationAlarmCheckLocked(mContext, userId, /* parent */ false);
 
-            // Send a broadcast to each profile using this password as its primary unlock.
-            sendAdminCommandForLockscreenPoliciesLocked(
-                    DeviceAdminReceiver.ACTION_PASSWORD_CHANGED,
-                    DeviceAdminInfo.USES_POLICY_LIMIT_PASSWORD, userId);
+                // Send a broadcast to each profile using this password as its primary unlock.
+                sendAdminCommandForLockscreenPoliciesLocked(
+                        DeviceAdminReceiver.ACTION_PASSWORD_CHANGED,
+                        DeviceAdminInfo.USES_POLICY_LIMIT_PASSWORD, userId);
 
-            affectedUserIds.addAll(removeCaApprovalsIfNeeded(userId));
+                affectedUserIds.addAll(removeCaApprovalsIfNeeded(userId));
+            } else {
+                policy.mFailedBiometricSecondFactorAttempts = 0;
+                // This could probably be moved to after the if, but keep it in both conditional
+                // paths just in case.
+                affectedUserIds.add(userId);
+            }
             saveSettingsForUsersLocked(affectedUserIds);
         }
-        if (mInjector.securityLogIsLoggingEnabled()) {
+        if (lockDomain == Primary && mInjector.securityLogIsLoggingEnabled()) {
             SecurityLog.writeEvent(SecurityLog.TAG_PASSWORD_CHANGED,
                     /* complexity */ metrics.determineComplexity(), /*user*/ userId);
         }
@@ -8499,13 +8526,16 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
     }
 
     @Override
-    public void reportFailedPasswordAttempt(int userHandle, boolean parent) {
+    public void reportFailedPasswordAttempt(int userHandle, LockDomain lockDomain, boolean parent) {
         Preconditions.checkArgumentNonnegative(userHandle, "Invalid userId");
 
         final CallerIdentity caller = getCallerIdentity();
         Preconditions.checkCallAuthorization(hasFullCrossUsersPermission(caller, userHandle));
         Preconditions.checkCallAuthorization(hasCallingOrSelfPermission(BIND_DEVICE_ADMIN));
-        if (!isSeparateProfileChallengeEnabled(userHandle)) {
+        if (!checkUserSupportsBiometricSecondFactorIfSecondary(userHandle, lockDomain)) {
+            return;
+        }
+        if (lockDomain == Primary && !isSeparateProfileChallengeEnabled(userHandle)) {
             Preconditions.checkCallAuthorization(!isManagedProfile(userHandle),
                     "You can not report failed password attempt if separate profile challenge is "
                             + "not in place for a managed profile, userId = %d", userHandle);
@@ -8517,8 +8547,18 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
         try {
             synchronized (getLockObject()) {
                 DevicePolicyData policy = getUserData(userHandle);
-                policy.mFailedPasswordAttempts++;
+                if (lockDomain == Primary) {
+                    policy.mFailedPasswordAttempts++;
+                } else {
+                    // This counter can become inaccurate due to using Gatekeeper for second factor.
+                    // If we timeout then reboot the device, the first attempt always gives another
+                    // timeout, even if it is correct.
+                    policy.mFailedBiometricSecondFactorAttempts++;
+                }
                 saveSettingsLocked(userHandle);
+                if (lockDomain == Secondary) {
+                    return;
+                }
                 if (mHasFeature) {
                     strictestAdmin = getAdminWithMinimumFailedPasswordsForWipeLocked(
                             userHandle, /* parent= */ false);
@@ -8592,21 +8632,33 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
     }
 
     @Override
-    public void reportSuccessfulPasswordAttempt(int userHandle) {
+    public void reportSuccessfulPasswordAttempt(int userHandle, LockDomain lockDomain) {
         Preconditions.checkArgumentNonnegative(userHandle, "Invalid userId");
 
         final CallerIdentity caller = getCallerIdentity();
         Preconditions.checkCallAuthorization(hasFullCrossUsersPermission(caller, userHandle));
         Preconditions.checkCallAuthorization(hasCallingOrSelfPermission(BIND_DEVICE_ADMIN));
+        if (!checkUserSupportsBiometricSecondFactorIfSecondary(userHandle, lockDomain)) {
+            return;
+        }
 
         synchronized (getLockObject()) {
             DevicePolicyData policy = getUserData(userHandle);
-            if (policy.mFailedPasswordAttempts != 0 || policy.mPasswordOwner >= 0) {
+            boolean savePolicy = true;
+            if (lockDomain == Primary &&
+                    (policy.mFailedPasswordAttempts != 0 || policy.mPasswordOwner >= 0)) {
+                policy.mFailedPasswordAttempts = 0;
+                policy.mPasswordOwner = -1;
+            } else if (lockDomain == Secondary && policy.mFailedBiometricSecondFactorAttempts != 0) {
+                policy.mFailedBiometricSecondFactorAttempts = 0;
+            } else {
+                savePolicy = false;
+            }
+
+            if (savePolicy) {
                 mInjector.binderWithCleanCallingIdentity(() -> {
-                    policy.mFailedPasswordAttempts = 0;
-                    policy.mPasswordOwner = -1;
                     saveSettingsLocked(userHandle);
-                    if (mHasFeature) {
+                    if (mHasFeature && lockDomain == Primary) {
                         sendAdminCommandForLockscreenPoliciesLocked(
                                 DeviceAdminReceiver.ACTION_PASSWORD_SUCCEEDED,
                                 DeviceAdminInfo.USES_POLICY_WATCH_LOGIN, userHandle);
@@ -8615,7 +8667,7 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
             }
         }
 
-        if (mInjector.securityLogIsLoggingEnabled()) {
+        if (lockDomain == Primary && mInjector.securityLogIsLoggingEnabled()) {
             SecurityLog.writeEvent(SecurityLog.TAG_KEYGUARD_DISMISS_AUTH_ATTEMPT, /*result*/ 1,
                     /*method strength*/ 1);
         }
@@ -8644,6 +8696,10 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
         Preconditions.checkCallAuthorization(hasCallingOrSelfPermission(BIND_DEVICE_ADMIN));
 
         if (mInjector.securityLogIsLoggingEnabled()) {
+            // This method is called by upstream on successful biometric auth even if unlocking with
+            // biometrics is not allowed, so doesn't make sense to check for second factor here. The
+            // log message doesn't exactly make sense because result is set to 1 indicating a
+            // successful Keyguard dismissal, even when it may not be.
             SecurityLog.writeEvent(SecurityLog.TAG_KEYGUARD_DISMISS_AUTH_ATTEMPT, /*result*/ 1,
                     /*method strength*/ 0);
         }
