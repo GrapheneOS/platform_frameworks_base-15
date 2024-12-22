@@ -150,7 +150,7 @@ class AuthRippleControllerTest : SysuiTestCase() {
         `when`(authController.fingerprintSensorLocation).thenReturn(fpsLocation)
         controller.onViewAttached()
         `when`(keyguardStateController.isShowing).thenReturn(true)
-        `when`(keyguardUpdateMonitor.isUnlockingWithBiometricAllowed(
+        `when`(keyguardUpdateMonitor.isUnlockingWithBiometricAllowedSafe(
                 eq(BiometricSourceType.FINGERPRINT))).thenReturn(true)
 
         // WHEN fingerprint authenticated
@@ -169,7 +169,7 @@ class AuthRippleControllerTest : SysuiTestCase() {
         val fpsLocation = Point(5, 5)
         `when`(authController.udfpsLocation).thenReturn(fpsLocation)
         controller.onViewAttached()
-        `when`(keyguardUpdateMonitor.isUnlockingWithBiometricAllowed(
+        `when`(keyguardUpdateMonitor.isUnlockingWithBiometricAllowedSafe(
                 eq(BiometricSourceType.FINGERPRINT))).thenReturn(true)
 
         // WHEN keyguard is NOT showing & fingerprint authenticated
@@ -194,7 +194,7 @@ class AuthRippleControllerTest : SysuiTestCase() {
         `when`(keyguardStateController.isShowing).thenReturn(true)
 
         // WHEN unlocking with fingerprint is NOT allowed & fingerprint authenticated
-        `when`(keyguardUpdateMonitor.isUnlockingWithBiometricAllowed(
+        `when`(keyguardUpdateMonitor.isUnlockingWithBiometricAllowedSafe(
                 eq(BiometricSourceType.FINGERPRINT))).thenReturn(false)
         val captor = ArgumentCaptor.forClass(KeyguardUpdateMonitorCallback::class.java)
         verify(keyguardUpdateMonitor).registerCallback(captor.capture())
@@ -259,7 +259,7 @@ class AuthRippleControllerTest : SysuiTestCase() {
         `when`(authController.fingerprintSensorLocation).thenReturn(fpsLocation)
         controller.onViewAttached()
         `when`(keyguardStateController.isShowing).thenReturn(true)
-        `when`(keyguardUpdateMonitor.isUnlockingWithBiometricAllowed(
+        `when`(keyguardUpdateMonitor.isUnlockingWithBiometricAllowedSafe(
                 BiometricSourceType.FINGERPRINT)).thenReturn(true)
         `when`(biometricUnlockController.isWakeAndUnlock).thenReturn(true)
 
@@ -282,7 +282,7 @@ class AuthRippleControllerTest : SysuiTestCase() {
         `when`(keyguardStateController.isShowing).thenReturn(true)
         `when`(biometricUnlockController.isWakeAndUnlock).thenReturn(true)
         `when`(authController.isUdfpsFingerDown).thenReturn(true)
-        `when`(keyguardUpdateMonitor.isUnlockingWithBiometricAllowed(
+        `when`(keyguardUpdateMonitor.isUnlockingWithBiometricAllowedSafe(
                 eq(BiometricSourceType.FACE))).thenReturn(true)
 
         controller.showUnlockRipple(BiometricSourceType.FACE)

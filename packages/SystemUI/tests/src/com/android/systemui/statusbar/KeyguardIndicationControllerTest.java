@@ -456,7 +456,7 @@ public class KeyguardIndicationControllerTest extends KeyguardIndicationControll
 
         // GIVEN unlocking with fingerprint is possible but not allowed
         setupFingerprintUnlockPossible(true);
-        when(mKeyguardUpdateMonitor.isUnlockingWithFingerprintAllowed())
+        when(mKeyguardUpdateMonitor.isUnlockingWithFingerprintAllowedSafe())
                 .thenReturn(false);
 
         String message = "A message";
@@ -1627,7 +1627,7 @@ public class KeyguardIndicationControllerTest extends KeyguardIndicationControll
 
     private void fingerprintUnlockIsPossibleAndAllowed() {
         setupFingerprintUnlockPossible(true);
-        when(mKeyguardUpdateMonitor.isUnlockingWithFingerprintAllowed()).thenReturn(true);
+        when(mKeyguardUpdateMonitor.isUnlockingWithFingerprintAllowedSafe()).thenReturn(true);
     }
 
     private void setupFingerprintUnlockPossible(boolean possible) {
