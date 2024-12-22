@@ -223,7 +223,7 @@ public class KeyguardIndicationControllerBaseTest extends SysuiTestCase {
         mFinancedDisclosureWithOrganization = mContext.getString(
                 R.string.do_financed_disclosure_with_name, ORGANIZATION_NAME);
 
-        when(mKeyguardUpdateMonitor.isUnlockingWithBiometricAllowed(anyBoolean())).thenReturn(true);
+        when(mKeyguardUpdateMonitor.isUnlockingWithBiometricAllowedSafe(anyBoolean())).thenReturn(true);
         when(mScreenLifecycle.getScreenState()).thenReturn(SCREEN_ON);
         when(mKeyguardUpdateMonitor.isUserUnlocked(anyInt())).thenReturn(true);
 

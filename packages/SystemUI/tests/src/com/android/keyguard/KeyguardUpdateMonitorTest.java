@@ -893,9 +893,9 @@ public class KeyguardUpdateMonitorTest extends SysuiTestCase {
         primaryAuthNotRequiredByStrongAuthTracker();
 
         // THEN unlocking with face and fp is allowed
-        Assert.assertTrue(mKeyguardUpdateMonitor.isUnlockingWithBiometricAllowed(
+        Assert.assertTrue(mKeyguardUpdateMonitor.isUnlockingWithBiometricAllowedSafe(
                 BiometricSourceType.FACE));
-        Assert.assertTrue(mKeyguardUpdateMonitor.isUnlockingWithBiometricAllowed(
+        Assert.assertTrue(mKeyguardUpdateMonitor.isUnlockingWithBiometricAllowedSafe(
                 BiometricSourceType.FINGERPRINT));
     }
 
@@ -905,7 +905,7 @@ public class KeyguardUpdateMonitorTest extends SysuiTestCase {
         when(mStrongAuthTracker.isUnlockingWithBiometricAllowed(anyBoolean())).thenReturn(false);
 
         // THEN unlocking with face is not allowed
-        Assert.assertFalse(mKeyguardUpdateMonitor.isUnlockingWithBiometricAllowed(
+        Assert.assertFalse(mKeyguardUpdateMonitor.isUnlockingWithBiometricAllowedSafe(
                 BiometricSourceType.FACE));
     }
 
@@ -923,7 +923,7 @@ public class KeyguardUpdateMonitorTest extends SysuiTestCase {
         faceAuthLockOut();
 
         // THEN unlocking with fingerprint is not allowed
-        Assert.assertFalse(mKeyguardUpdateMonitor.isUnlockingWithBiometricAllowed(
+        Assert.assertFalse(mKeyguardUpdateMonitor.isUnlockingWithBiometricAllowedSafe(
                 BiometricSourceType.FINGERPRINT));
     }
 
@@ -939,7 +939,7 @@ public class KeyguardUpdateMonitorTest extends SysuiTestCase {
         faceAuthLockOut();
 
         // THEN unlocking with fingerprint is still allowed
-        Assert.assertTrue(mKeyguardUpdateMonitor.isUnlockingWithBiometricAllowed(
+        Assert.assertTrue(mKeyguardUpdateMonitor.isUnlockingWithBiometricAllowedSafe(
                 BiometricSourceType.FINGERPRINT));
     }
 
@@ -949,7 +949,7 @@ public class KeyguardUpdateMonitorTest extends SysuiTestCase {
         when(mStrongAuthTracker.isUnlockingWithBiometricAllowed(anyBoolean())).thenReturn(false);
 
         // THEN unlocking with fingerprint is not allowed
-        Assert.assertFalse(mKeyguardUpdateMonitor.isUnlockingWithBiometricAllowed(
+        Assert.assertFalse(mKeyguardUpdateMonitor.isUnlockingWithBiometricAllowedSafe(
                 BiometricSourceType.FINGERPRINT));
     }
 
@@ -962,7 +962,7 @@ public class KeyguardUpdateMonitorTest extends SysuiTestCase {
         fingerprintErrorTemporaryLockOut();
 
         // THEN unlocking with fingerprint is not allowed
-        Assert.assertFalse(mKeyguardUpdateMonitor.isUnlockingWithBiometricAllowed(
+        Assert.assertFalse(mKeyguardUpdateMonitor.isUnlockingWithBiometricAllowedSafe(
                 BiometricSourceType.FINGERPRINT));
     }
 
@@ -2144,7 +2144,7 @@ public class KeyguardUpdateMonitorTest extends SysuiTestCase {
         mTestableLooper.processAllMessages();
 
         // THEN unlocking with fingerprint is not allowed
-        Assert.assertFalse(mKeyguardUpdateMonitor.isUnlockingWithBiometricAllowed(
+        Assert.assertFalse(mKeyguardUpdateMonitor.isUnlockingWithBiometricAllowedSafe(
                 BiometricSourceType.FINGERPRINT));
 
         // THEN fingerprint detect gets called
