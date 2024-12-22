@@ -162,12 +162,12 @@ class IndicationHelperTest : SysuiTestCase() {
     }
 
     private fun givenPrimaryAuthNotRequired() {
-        whenever(keyguardUpdateMonitor.isUnlockingWithBiometricAllowed(anyBoolean()))
+        whenever(keyguardUpdateMonitor.isUnlockingWithBiometricAllowedSafe(anyBoolean()))
             .thenReturn(true)
     }
 
     private fun givenPrimaryAuthRequired() {
-        whenever(keyguardUpdateMonitor.isUnlockingWithBiometricAllowed(anyBoolean()))
+        whenever(keyguardUpdateMonitor.isUnlockingWithBiometricAllowedSafe(anyBoolean()))
             .thenReturn(false)
     }
 }

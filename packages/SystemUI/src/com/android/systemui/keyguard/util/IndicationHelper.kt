@@ -60,6 +60,6 @@ constructor(
         // pass true for isStrongBiometric to isUnlockingWithBiometricAllowed() to bypass the
         // check of whether non-strong biometric is allowed since strong biometrics can still be
         // used.
-        return !keyguardUpdateMonitor.isUnlockingWithBiometricAllowed(true /* isStrongBiometric */)
+        return !keyguardUpdateMonitor.isUnlockingWithBiometricAllowedSafe(true /* isStrongBiometric */)
     }
 }

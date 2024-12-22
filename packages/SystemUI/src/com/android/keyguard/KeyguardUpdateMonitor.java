@@ -1412,8 +1412,8 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
     public boolean getUserUnlockedWithBiometric(int userId) {
         BiometricAuthenticated fingerprint = mUserFingerprintAuthenticated.get(userId);
         boolean fingerprintAllowed = fingerprint != null && fingerprint.mAuthenticated
-                && isUnlockingWithBiometricAllowed(fingerprint.mIsStrongBiometric);
-        boolean unlockedByFace = isCurrentUserUnlockedWithFace() && isUnlockingWithBiometricAllowed(
+                && isUnlockingWithBiometricAllowedSafe(fingerprint.mIsStrongBiometric);
+        boolean unlockedByFace = isCurrentUserUnlockedWithFace() && isUnlockingWithBiometricAllowedSafe(
                 FACE);
         return fingerprintAllowed || unlockedByFace;
     }
@@ -1437,7 +1437,7 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
         BiometricAuthenticated fingerprint = mUserFingerprintAuthenticated.get(userId);
         // fingerprint always bypasses
         boolean fingerprintAllowed = fingerprint != null && fingerprint.mAuthenticated
-                && isUnlockingWithBiometricAllowed(fingerprint.mIsStrongBiometric);
+                && isUnlockingWithBiometricAllowedSafe(fingerprint.mIsStrongBiometric);
         return fingerprintAllowed || (isCurrentUserUnlockedWithFace()
                 && mKeyguardBypassController.canBypass());
     }
@@ -1500,14 +1500,21 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
     }
 
     private boolean isUnlockingWithTrustAgentAllowed() {
-        return isUnlockingWithBiometricAllowed(true);
+        return isUnlockingWithBiometricAllowedSafe(true);
     }
 
     private boolean isUnlockingWithForceKeyguardDismissibleAllowed() {
-        return isUnlockingWithBiometricAllowed(false);
+        return isUnlockingWithBiometricAllowedSafe(false);
     }
 
-    public boolean isUnlockingWithBiometricAllowed(boolean isStrongBiometric) {
+    /**
+     * This method has had "Safe" appended to the name that is used upstream, which allows us to
+     * keep track of future callers. This is necessary because this method is often used to check if
+     * unlocking is possible when it is known that a biometric auth has succeeded, which doesn't
+     * take biometric second factor into consideration. We can't modify this method's return value
+     * based on second factor. We would prefer #getUserUnlockedWithBiometric to be used.
+     */
+    public boolean isUnlockingWithBiometricAllowedSafe(boolean isStrongBiometric) {
         // StrongAuthTracker#isUnlockingWithBiometricAllowed includes
         // STRONG_AUTH_REQUIRED_AFTER_LOCKOUT which is the same as mFingerprintLockedOutPermanent;
         // however the strong auth tracker does not include the temporary lockout
@@ -1534,21 +1541,21 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
      * Whether fingerprint is allowed ot be used for unlocking based on the strongAuthTracker
      * and temporary lockout state (tracked by FingerprintManager via error codes).
      */
-    public boolean isUnlockingWithFingerprintAllowed() {
-        return isUnlockingWithBiometricAllowed(FINGERPRINT);
+    public boolean isUnlockingWithFingerprintAllowedSafe() {
+        return isUnlockingWithBiometricAllowedSafe(FINGERPRINT);
     }
 
     /**
      * Whether the given biometric is allowed based on strongAuth & lockout states.
      */
-    public boolean isUnlockingWithBiometricAllowed(
+    public boolean isUnlockingWithBiometricAllowedSafe(
             @NonNull BiometricSourceType biometricSourceType) {
         switch (biometricSourceType) {
             case FINGERPRINT:
-                return isUnlockingWithBiometricAllowed(isFingerprintClass3());
+                return isUnlockingWithBiometricAllowedSafe(isFingerprintClass3());
             case FACE:
                 return getFaceAuthInteractor() != null
-                        && isUnlockingWithBiometricAllowed(
+                        && isUnlockingWithBiometricAllowedSafe(
                         getFaceAuthInteractor().isFaceAuthStrong());
             default:
                 return false;
@@ -2618,7 +2625,7 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
         final boolean running = mFingerprintRunningState == BIOMETRIC_STATE_RUNNING;
         final boolean runningOrRestarting = running
                 || mFingerprintRunningState == BIOMETRIC_STATE_CANCELLING_RESTARTING;
-        final boolean runDetect = !isUnlockingWithFingerprintAllowed();
+        final boolean runDetect = !isUnlockingWithFingerprintAllowedSafe();
 
         if (runningOrRestarting && !shouldListenForFingerprint) {
             if (action == BIOMETRIC_ACTION_START) {
@@ -4104,7 +4111,7 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
                     + mAuthController.areAllFingerprintAuthenticatorsRegistered());
             pw.println("    allowed="
                     + (fingerprint != null
-                            && isUnlockingWithBiometricAllowed(fingerprint.mIsStrongBiometric)));
+                            && isUnlockingWithBiometricAllowedSafe(fingerprint.mIsStrongBiometric)));
             pw.println("    auth'd=" + (fingerprint != null && fingerprint.mAuthenticated));
             pw.println("    authSinceBoot="
                     + getStrongAuthTracker().hasUserAuthenticatedSinceBoot());
