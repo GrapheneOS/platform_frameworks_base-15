@@ -6988,7 +6988,7 @@
     <!-- Enables or disables support for repair mode. The feature creates a secure
          environment to protect the user's privacy when the device is being repaired.
          Off by default, since OEMs may have had a similar feature on their devices. -->
-    <bool name="config_repairModeSupported">false</bool>
+    <bool name="config_repairModeSupported">true</bool>
 
     <!-- The file path in which the default shutdown vibration effect should be serialized. If the
          device does not specify any such file path here, if the file path specified here does not
