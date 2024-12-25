@@ -1035,7 +1035,7 @@ class SyntheticPasswordManager {
     public long createLskfBasedProtector(IGateKeeperService gatekeeper,
             LockscreenCredential credential, LockDomain lockDomain, SyntheticPassword sp,
             int userId) {
-        long protectorId = generateProtectorId();
+        long protectorId = generateProtectorId(userId);
 
         int pinLength = PIN_LENGTH_UNAVAILABLE;
         if (isAutoPinConfirmationFeatureAvailable()) {
@@ -1307,7 +1307,7 @@ class SyntheticPasswordManager {
      */
     public long addPendingToken(byte[] token, @TokenType int type, int userId,
             @Nullable EscrowTokenStateChangeCallback changeCallback) {
-        long tokenHandle = generateProtectorId(); // tokenHandle is reused as protectorId later
+        long tokenHandle = generateProtectorId(userId); // tokenHandle is reused as protectorId later
         if (!tokenMap.containsKey(userId)) {
             tokenMap.put(userId, new ArrayMap<>());
         }
@@ -1970,10 +1970,14 @@ class SyntheticPasswordManager {
         SyntheticPasswordCrypto.destroyProtectorKey(keyAlias);
     }
 
-    private static long generateProtectorId() {
+    private long generateProtectorId(int userId) {
+        final List<Long> currentProtectors =
+                mStorage.listSyntheticPasswordProtectorsForUser(SP_BLOB_NAME, userId);
         while (true) {
             final long result = SecureRandomUtils.randomLong();
-            if (result != NULL_PROTECTOR_ID) {
+            // Upstream assumes there's insufficient entropy to not collide with NULL_PROTECTOR_ID,
+            // but fails to check the existing protectors.
+            if (!currentProtectors.contains(result) && result != NULL_PROTECTOR_ID) {
                 return result;
             }
         }
