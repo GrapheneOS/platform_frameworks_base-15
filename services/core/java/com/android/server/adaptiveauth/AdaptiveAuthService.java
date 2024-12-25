@@ -121,7 +121,7 @@ public class AdaptiveAuthService extends SystemService {
                 @Override
                 public void onAuthenticationSucceeded(int userId, LockDomain lockDomain) {
                     if (DEBUG) {
-                        Slog.d(TAG, "LockSettingsStateListener#onAuthenticationSucceeded");
+                        Slog.d(TAG, "LockSettingsStateListener#onAuthenticationSucceeded, domain: " + lockDomain);
                     }
                     mHandler.obtainMessage(lockDomain == Primary ? MSG_REPORT_PRIMARY_AUTH_ATTEMPT :
                                     MSG_REPORT_BIOMETRIC_SECOND_FACTOR_AUTH_ATTEMPT, AUTH_SUCCESS,
@@ -130,7 +130,7 @@ public class AdaptiveAuthService extends SystemService {
 
                 @Override
                 public void onAuthenticationFailed(int userId, LockDomain lockDomain) {
-                    Slog.i(TAG, "LockSettingsStateListener#onAuthenticationFailed");
+                    Slog.i(TAG, "LockSettingsStateListener#onAuthenticationFailed, domain: " + lockDomain);
                     mHandler.obtainMessage(lockDomain == Primary ? MSG_REPORT_PRIMARY_AUTH_ATTEMPT :
                                     MSG_REPORT_BIOMETRIC_SECOND_FACTOR_AUTH_ATTEMPT, AUTH_FAILURE,
                                     userId).sendToTarget();
