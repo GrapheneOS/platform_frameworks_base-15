@@ -6862,7 +6862,11 @@ public final class Settings {
         public static final String SCREENSHOT_TIMESTAMP_EXIF = "screenshot_timestamp_exif";
 
         /** @hide */
-        public static final String SCRAMBLE_PIN_LAYOUT = "lockscreen_scramble_pin_layout";
+        public static final String SCRAMBLE_PIN_LAYOUT_PRIMARY =
+                "lockscreen_scramble_pin_layout";
+        /** @hide */
+        public static final String SCRAMBLE_PIN_LAYOUT_SECONDARY =
+                "lockscreen_scramble_pin_layout_secondary";
 
         /** @hide */
         public static final String SCRAMBLE_SIM_PIN_LAYOUT = "scramble_sim_pin_layout";
