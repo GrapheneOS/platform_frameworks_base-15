@@ -1985,7 +1985,11 @@ class SyntheticPasswordManager {
 
     @VisibleForTesting
     static int fakeUserId(int userId, LockDomain lockDomain) {
-        return 100_000 + userId + (lockDomain == Primary ? 0 : 10_000);
+        int domainRange = 100_000;
+        if (domainRange < android.os.UserHandle.MAX_SECONDARY_USER_ID) {
+            throw new IllegalStateException("unexpected value of UserHandle.MAX_SECONDARY_USER_ID");
+        }
+        return 100_000 + userId + (lockDomain == Primary ? 0 : domainRange);
     }
 
     private String getProtectorKeyAlias(long protectorId) {
