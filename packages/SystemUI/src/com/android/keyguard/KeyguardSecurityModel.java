@@ -87,7 +87,7 @@ public class KeyguardSecurityModel {
                 mKeyguardUpdateMonitor.getUserAuthenticatedWithFingerprint(userId) &&
                 mKeyguardUpdateMonitor.isUnlockingWithFingerprintAllowedSafe() &&
                 mLockPatternUtils.isBiometricSecondFactorEnabled(userId)) {
-                return SecurityMode.BiometricSecondFactorPin;
+            return SecurityMode.BiometricSecondFactorPin;
         }
 
         final int security = whitelistIpcs(() ->
