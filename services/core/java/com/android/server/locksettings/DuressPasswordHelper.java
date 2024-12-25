@@ -11,6 +11,7 @@ import com.android.internal.widget.VerifyCredentialResponse;
 import java.util.Objects;
 import java.util.UUID;
 
+import static com.android.internal.widget.LockDomain.Primary;
 import static com.android.internal.widget.LockPatternUtils.CREDENTIAL_TYPE_NONE;
 import static com.android.internal.widget.LockPatternUtils.CREDENTIAL_TYPE_PASSWORD;
 import static com.android.internal.widget.LockPatternUtils.CREDENTIAL_TYPE_PIN;
@@ -58,7 +59,8 @@ public class DuressPasswordHelper {
                 throw new IllegalArgumentException("!ownerCredential.isNone()");
             }
         } else {
-            VerifyCredentialResponse response = lockSettingsService.checkCredential(ownerCredential, userId, null);
+            VerifyCredentialResponse response = lockSettingsService.checkCredential(ownerCredential,
+                    Primary, userId, null);
 
             if (response.getResponseCode() != VerifyCredentialResponse.RESPONSE_OK) {
                 throw new SecurityException("owner credential verification failed; " + response);
