@@ -5372,7 +5372,7 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
     private PasswordMetrics getPasswordMinimumMetricsUnchecked(@UserIdInt int userId,
             boolean deviceWideOnly) {
         if (!mHasFeature) {
-            return new PasswordMetrics(CREDENTIAL_TYPE_NONE);
+            new PasswordMetrics(CREDENTIAL_TYPE_NONE);
         }
         Preconditions.checkArgumentNonnegative(userId, "Invalid userId");
         if (deviceWideOnly) {
