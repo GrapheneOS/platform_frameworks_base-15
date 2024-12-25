@@ -3284,9 +3284,8 @@ public class LockSettingsService extends ILockSettings.Stub {
                     mSpManager.verifyChallenge(getGateKeeperService(), sp, 0L, userId);
                 }
             } else {
-                // Cache all profile password if they use unified work challenge. This will later be
-                // used to clear the profile's password in
-                // synchronizeUnifiedWorkChallengeForProfiles()
+                // Cache all profile password if they use unified challenge. This will later be used to
+                // clear the profile's password in synchronizeUnifiedChallengeForProfiles().
                 profilePasswords = getDecryptedPasswordsForAllTiedProfiles(userId);
 
                 mSpManager.clearSidForUser(userId);
