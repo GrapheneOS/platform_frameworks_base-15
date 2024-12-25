@@ -52,6 +52,7 @@ import android.service.gatekeeper.IGateKeeperService;
 import android.text.TextUtils;
 import android.util.ArrayMap;
 import android.util.ArraySet;
+import android.util.LongSparseLongArray;
 import android.util.Slog;
 
 import com.android.internal.annotations.VisibleForTesting;
@@ -1970,14 +1971,23 @@ class SyntheticPasswordManager {
         SyntheticPasswordCrypto.destroyProtectorKey(keyAlias);
     }
 
+    private final LongSparseLongArray mGeneratedProtectorIds = new LongSparseLongArray();
+
     private long generateProtectorId(int userId) {
+        if (!Thread.holdsLock(this)) {
+            throw new IllegalStateException();
+        }
+
         final List<Long> currentProtectors =
                 mStorage.listSyntheticPasswordProtectorsForUser(SP_BLOB_NAME, userId);
         while (true) {
             final long result = SecureRandomUtils.randomLong();
             // Upstream assumes there's insufficient entropy to not collide with NULL_PROTECTOR_ID,
             // but fails to check the existing protectors.
-            if (!currentProtectors.contains(result) && result != NULL_PROTECTOR_ID) {
+            if (result != NULL_PROTECTOR_ID
+                    && mGeneratedProtectorIds.get(result) == 0
+                    && !currentProtectors.contains(result)) {
+                mGeneratedProtectorIds.put(result, 1);
                 return result;
             }
         }
