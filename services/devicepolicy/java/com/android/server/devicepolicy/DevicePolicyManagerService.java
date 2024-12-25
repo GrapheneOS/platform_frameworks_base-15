@@ -8498,7 +8498,7 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
             }
             saveSettingsForUsersLocked(affectedUserIds);
         }
-        if (mInjector.securityLogIsLoggingEnabled()) {
+        if (lockDomain == Primary && mInjector.securityLogIsLoggingEnabled()) {
             SecurityLog.writeEvent(SecurityLog.TAG_PASSWORD_CHANGED,
                     /* complexity */ metrics.determineComplexity(), /*user*/ userId);
         }
@@ -8667,7 +8667,7 @@ public class DevicePolicyManagerService extends IDevicePolicyManager.Stub {
             }
         }
 
-        if (mInjector.securityLogIsLoggingEnabled()) {
+        if (lockDomain == Primary && mInjector.securityLogIsLoggingEnabled()) {
             SecurityLog.writeEvent(SecurityLog.TAG_KEYGUARD_DISMISS_AUTH_ATTEMPT, /*result*/ 1,
                     /*method strength*/ 1);
         }
