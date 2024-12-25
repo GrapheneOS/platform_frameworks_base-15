@@ -1273,7 +1273,7 @@ public class LockPatternUtils {
     private final PropertyInvalidatedCache<Integer, Integer> mSecondaryCredentialTypeCache =
             // TODO: maxEntires should be maximum number of concurrent users allowed.
             new PropertyInvalidatedCache<>(4, PropertyInvalidatedCache.MODULE_SYSTEM,
-                    CREDENTIAL_TYPE_API, CREDENTIAL_TYPE_API,
+                    CREDENTIAL_TYPE_API, CREDENTIAL_TYPE_API + "_secondary",
                     new CredendialTypeQueryHandler(Secondary));
 
     /**
@@ -1446,7 +1446,7 @@ public class LockPatternUtils {
         //  DPM#getCurrentFailedPasswordAttempts is 0 because the user could change their secondary
         //  and then accumulate a failure before going back to the lockscreen. Could track the
         //  protector IDs.
-        if (deadline < now  && deadline != 0) {
+        if (deadline < now && deadline != 0) {
             // timeout expired
             deadlines.put(userId, 0);
             return 0L;
