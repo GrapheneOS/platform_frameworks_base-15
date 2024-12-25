@@ -1159,11 +1159,9 @@ public class LockSettingsService extends ILockSettings.Stub {
             // Do an early migration to remain consistent with upstream's invariant that, after this
             // method is run, #getCurrentLskfBasedProtectorId never returns NULL_PROTECTOR_ID.
             if (!getBoolean(MIGRATED_SECONDARY_SP, false, 0)) {
-                synchronized (mSpManager) {
-                    for (UserInfo user : mUserManager.getAliveUsers()) {
-                        synchronized (mSpManager) {
-                            migrateUserToSecondarySpLocked(user.id);
-                        }
+                for (UserInfo user : mUserManager.getAliveUsers()) {
+                    synchronized (mSpManager) {
+                        migrateUserToSecondarySpLocked(user.id);
                     }
                 }
                 setBoolean(MIGRATED_SECONDARY_SP, true, 0);
