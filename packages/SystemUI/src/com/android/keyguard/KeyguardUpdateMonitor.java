@@ -1573,7 +1573,9 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
         // STRONG_AUTH_REQUIRED_AFTER_LOCKOUT which is the same as mFingerprintLockedOutPermanent;
         // however the strong auth tracker does not include the temporary lockout
         // mFingerprintLockedOut.
-        if (!mStrongAuthTracker.isUnlockingWithBiometricAllowed(isStrongBiometric)) {
+        int userId = mSelectedUserInteractor.getSelectedUserId();
+        if (!mStrongAuthTracker.isUnlockingWithBiometricAllowed(isStrongBiometric)
+                || getUserWaitingForStrongAuthUpdateAfterSecondFactorLockout(userId)) {
             return false;
         }
         boolean isFaceLockedOut =
@@ -3034,8 +3036,7 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
                         // which can change at any given point. Worst case we end up disabled on
                         // primary bouncer, but even in that case the first leg of
                         // shouldListenBouncerState will usually be false anyway.
-                        && !(fingerprintAuthenticated && biometricSecondFactorEnabled)
-                        && !getUserWaitingForStrongAuthUpdateAfterSecondFactorLockout(user);
+                        && !(fingerprintAuthenticated && biometricSecondFactorEnabled);
 
         final boolean shouldListenUdfpsState = !isUdfps
                 || (!userCanSkipBouncer
