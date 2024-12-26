@@ -1971,13 +1971,10 @@ class SyntheticPasswordManager {
         SyntheticPasswordCrypto.destroyProtectorKey(keyAlias);
     }
 
+    @com.android.internal.annotations.GuardedBy("this")
     private final LongSparseLongArray mGeneratedProtectorIds = new LongSparseLongArray();
 
-    private long generateProtectorId(int userId) {
-        if (!Thread.holdsLock(this)) {
-            throw new IllegalStateException();
-        }
-
+    private synchronized long generateProtectorId(int userId) {
         final List<Long> currentProtectors =
                 mStorage.listSyntheticPasswordProtectorsForUser(SP_BLOB_NAME, userId);
         while (true) {
