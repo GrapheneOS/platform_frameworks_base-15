@@ -1995,6 +1995,9 @@ class SyntheticPasswordManager {
 
     @VisibleForTesting
     static int fakeUserId(int userId, LockDomain lockDomain) {
+        if (userId < 0 || userId > android.os.UserHandle.MAX_SECONDARY_USER_ID) {
+            throw new IllegalArgumentException();
+        }
         int domainRange = 100_000;
         if (domainRange < android.os.UserHandle.MAX_SECONDARY_USER_ID) {
             throw new IllegalStateException("unexpected value of UserHandle.MAX_SECONDARY_USER_ID");
