@@ -64,7 +64,7 @@ interface IFingerprintService {
     // Add a pending hardware auth token to KeyStore. This should only be called after biometric
     // second factor has succeeded.
     @EnforcePermission("USE_BIOMETRIC_INTERNAL")
-    void addPendingAuthTokenToKeyStore(int userId);
+    int addPendingAuthTokenToKeyStore(int userId);
 
     // Clear all pending auth tokens.
     @EnforcePermission("USE_BIOMETRIC_INTERNAL")
