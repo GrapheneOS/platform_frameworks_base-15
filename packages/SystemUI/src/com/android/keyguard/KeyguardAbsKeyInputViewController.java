@@ -21,12 +21,14 @@ import static com.android.internal.util.LatencyTracker.ACTION_CHECK_CREDENTIAL_U
 import static com.android.internal.widget.LockDomain.Primary;
 import static com.android.internal.widget.LockDomain.Secondary;
 import static com.android.keyguard.KeyguardAbsKeyInputView.MINIMUM_PASSWORD_LENGTH_BEFORE_REPORT;
+import static com.android.keyguard.KeyguardUpdateMonitor.BSF_TAG;
 import static com.android.systemui.Flags.notifyPasswordTextViewUserActivityInBackground;
 
 import android.content.res.ColorStateList;
 import android.os.AsyncTask;
 import android.os.CountDownTimer;
 import android.os.SystemClock;
+import android.util.Log;
 import android.util.PluralsMessageFormatter;
 import android.view.KeyEvent;
 
@@ -44,9 +46,11 @@ import com.android.systemui.classifier.FalsingCollector;
 import com.android.systemui.flags.FeatureFlags;
 import com.android.systemui.res.R;
 import com.android.systemui.user.domain.interactor.SelectedUserInteractor;
+import com.android.systemui.util.Assert;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.BooleanSupplier;
 
 public abstract class KeyguardAbsKeyInputViewController<T extends KeyguardAbsKeyInputView>
         extends KeyguardInputViewController<T> {
@@ -187,11 +191,31 @@ public abstract class KeyguardAbsKeyInputViewController<T extends KeyguardAbsKey
 
     void onPasswordChecked(int userId, boolean matched, int timeoutMs, boolean isValidPassword) {
         boolean dismissKeyguard = mSelectedUserInteractor.getSelectedUserId() == userId;
+        if (mLockDomain == Secondary) {
+            Log.d(BSF_TAG, "onPasswordChecked, userId: " + userId + ", matched: " + matched
+                    + ", timeoutMs: " + timeoutMs + ", isValidPassword: " + isValidPassword);
+        }
+
         if (matched) {
             mBouncerHapticPlayer.playAuthenticationFeedback(
                     /* authenticationSucceeded = */true
             );
             getKeyguardSecurityCallback().reportUnlockAttempt(userId, mLockDomain, true, 0);
+
+            if (dismissKeyguard && mLockDomain == Secondary) {
+                Assert.isMainThread();
+                BooleanSupplier pendingAction =
+                        KeyguardUpdateMonitor.getAndRemovePendingSecondFactorAction(userId);
+                if (pendingAction == null) {
+                    Log.e(BSF_TAG, "no PendingSecondFactorAction");
+                    return;
+                }
+                if (!pendingAction.getAsBoolean()) {
+                    Log.e(BSF_TAG, "PendingSecondFactorAction returned false");
+                    return;
+                }
+            }
+
             if (dismissKeyguard) {
                 mDismissing = true;
                 mLatencyTracker.onActionStart(LatencyTracker.ACTION_LOCKSCREEN_UNLOCK);
