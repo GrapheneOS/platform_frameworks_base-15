@@ -357,9 +357,9 @@ public class FingerprintService extends SystemService {
 
         @android.annotation.EnforcePermission(android.Manifest.permission.USE_BIOMETRIC_INTERNAL)
         @Override // Binder call
-        public void addPendingAuthTokenToKeyStore(final int userId) {
+        public int addPendingAuthTokenToKeyStore(final int userId) {
             super.addPendingAuthTokenToKeyStore_enforcePermission();
-            mBiometricContext.getAuthTokenStore().addPendingAuthTokenToKeyStore(userId);
+            return mBiometricContext.getAuthTokenStore().addPendingAuthTokenToKeyStore(userId);
         }
 
         @android.annotation.EnforcePermission(android.Manifest.permission.USE_BIOMETRIC_INTERNAL)
