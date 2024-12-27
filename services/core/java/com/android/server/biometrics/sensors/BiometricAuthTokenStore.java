@@ -1,7 +1,9 @@
 package com.android.server.biometrics.sensors;
 
+import android.hardware.fingerprint.FingerprintManager;
+import android.hardware.fingerprint.FingerprintManager.AddPendingAuthTokenResult;
 import android.security.KeyStoreAuthorization;
-import android.util.Log;
+import android.util.Slog;
 import android.util.SparseArray;
 
 /**
@@ -39,20 +41,21 @@ public class BiometricAuthTokenStore {
         }
     }
 
-    public boolean addPendingAuthTokenToKeyStore(int userId) {
+    public @AddPendingAuthTokenResult int addPendingAuthTokenToKeyStore(int userId) {
         synchronized (mPendingSecondFactorAuthTokens) {
-            byte[] authToken = getPendingAuthToken(userId);
-            if (authToken != null) {
-                final int result = mKeyStoreAuthorization.addAuthToken(authToken);
-                mPendingSecondFactorAuthTokens.remove(userId);
-                if (result == 0 /* success */) {
-                    Log.d(TAG, "Success adding auth token");
-                    return true;
-                } else {
-                    Log.d(TAG, "Error adding auth token: " + result);
-                }
+            byte[] authToken = mPendingSecondFactorAuthTokens.get(userId);
+            if (authToken == null) {
+                return FingerprintManager.ERROR_NO_PENDING_AUTH_TOKEN;
             }
+            final int result = mKeyStoreAuthorization.addAuthToken(authToken);
+            mPendingSecondFactorAuthTokens.remove(userId);
+            if (result != 0) {
+                Slog.e(TAG, "Error adding auth token: " + result);
+                return FingerprintManager.ERROR_UNABLE_TO_ADD_AUTH_TOKEN_TO_KEYSTORE;
+            }
+
+            Slog.d(TAG, "Successfully added auth token to keystore");
+            return FingerprintManager.SUCCESS;
         }
-        return false;
     }
 }
