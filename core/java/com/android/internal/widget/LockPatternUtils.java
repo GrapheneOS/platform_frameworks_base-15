@@ -458,25 +458,7 @@ public class LockPatternUtils {
             if (!reportPrimaryAuthAttempts() || !shouldTrustManagerListenForPrimaryAuth()) {
                 getTrustManager().reportUnlockAttempt(/* authenticated= */ true, userId);
             }
-        } else {
-            // These two calls were suppressed in KeyguardUpdateMonitor#onFingerprintAuthenticated.
-            // Should only be called as part of an unlock process, not if the second factor was
-            // being entered elsewhere such as within a Settings app confirmation screen. Will need
-            // to add a forUnlock param if we end up needing to do this.
-            getTrustManager().unlockedByBiometricForUser(userId, FINGERPRINT);
-            reportSuccessfulBiometricUnlock(mIsFingerprintStrongBiometric, userId);
-
-            FingerprintManager fm = (FingerprintManager) mContext.getSystemService(
-                    Context.FINGERPRINT_SERVICE);
-            if (fm != null) {
-                fm.addPendingAuthTokenToKeyStore(userId);
-            }
         }
-    }
-
-    private boolean mIsFingerprintStrongBiometric = false;
-    public void setFingerprintIsStrongBiometric(boolean isStrongBiometric) {
-        mIsFingerprintStrongBiometric = isStrongBiometric;
     }
 
     public void reportPasswordLockout(int timeoutMs, int userId) {
