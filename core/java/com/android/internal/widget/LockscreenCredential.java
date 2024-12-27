@@ -24,7 +24,6 @@ import static com.android.internal.widget.LockPatternUtils.CREDENTIAL_TYPE_PIN;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
-import android.app.admin.DevicePolicyManager;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.text.TextUtils;
@@ -277,19 +276,11 @@ public class LockscreenCredential implements Parcelable, AutoCloseable {
                     throw new IllegalArgumentException("PIN must be at least "
                             + LockPatternUtils.MIN_LOCK_PASSWORD_SIZE + " digits long.");
                 }
-                if (size() > DevicePolicyManager.MAX_PASSWORD_LENGTH) {
-                    throw new IllegalArgumentException("PIN must be at most "
-                            + DevicePolicyManager.MAX_PASSWORD_LENGTH + " digits long.");
-                }
                 break;
             case CREDENTIAL_TYPE_PASSWORD:
                 if (size() < LockPatternUtils.MIN_LOCK_PASSWORD_SIZE) {
                     throw new IllegalArgumentException("password must be at least "
                             + LockPatternUtils.MIN_LOCK_PASSWORD_SIZE + " characters long.");
-                }
-                if (size() > DevicePolicyManager.MAX_PASSWORD_LENGTH) {
-                    throw new IllegalArgumentException("password must be at most "
-                            + DevicePolicyManager.MAX_PASSWORD_LENGTH + " characters long.");
                 }
                 break;
         }
