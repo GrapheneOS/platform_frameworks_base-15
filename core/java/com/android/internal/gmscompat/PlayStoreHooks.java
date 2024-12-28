@@ -361,7 +361,10 @@ public final class PlayStoreHooks {
             return null;
         }
 
-        Log.d(TAG, "overriding locales for " + (targetPackage == null ? "self" : targetPackage), new Throwable());
+        String tag = targetPackage == null ? "GmcAppLocaleSelf" : "GmcAppLocale";
+        if (Log.isLoggable(tag, Log.VERBOSE)) {
+            Log.v(tag, "overriding locales for " + (targetPackage == null ? "self" : targetPackage), new Throwable());
+        }
 
         int numActualLocales = actualLocales.size();
         ArraySet<Locale> actualLocalesSet = new ArraySet<>(numActualLocales);
