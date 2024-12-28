@@ -829,6 +829,12 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
      * dragging it and translation should be deferred {@see KeyguardBouncer#show(boolean, boolean)}
      */
     public void showPrimaryBouncer(boolean scrimmed) {
+        // TODO: SIM PIN/PUK insertion code does not call through here. Despite that, it might be
+        //  possible for a user with second factor enabled to complete a fingerprint auth just
+        //  after inserting a SIM with a PIN/PUK, and then KSCC#showSecurityScreen would be called
+        //  with SIM PIN/PUK prior to preparing the fullscreen bouncer. Need to verify that this is
+        //  not done.
+
         hideAlternateBouncer(false);
         if (mKeyguardStateController.isShowing()) {
             if (!isBouncerShowing()) {
@@ -840,13 +846,14 @@ public class StatusBarKeyguardViewManager implements RemoteInputController.Callb
                     mPrimaryBouncerInteractor.show(scrimmed);
                 }
             } else {
-                // This is a no-op unless the SecurityMode has changed, which can only occur when
-                // doing fp auth with second factor enabled, or inserting a SIM PIN. The latter
-                // case doesn't call this method, although it could in the future and would need to
-                // be reviewed. In theory it might be possible to open the bouncer, insert a SIM PIN
-                // then quickly do a fp auth. This could result in this path being taken with the
-                // SecurityMode as SimPin, which is not tested or understood. Unclear if this could
-                // be a path to exploiting the lockscreen.
+                if (SceneContainerFlag.isEnabled()) {
+                    throw new IllegalStateException(
+                            "Handle SceneContainerFlag in SBKVM#showPrimaryBouncer!");
+                }
+                // This will either dismiss the Keyguard (if KUM#getUserCanSkipBouncer is true) or
+                // display the appropriate SecurityMode in KSCC. These are the same outcomes that
+                // a caller can expect when calling #showPrimaryBouncer while the bouncer is not
+                // showing.
                 mPrimaryBouncerInteractor.notifyBouncerRequestedWhenAlreadyShowing();
             }
         }
