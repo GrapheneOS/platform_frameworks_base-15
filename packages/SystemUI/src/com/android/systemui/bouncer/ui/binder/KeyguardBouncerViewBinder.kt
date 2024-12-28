@@ -252,11 +252,22 @@ object KeyguardBouncerViewBinder {
 
                     launch {
                         viewModel.bouncerRequestedWhenAlreadyShowing.collect {
-                            // This will be a no-op except for when fingerprint authenticated
-                            // while the primary bouncer is showing. It would seem this is only
-                            // possible for non-UDFPS devices, but there might be edge cases or bugs
-                            // where UDFPS is displayed on top of primary bouncer.
-                            securityContainerController.showPrimarySecurityScreen(false)
+                            // We get here when fp authenticated while the primary bouncer is
+                            // showing. If KUM#getUserCanSkipBouncer is true then we should dismiss
+                            // immediately. This same dismissal attempt is also done when showing
+                            // the bouncer initially as part of PrimaryBouncerInteractor#show.
+                            val dismissed = securityContainerController.dismiss(
+                                selectedUserInteractor.getSelectedUserId()
+                            )
+                            if (!dismissed) {
+                                // This will be a no-op except for when fingerprint authenticated
+                                // while the primary bouncer is showing (as well as SIM PIN/PUK,
+                                // which is discussed in SBKVM#showPrimaryBouncer). It would seem
+                                // this is only possible for non-UDFPS devices, but there might be
+                                // edge cases or bugs where UDFPS is displayed on top of primary
+                                // bouncer.
+                                securityContainerController.showPrimarySecurityScreen(false)
+                            }
                             viewModel.notifyBouncerRequestedWhenAlreadyShowingHandled()
                         }
                     }
