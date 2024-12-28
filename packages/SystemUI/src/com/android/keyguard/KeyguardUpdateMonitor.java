@@ -934,15 +934,8 @@ public class KeyguardUpdateMonitor implements TrustManager.TrustListener, Dumpab
                         Log.e(BSF_TAG, "addPendingAuthTokenToKeyStore returned ERROR_UNABLE_TO_ADD_AUTH_TOKEN_TO_KEYSTORE");
                         return false;
                     case FingerprintManager.ERROR_NO_PENDING_AUTH_TOKEN:
-                        String msg = "addPendingAuthTokenToKeyStore returned ERROR_NO_PENDING_AUTH_TOKEN";
-                        if (isStrongBiometric) {
-                            Log.e(BSF_TAG, msg);
-                            return false;
-                        } else {
-                            Log.d(BSF_TAG, msg);
-                            // weak biometric doesn't generate keystore auth token
-                            break;
-                        }
+                        Log.e(BSF_TAG, "addPendingAuthTokenToKeyStore returned ERROR_NO_PENDING_AUTH_TOKEN");
+                        return false;
                     default:
                         Log.e(BSF_TAG, "addPendingAuthTokenToKeyStore returned unknown value: " + res);
                         return false;
