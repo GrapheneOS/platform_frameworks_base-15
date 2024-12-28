@@ -1241,6 +1241,14 @@ public class Binder implements IBinder {
      */
     public final native void setExtension(@Nullable IBinder extension);
 
+    private static final String LOG_TAG_TXN = "BinderTxn";
+    private static boolean LOG_TXNS = Log.isLoggable(LOG_TAG_TXN, Log.VERBOSE);
+
+    /** @hide */
+    public static void onZygotePostForkChild() {
+        LOG_TXNS = Log.isLoggable(LOG_TAG_TXN, Log.VERBOSE);
+    }
+
     /**
      * Default implementation rewinds the parcels and calls onTransact. On
      * the remote side, transact calls into the binder to do the IPC.
@@ -1248,6 +1256,10 @@ public class Binder implements IBinder {
     public final boolean transact(int code, @NonNull Parcel data, @Nullable Parcel reply,
             int flags) throws RemoteException {
         if (false) Log.v("Binder", "Transact: " + code + " to " + this);
+
+        if (LOG_TXNS) {
+            Log.v(LOG_TAG_TXN, getInterfaceDescriptor() + ", code " + code, new Throwable());
+        }
 
         if (data != null) {
             data.setDataPosition(0);
@@ -1338,6 +1350,10 @@ public class Binder implements IBinder {
                     GmsHooks.onBinderTransaction(Binder.getCallingPid(), binderCallingUid);
                 }
             }
+        }
+
+        if (LOG_TXNS) {
+            Log.v(LOG_TAG_TXN, getInterfaceDescriptor() + ", code " + code);
         }
 
         Parcel data = Parcel.obtain(dataObj);
