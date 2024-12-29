@@ -17,6 +17,7 @@
 package com.android.systemui.statusbar.policy;
 
 import android.content.Context;
+import android.ext.power.BatteryChargeLimit;
 import android.os.Handler;
 import android.os.PowerManager;
 
@@ -27,6 +28,7 @@ import com.android.systemui.dagger.qualifiers.Main;
 import com.android.systemui.demomode.DemoModeController;
 import com.android.systemui.dump.DumpManager;
 import com.android.systemui.power.EnhancedEstimates;
+import com.google.android.systemui.statusbar.policy.BatteryControllerImplGoogle;
 
 import dagger.Module;
 import dagger.Provides;
@@ -48,7 +50,9 @@ public class AospPolicyModule {
             BatteryControllerLogger logger,
             @Main Handler mainHandler,
             @Background Handler bgHandler) {
-        BatteryController bC = new BatteryControllerImpl(
+        BatteryController bC;
+        if (BatteryChargeLimit.isGoogleDevice()) {
+            bC = new BatteryControllerImplGoogle(
                 context,
                 enhancedEstimates,
                 powerManager,
@@ -58,6 +62,19 @@ public class AospPolicyModule {
                 logger,
                 mainHandler,
                 bgHandler);
+        }
+        else {
+            bC = new BatteryControllerImpl(
+                context,
+                enhancedEstimates,
+                powerManager,
+                broadcastDispatcher,
+                demoModeController,
+                dumpManager,
+                logger,
+                mainHandler,
+                bgHandler);
+        }
         bC.init();
         return bC;
     }
