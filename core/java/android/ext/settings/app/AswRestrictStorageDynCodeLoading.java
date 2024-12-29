@@ -5,6 +5,9 @@ import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.GosPackageState;
 import android.content.pm.GosPackageStateBase;
+import android.content.pm.PackageManager;
+import android.ext.AppInfoExt;
+import android.ext.PackageId;
 import android.ext.settings.ExtSettings;
 import android.util.ArraySet;
 
@@ -58,12 +61,30 @@ public class AswRestrictStorageDynCodeLoading extends AppSwitch {
         return null;
     }
 
+    public static boolean isGmsCoreInstalled(Context ctx, int userId) {
+        PackageManager pm = ctx.getPackageManager();
+        try {
+            ApplicationInfo info = pm.getApplicationInfoAsUser(PackageId.GMS_CORE_NAME, 0, userId);
+            return info.ext().getPackageId() == PackageId.GMS_CORE;
+        } catch (PackageManager.NameNotFoundException ignored) {
+            return false;
+        }
+    }
+
     @Override
     protected boolean getDefaultValueInner(Context ctx, int userId, ApplicationInfo appInfo,
                                            @Nullable GosPackageStateBase ps, StateInfo si) {
         if (appInfo.isSystemApp()) {
             return !shouldAllowByDefaultToSystemPkg(ctx, appInfo.packageName);
         } else {
+            if (appInfo.ext().hasFlag(AppInfoExt.FLAG_HAS_GMSCORE_CLIENT_LIBRARY)) {
+                if (isGmsCoreInstalled(ctx, userId)) {
+                    si.defaultValueReason = DVR_APP_IS_CLIENT_OF_GMSCORE;
+                    // Dynamite modules are loaded from writable data storage of GmsCore
+                    return false;
+                }
+            }
+
             si.defaultValueReason = DVR_DEFAULT_SETTING;
             return ExtSettings.RESTRICT_STORAGE_DYN_CODE_LOADING_BY_DEFAULT.get(ctx, userId);
         }
