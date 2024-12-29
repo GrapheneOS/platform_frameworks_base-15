@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="charge_limit_discovery_notification_enable_button"/>
+    <string name="charge_limit_discovery_notification_help_url"/>
+    <string name="charge_limit_discovery_notification_text"/>
+    <string name="charge_limit_discovery_notification_title"/>
+    <string name="keyguard_indication_charging_time_charge_limit"/>
+    <string name="keyguard_indication_charging_time_charge_limit_v1"/>
+    <string name="keyguard_indication_charging_time_reach_charge_limit"/>
+</resources>
