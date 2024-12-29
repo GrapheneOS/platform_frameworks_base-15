@@ -423,16 +423,22 @@ public class TombstoneHandler {
 
         if ("/apex/com.google.android.hardware.biometrics.fingerprint/bin/hw/android.hardware.biometrics.fingerprint-service.goodix".equals(cmdline[0])) {
             // rare harmless crash, fingerprint service restarts and continues to work
-            return checkBacktraceFunctionNames(backtrace, 0
-                    , "android::VectorImpl::editArrayImpl()"
-                    , "goodix::EventCenter::hasUpEvt()"
-                    , "goodix::DelmarSensor::checkFingerUp(unsigned int)"
-                    , "goodix::DelmarSensor::readImage(unsigned int, unsigned long)"
-                    , "goodix::CustomizedSensor::readImage(unsigned int, unsigned long)"
-                    , "goodix::DelmarFingerprintCore::onAfterAuthCapture(goodix::FingerprintCore::AuthenticateContext*)"
-                    , "goodix::CustomizedFingerprintCore::onAfterAuthCapture(goodix::FingerprintCore::AuthenticateContext*)"
-                    , "goodix::FingerprintCore::onAuthDownEvt()"
-            );
+            String[] functionNames = {
+                    "android::VectorImpl::editArrayImpl()",
+                    "goodix::EventCenter::hasUpEvt()",
+                    "goodix::DelmarSensor::checkFingerUp(unsigned int)",
+                    "goodix::DelmarSensor::readImage(unsigned int, unsigned long)",
+                    "goodix::CustomizedSensor::readImage(unsigned int, unsigned long)",
+                    "goodix::DelmarFingerprintCore::onAfterAuthCapture(goodix::FingerprintCore::AuthenticateContext*)",
+                    "goodix::CustomizedFingerprintCore::onAfterAuthCapture(goodix::FingerprintCore::AuthenticateContext*)",
+                    "goodix::FingerprintCore::onAuthDownEvt()",
+            };
+            // top backtrace entries might be missing due to inlining
+            for (int i = 0; i < 3; ++i) {
+                if (checkBacktraceFunctionNames(backtrace, i, functionNames)) {
+                    return true;
+                }
+            }
         }
 
         return false;
