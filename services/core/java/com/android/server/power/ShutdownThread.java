@@ -404,13 +404,7 @@ public final class ShutdownThread extends Thread {
             sIsStarted = true;
         }
 
-        try {
-            sInstance.mProgressDialog = showShutdownDialog(context);
-        } catch (android.content.res.Resources.NotFoundException e) {
-            // mProgressDialog is expected to be nullable, no special handling is needed for this case
-            Slog.e(TAG, "unable to show shutdown dialog", e);
-        }
-
+        sInstance.mProgressDialog = showShutdownDialog(context);
         sInstance.mContext = context;
         sInstance.mPowerManager = (PowerManager)context.getSystemService(Context.POWER_SERVICE);
 
