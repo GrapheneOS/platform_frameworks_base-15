@@ -247,8 +247,6 @@ public interface PackageManagerLocal {
         void close();
     }
 
-    void showDexoptProgressBootMessage(int percentage, int current, int total);
-
     void onBgDexoptProgressUpdate(@ElapsedRealtimeLong long start, int percentage, int current, int total);
 
     void onBgDexoptCompleted(
