@@ -38,6 +38,7 @@ public abstract class AppSwitch {
     public static final int DVR_DEFAULT_SETTING = 1;
     public static final int DVR_APP_COMPAT_CONFIG_HARDENING_OPT_IN = 2;
     public static final int DVR_APP_COMPAT_CONFIG_HARDENING_OPT_OUT = 3;
+    public static final int DVR_APP_IS_CLIENT_OF_GMSCORE = 4;
 
     public static class StateInfo {
         // use it only if StateInfo is not needed, it's not thread-safe to read from this variable
