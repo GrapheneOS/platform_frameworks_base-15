@@ -4373,7 +4373,7 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
             dexUseManager.systemReady();
         }
 
-        GosPackageStatePmHooks.init(this);
+        PackageManagerServiceHooks.systemReady(this);
     }
 
     //TODO: b/111402650
@@ -4829,7 +4829,7 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
                 public void run() {
                     mHandler.removeCallbacks(this);
 
-                    GosPackageStatePmHooks.onClearApplicationUserData(
+                    PackageManagerServiceHooks.onClearApplicationUserData(
                             PackageManagerService.this, packageName, userId);
 
                     final boolean succeeded;

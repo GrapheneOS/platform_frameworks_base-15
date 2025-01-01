@@ -32,7 +32,7 @@ import java.io.PrintWriter;
 /**
  * Read-only interface used by computer and snapshots to query the visibility of packages
  */
-public interface AppsFilterSnapshot {
+public sealed interface AppsFilterSnapshot permits AppsFilterBase {
     /**
      * Fetches all app Ids that a given setting is currently visible to, per provided user. This
      * only includes UIDs >= {@link Process#FIRST_APPLICATION_UID} as all other UIDs can already see

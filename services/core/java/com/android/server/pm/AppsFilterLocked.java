@@ -24,7 +24,7 @@ import java.io.PrintWriter;
  * Overrides the unlocked methods in {@link AppsFilterBase} and guards them with locks.
  * These are used by {@link AppsFilterImpl} which contains modifications to the class members
  */
-abstract class AppsFilterLocked extends AppsFilterBase {
+sealed abstract class AppsFilterLocked extends AppsFilterBase permits AppsFilterImpl {
     /**
      * The following locks guard the accesses for the list/set class members
      */

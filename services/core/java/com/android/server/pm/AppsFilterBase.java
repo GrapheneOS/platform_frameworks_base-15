@@ -62,7 +62,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * in their manifests. This class implements the unlocked, read-only methods of AppsFilter.
  * See {@link AppsFilterImpl} for the write methods that updates the internal structures.
  */
-public abstract class AppsFilterBase implements AppsFilterSnapshot {
+public sealed abstract class AppsFilterBase implements AppsFilterSnapshot permits AppsFilterLocked, AppsFilterSnapshotImpl {
     protected static final String TAG = "AppsFilter";
 
     // Logs all filtering instead of enforcing
