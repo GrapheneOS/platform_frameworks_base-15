@@ -15,6 +15,10 @@
  */
 package com.android.systemui.deviceentry.domain.interactor
 
+import android.hardware.biometrics.BiometricSourceType
+import android.util.Log
+import com.android.keyguard.KeyguardUpdateMonitor
+import com.android.keyguard.KeyguardUpdateMonitorCallback
 import com.android.keyguard.logging.BiometricUnlockLogger
 import com.android.systemui.biometrics.data.repository.FingerprintPropertyRepository
 import com.android.systemui.biometrics.shared.model.FingerprintSensorType
@@ -27,7 +31,9 @@ import com.android.systemui.util.kotlin.sample
 import com.android.systemui.util.time.SystemClock
 import javax.inject.Inject
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.callbackFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.combineTransform
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -53,6 +59,7 @@ constructor(
     biometricSettingsRepository: BiometricSettingsRepository,
     keyEventInteractor: KeyEventInteractor,
     powerInteractor: PowerInteractor,
+    keyguardUpdateMonitor: KeyguardUpdateMonitor,
     private val systemClock: SystemClock,
     private val logger: BiometricUnlockLogger,
 ) {
@@ -79,7 +86,7 @@ constructor(
                 emit(recentPowerButtonPressThresholdMs * -1L - 1L)
             }
 
-    val playSuccessHaptic: Flow<Unit> =
+    val playSuccessHaptic: Flow<Unit> = merge(
         deviceEntrySourceInteractor.deviceEntryFromBiometricSource
             .sample(
                 combine(
@@ -101,6 +108,28 @@ constructor(
                 allowHaptic
             }
             .map {} // map to Unit
+            , // merge with callbackFlow below
+            callbackFlow {
+                    val callback =
+                        object : KeyguardUpdateMonitorCallback() {
+                            override fun onBiometricAuthenticated(
+                                userId: Int,
+                                biometricSourceType: BiometricSourceType,
+                                isStrongBiometric: Boolean,
+                                secondFactorStatus: SecondFactorStatus,
+                            ) {
+                                if (secondFactorStatus == SecondFactorStatus.Enabled) {
+                                    if (!trySend(Unit).isSuccess) {
+                                        Log.w("DeviceEntryHapticsInteractor",
+                                            "playSuccessHaptic: !trySend failed")
+                                    }
+                                    return
+                                }
+                            }
+                        }
+                keyguardUpdateMonitor.registerCallback(callback)
+                awaitClose { keyguardUpdateMonitor.removeCallback(callback) }
+            })
 
     private val playErrorHapticForBiometricFailure: Flow<Unit> =
         merge(
