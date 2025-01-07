@@ -8329,4 +8329,66 @@ public class UserManagerService extends IUserManager.Stub {
         return mUserJourneyLogger;
     }
 
+    @Override
+    public boolean getAllowStopUserWithDelayedStorageLocking(@UserIdInt int userId) {
+        checkCreateUsersPermission("getAllowStopUserWithDelayedStorageLocking");
+        if (UserHandle.getAppId(Binder.getCallingUid()) != Process.SYSTEM_UID) {
+            throw new SecurityException("Only apps with appId=SYSTEM_UID can call this method");
+        }
+
+        UserInfo userInfo = getUserInfo(userId);
+        if (userInfo == null || !userInfo.isPrivateProfile()) {
+            return false;
+        }
+
+        UserProperties userProperties = getUserPropertiesInternal(userId);
+        return userProperties != null && userProperties.getAllowStoppingUserWithDelayedLocking();
+    }
+
+    @Override
+    public boolean setAllowStopUserWithDelayedStorageLocking(@UserIdInt int userId, boolean allow) {
+        checkCreateUsersPermission("setAllowStopUserWithDelayedStorageLocking");
+        if (UserHandle.getAppId(Binder.getCallingUid()) != Process.SYSTEM_UID) {
+            throw new SecurityException("Only apps with appId=SYSTEM_UID can call this method");
+        }
+
+        UserInfo userInfo = getUserInfo(userId);
+        if (userInfo == null || !userInfo.isPrivateProfile()) {
+            return false;
+        }
+
+        UserProperties userProperties = getUserPropertiesInternal(userId);
+        if (userProperties == null) {
+            return false;
+        }
+
+        userProperties.setAllowStoppingUserWithDelayedLocking(allow);
+        scheduleWriteUser(userId);
+        return true;
+    }
+
+    @Override
+    public boolean resetAllowStopUserWithDelayedStorageLocking(@UserIdInt int userId) {
+        checkCreateUsersPermission("setAllowStopUserWithDelayedStorageLocking");
+        if (UserHandle.getAppId(Binder.getCallingUid()) != Process.SYSTEM_UID) {
+            throw new SecurityException("Only apps with appId=SYSTEM_UID can call this method");
+        }
+
+        UserInfo userInfo = getUserInfo(userId);
+        if (userInfo == null || !userInfo.isPrivateProfile()) {
+            return false;
+        }
+
+        UserProperties userProperties = getUserPropertiesInternal(userId);
+        if (userProperties == null) {
+            return false;
+        }
+
+        boolean res = userProperties.resetAllowStoppingUserWithDelayedLocking();
+        if (res) {
+            scheduleWriteUser(userId);
+        }
+        return res;
+    }
+
 }

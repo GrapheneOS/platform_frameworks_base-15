@@ -440,6 +440,7 @@ public final class UserTypeFactory {
     static Bundle getDefaultPrivateProfileRestrictions() {
         final Bundle restrictions = getDefaultProfileRestrictions();
         restrictions.putBoolean(UserManager.DISALLOW_BLUETOOTH_SHARING, true);
+        restrictions.putBoolean(UserManager.DISALLOW_CROSS_PROFILE_COPY_PASTE, true);
         return restrictions;
     }
 
@@ -450,6 +451,8 @@ public final class UserTypeFactory {
                 android.provider.Settings.Secure.MANAGED_PROFILE_CONTACT_REMOTE_SEARCH, "1");
         settings.putString(
                 android.provider.Settings.Secure.CROSS_PROFILE_CALENDAR_ENABLED, "1");
+        settings.putString(
+                android.provider.Settings.Secure.CROSS_PROFILE_CLIPBOARD_IMPORT_ACCESS, "0");
         return settings;
     }
 

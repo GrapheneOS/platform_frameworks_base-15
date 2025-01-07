@@ -1143,6 +1143,20 @@ public class SettingsProvider extends ContentProvider {
                         Binder.restoreCallingIdentity(identity);
                     }
                 }
+                if (changedRestrictions.contains(UserManager.DISALLOW_CROSS_PROFILE_COPY_PASTE)) {
+                    final long identity = Binder.clearCallingIdentity();
+                    try {
+                        for (int profileId : mUserManager.getProfileIdsWithDisabled(userId)) {
+                            synchronized (mLock) {
+                                final int key = makeKey(SETTINGS_TYPE_SECURE, profileId);
+                                final String name = Settings.Secure.CROSS_PROFILE_CLIPBOARD_IMPORT_ACCESS;
+                                mSettingsRegistry.notifyForSettingsChange(key, name);
+                            }
+                        }
+                    } finally {
+                        Binder.restoreCallingIdentity(identity);
+                    }
+                }
             }
         };
         mUserManager.addUserRestrictionsListener(listener);
@@ -1313,6 +1327,18 @@ public class SettingsProvider extends ContentProvider {
             boolean makeDefault, int operation, int mode) {
         final String callingPackage = resolveCallingPackage();
 
+        SettingsProviderHooks.maybeEnforceMorePermissions(
+                this, name, value, SETTINGS_TYPE_CONFIG,
+                switch (operation) {
+                    case MUTATION_OPERATION_INSERT -> SettingsProviderHooks.OPR_MUTATE_SETTING_INSERT;
+                    case MUTATION_OPERATION_DELETE -> SettingsProviderHooks.OPR_MUTATE_SETTING_DELETE;
+                    case MUTATION_OPERATION_UPDATE -> SettingsProviderHooks.OPR_MUTATE_SETTING_UPDATE;
+                    case MUTATION_OPERATION_RESET -> SettingsProviderHooks.OPR_MUTATE_SETTING_RESET;
+                    default -> SettingsProviderHooks.OPR_UNKNOWN;
+                },
+                UserHandle.getCallingUserId(), UserHandle.USER_SYSTEM,
+                () -> getCallingPackageInfo(UserHandle.getCallingUserId()));
+
         // Perform the mutation.
         synchronized (mLock) {
             switch (operation) {
@@ -1446,6 +1472,10 @@ public class SettingsProvider extends ContentProvider {
                 try {
                     enforceSettingReadable(name, SETTINGS_TYPE_GLOBAL,
                             UserHandle.getCallingUserId());
+                    SettingsProviderHooks.maybeEnforceMorePermissions(this, name, null,
+                            SETTINGS_TYPE_GLOBAL, SettingsProviderHooks.OPR_READ_SETTING,
+                            UserHandle.getCallingUserId(), UserHandle.USER_SYSTEM,
+                            () -> getCallingPackageInfo(UserHandle.getCallingUserId()));
                 } catch (SecurityException e) {
                     // Caller doesn't have permission to read this setting
                     continue;
@@ -1465,6 +1495,11 @@ public class SettingsProvider extends ContentProvider {
 
         // Ensure the caller can access the setting.
         enforceSettingReadable(name, SETTINGS_TYPE_GLOBAL, UserHandle.getCallingUserId());
+
+        SettingsProviderHooks.maybeEnforceMorePermissions(this, name, null,
+                SETTINGS_TYPE_GLOBAL, SettingsProviderHooks.OPR_READ_SETTING,
+                UserHandle.getCallingUserId(), UserHandle.USER_SYSTEM,
+                () -> getCallingPackageInfo(UserHandle.getCallingUserId()));
 
         // Get the value.
         synchronized (mLock) {
@@ -1542,6 +1577,17 @@ public class SettingsProvider extends ContentProvider {
 
         // Resolve the userId on whose behalf the call is made.
         final int callingUserId = resolveCallingUserIdEnforcingPermissions(requestingUserId);
+
+        SettingsProviderHooks.maybeEnforceMorePermissions(
+                this, name, value, SETTINGS_TYPE_GLOBAL,
+                switch (operation) {
+                    case MUTATION_OPERATION_INSERT -> SettingsProviderHooks.OPR_MUTATE_SETTING_INSERT;
+                    case MUTATION_OPERATION_DELETE -> SettingsProviderHooks.OPR_MUTATE_SETTING_DELETE;
+                    case MUTATION_OPERATION_UPDATE -> SettingsProviderHooks.OPR_MUTATE_SETTING_UPDATE;
+                    case MUTATION_OPERATION_RESET -> SettingsProviderHooks.OPR_MUTATE_SETTING_RESET;
+                    default -> SettingsProviderHooks.OPR_UNKNOWN;
+                },
+                callingUserId, UserHandle.USER_SYSTEM, () -> getCallingPackageInfo(UserHandle.getCallingUserId()));
 
         // If this is a setting that is currently restricted for this user, do not allow
         // unrestricting changes.
@@ -1626,6 +1672,9 @@ public class SettingsProvider extends ContentProvider {
 
                 try {
                     enforceSettingReadable(name, SETTINGS_TYPE_SECURE, callingUserId);
+                    SettingsProviderHooks.maybeEnforceMorePermissions(this, name, null,
+                            SETTINGS_TYPE_SECURE, SettingsProviderHooks.OPR_READ_SETTING,
+                            callingUserId, owningUserId, () -> getCallingPackageInfo(UserHandle.getCallingUserId()));
                 } catch (SecurityException e) {
                     // Caller doesn't have permission to read this setting
                     continue;
@@ -1660,6 +1709,10 @@ public class SettingsProvider extends ContentProvider {
 
         // Determine the owning user as some profile settings are cloned from the parent.
         final int owningUserId = resolveOwningUserIdForSecureSetting(callingUserId, name);
+
+        SettingsProviderHooks.maybeEnforceMorePermissions(this, name, null,
+                SETTINGS_TYPE_SECURE, SettingsProviderHooks.OPR_READ_SETTING,
+                callingUserId, owningUserId, () -> getCallingPackageInfo(UserHandle.getCallingUserId()));
 
         if (!isSecureSettingAccessible(name)) {
             // This caller is not permitted to access this setting. Pretend the setting doesn't
@@ -1842,6 +1895,17 @@ public class SettingsProvider extends ContentProvider {
             return false;
         }
 
+        SettingsProviderHooks.maybeEnforceMorePermissions(
+                this, name, value, SETTINGS_TYPE_SECURE,
+                switch (operation) {
+                    case MUTATION_OPERATION_INSERT -> SettingsProviderHooks.OPR_MUTATE_SETTING_INSERT;
+                    case MUTATION_OPERATION_DELETE -> SettingsProviderHooks.OPR_MUTATE_SETTING_DELETE;
+                    case MUTATION_OPERATION_UPDATE -> SettingsProviderHooks.OPR_MUTATE_SETTING_UPDATE;
+                    case MUTATION_OPERATION_RESET -> SettingsProviderHooks.OPR_MUTATE_SETTING_RESET;
+                    default -> SettingsProviderHooks.OPR_UNKNOWN;
+                },
+                callingUserId, owningUserId, () -> getCallingPackageInfo(UserHandle.getCallingUserId()));
+
         final String callingPackage = getCallingPackage();
 
         // Mutate the value.
@@ -1900,6 +1964,14 @@ public class SettingsProvider extends ContentProvider {
                 final int owningUserId = resolveOwningUserIdForSystemSettingLocked(callingUserId,
                         name);
 
+                try {
+                    SettingsProviderHooks.maybeEnforceMorePermissions(this, name, null,
+                            SETTINGS_TYPE_SYSTEM, SettingsProviderHooks.OPR_READ_SETTING,
+                            callingUserId, owningUserId, () -> getCallingPackageInfo(UserHandle.getCallingUserId()));
+                } catch (SecurityException e) {
+                    continue;
+                }
+
                 Setting setting = mSettingsRegistry.getSettingLocked(
                         SETTINGS_TYPE_SYSTEM, owningUserId, name);
                 appendSettingToCursor(result, setting);
@@ -1922,6 +1994,10 @@ public class SettingsProvider extends ContentProvider {
 
         // Determine the owning user as some profile settings are cloned from the parent.
         final int owningUserId = resolveOwningUserIdForSystemSettingLocked(callingUserId, name);
+
+        SettingsProviderHooks.maybeEnforceMorePermissions(this, name, null,
+                SETTINGS_TYPE_SYSTEM, SettingsProviderHooks.OPR_READ_SETTING,
+                callingUserId, owningUserId, () -> getCallingPackageInfo(UserHandle.getCallingUserId()));
 
         // Get the value.
         synchronized (mLock) {
@@ -2010,6 +2086,17 @@ public class SettingsProvider extends ContentProvider {
                     + owningUserId);
             return false;
         }
+
+        SettingsProviderHooks.maybeEnforceMorePermissions(
+                this, name, value, SETTINGS_TYPE_SYSTEM,
+                switch (operation) {
+                    case MUTATION_OPERATION_INSERT -> SettingsProviderHooks.OPR_MUTATE_SETTING_INSERT;
+                    case MUTATION_OPERATION_DELETE -> SettingsProviderHooks.OPR_MUTATE_SETTING_DELETE;
+                    case MUTATION_OPERATION_UPDATE -> SettingsProviderHooks.OPR_MUTATE_SETTING_UPDATE;
+                    case MUTATION_OPERATION_RESET -> SettingsProviderHooks.OPR_MUTATE_SETTING_RESET;
+                    default -> SettingsProviderHooks.OPR_UNKNOWN;
+                },
+                callingUserId, owningUserId, () -> getCallingPackageInfo(UserHandle.getCallingUserId()));
 
         File cacheFile = getCacheFile(name, callingUserId);
         if (cacheFile != null) {

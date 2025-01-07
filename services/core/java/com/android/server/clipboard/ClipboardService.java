@@ -982,6 +982,11 @@ public class ClipboardService extends SystemService {
                 for (int i = 0; i < size; i++) {
                     int id = related.get(i).id;
                     if (id != userId) {
+                        if (!android.ext.settings.ExtSettings.CROSS_PROFILE_CLIPBOARD_IMPORT_ACCESS
+                                .get(getContext(), id)) {
+                            continue;
+                        }
+
                         final boolean canCopyIntoProfile = !hasRestriction(
                                 UserManager.DISALLOW_SHARE_INTO_MANAGED_PROFILE, id);
                         if (canCopyIntoProfile) {

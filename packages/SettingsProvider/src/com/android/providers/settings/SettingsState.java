@@ -787,6 +787,14 @@ final class SettingsState {
         if (TextUtils.isEmpty(name)) {
             return mNullSetting;
         }
+        if (SettingsProviderHooks.isImmutableSetting(
+                SettingsState.this, mContext, getTypeFromKey(mKey), name, getUserIdFromKey(mKey))) {
+            Setting immutableSetting = SettingsProviderHooks.getImmutableSetting(
+                    this, mContext, getTypeFromKey(mKey), name, getUserIdFromKey(mKey));
+            if (immutableSetting != null) {
+                return immutableSetting;
+            }
+        }
         Setting setting = mSettings.get(name);
         if (setting != null) {
             return new Setting(setting);
@@ -844,6 +852,11 @@ final class SettingsState {
             boolean makeDefault, boolean forceNonSystemPackage, String packageName,
             boolean overrideableByRestore) {
         if (TextUtils.isEmpty(name)) {
+            return false;
+        }
+
+        if (SettingsProviderHooks.isImmutableSetting(
+                SettingsState.this, mContext, getTypeFromKey(mKey), name, getUserIdFromKey(mKey))) {
             return false;
         }
 

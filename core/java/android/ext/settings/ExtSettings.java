@@ -93,6 +93,9 @@ public class ExtSettings {
     public static final BoolSetting SHOW_SYSTEM_PROCESS_CRASH_NOTIFICATIONS = new BoolSetting(
             Setting.Scope.GLOBAL, Settings.Global.SHOW_SYSTEM_PROCESS_CRASH_NOTIFICATIONS, false);
 
+    public static final BoolSetting CROSS_PROFILE_CLIPBOARD_IMPORT_ACCESS = new BoolSetting(
+            Setting.Scope.PER_USER, Settings.Secure.CROSS_PROFILE_CLIPBOARD_IMPORT_ACCESS, false);
+
     private ExtSettings() {}
 
     public static Function<Context, Boolean> defaultBool(@BoolRes int res) {
