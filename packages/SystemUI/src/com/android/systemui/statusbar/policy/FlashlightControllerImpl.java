@@ -131,7 +131,12 @@ public class FlashlightControllerImpl implements FlashlightController {
             synchronized (this) {
                 if (mFlashlightEnabled != enabled) {
                     try {
-                        mCameraManager.setTorchMode(mCameraId.get(), enabled);
+                        if (enabled) {
+                            CameraCharacteristics c = mCameraManager.getCameraCharacteristics(mCameraId.get());
+                            mCameraManager.turnOnTorchWithStrengthLevel(mCameraId.get(), c.get(CameraCharacteristics.FLASH_TORCH_STRENGTH_MAX_LEVEL));
+                        } else {
+                            mCameraManager.setTorchMode(mCameraId.get(), false);
+                        }
                     } catch (CameraAccessException e) {
                         Log.e(TAG, "Couldn't set torch mode", e);
                         dispatchError();
