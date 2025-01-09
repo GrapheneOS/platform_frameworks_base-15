@@ -50,6 +50,7 @@ public class AppCopyHelper {
     private static final boolean DEBUG = false;
     private static final String TAG = "AppCopyHelper";
 
+    private final Context mContext;
     private final PackageManager mPackageManager;
     private final IPackageManager mIPm;
     private final UserHandle mUser;
@@ -66,6 +67,7 @@ public class AppCopyHelper {
 
     @VisibleForTesting
     AppCopyHelper(Injector injector) {
+        mContext = injector.getContext();
         mPackageManager = injector.getPackageManager();
         mIPm = injector.getIPackageManager();
         mUser = injector.getUser();
@@ -162,6 +164,7 @@ public class AppCopyHelper {
                 info.packageName = app.packageName;
                 info.appName = app.loadLabel(mPackageManager);
                 info.icon = app.loadIcon(mPackageManager);
+                info.ext = AppCopyHelperExt.getSelectableAppInfoExt(mContext, app);
                 mVisibleApps.add(info);
             }
         }
@@ -220,6 +223,7 @@ public class AppCopyHelper {
                     info.packageName = app.activityInfo.packageName;
                     info.appName = app.activityInfo.applicationInfo.loadLabel(mPackageManager);
                     info.icon = app.activityInfo.loadIcon(mPackageManager);
+                    info.ext = AppCopyHelperExt.getSelectableAppInfoExt(mContext, app.activityInfo.applicationInfo);
 
                     visibleApps.add(info);
                 }
@@ -227,11 +231,14 @@ public class AppCopyHelper {
         }
     }
 
+    public record SelectableAppInfoExt(boolean neededForPrivateProfile, boolean systemApp) {}
+
     /** Container for a package, its name, and icon. */
     public static class SelectableAppInfo {
         public String packageName;
         public CharSequence appName;
         public Drawable icon;
+        public SelectableAppInfoExt ext;
 
         @Override
         public String toString() {
@@ -259,6 +266,10 @@ public class AppCopyHelper {
         Injector(Context context, UserHandle user) {
             mContext = context;
             mUser = user;
+        }
+
+        Context getContext() {
+            return mContext;
         }
 
         UserHandle getUser() {
