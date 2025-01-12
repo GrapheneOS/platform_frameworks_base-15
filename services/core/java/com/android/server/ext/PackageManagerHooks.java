@@ -6,6 +6,7 @@ import android.annotation.UserIdInt;
 import android.app.AppBindArgs;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.GosPackageState;
+import android.content.pm.GosPackageStateFlag;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManagerInternal;
 import android.ext.PackageId;
@@ -25,7 +26,6 @@ import com.android.server.pm.ext.PackageExt;
 import com.android.server.pm.ext.PackageHooks;
 import com.android.server.pm.permission.SpecialRuntimePermUtils;
 import com.android.server.pm.pkg.AndroidPackage;
-import com.android.server.pm.pkg.GosPackageStatePm;
 import com.android.server.pm.pkg.PackageStateInternal;
 
 import static java.util.Objects.requireNonNull;
@@ -70,6 +70,7 @@ public class PackageManagerHooks {
     @Nullable
     public static Bundle getExtraAppBindArgs(PackageManagerService pm, String packageName) {
         final int callingUid = Binder.getCallingUid();
+        final int callingPid = Binder.getCallingPid();
         final int appId = UserHandle.getAppId(callingUid);
         final int userId = UserHandle.getUserId(callingUid);
 
@@ -92,9 +93,10 @@ public class PackageManagerHooks {
         // isSystem() remains true even if isUpdatedSystemApp() is true
         final boolean isUserApp = !pkgState.isSystem();
 
-        GosPackageStatePm unfilteredGosPs = pkgState.getUserStateOrDefault(userId).getGosPackageState();
+        GosPackageState unfilteredGosPs = pkgState.getUserStateOrDefault(userId).getGosPackageState();
         // GosPackageState that is filtered for the target app
-        GosPackageState gosPs = GosPackageStatePmHooks.get(pmComputer, pkgState, unfilteredGosPs, callingUid, userId);
+        GosPackageState gosPs = GosPackageStatePmHooks.getFiltered(pmComputer, pkgState, unfilteredGosPs,
+                callingUid, callingPid, userId);
 
         ApplicationInfo appInfo =
                 requireNonNull(pmComputer.getApplicationInfo(packageName, 0L, userId));
