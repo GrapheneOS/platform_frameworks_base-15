@@ -22,12 +22,12 @@ import android.app.AppOpsManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.GosPackageState;
+import android.content.pm.GosPackageStateFlag;
+import android.ext.DerivedPackageFlag;
 import android.net.Uri;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.provider.Settings;
-
-import static android.content.pm.GosPackageState.*;
 
 public class StorageScopesAppHooks {
     private static final String TAG = "StorageScopesAppHooks";
@@ -41,7 +41,7 @@ public class StorageScopesAppHooks {
             return;
         }
 
-        if (ps.hasFlag(FLAG_STORAGE_SCOPES_ENABLED)) {
+        if (ps.hasFlag(GosPackageStateFlag.STORAGE_SCOPES_ENABLED)) {
             gosPsDerivedFlags = ps.derivedFlags;
             isEnabled = true;
         }
@@ -52,10 +52,10 @@ public class StorageScopesAppHooks {
     }
 
     public static boolean shouldSkipPermissionCheckSpoof(int gosPsDflags, int permDerivedFlag) {
-        if ((gosPsDflags & DFLAG_HAS_READ_MEDIA_VISUAL_USER_SELECTED_DECLARATION) != 0) {
+        if ((gosPsDflags & DerivedPackageFlag.HAS_READ_MEDIA_VISUAL_USER_SELECTED_DECLARATION) != 0) {
             switch (permDerivedFlag) {
-                case DFLAG_HAS_READ_MEDIA_AUDIO_DECLARATION:
-                case DFLAG_HAS_READ_MEDIA_VIDEO_DECLARATION:
+                case DerivedPackageFlag.HAS_READ_MEDIA_AUDIO_DECLARATION:
+                case DerivedPackageFlag.HAS_READ_MEDIA_VIDEO_DECLARATION:
                     // see https://developer.android.com/about/versions/14/changes/partial-photo-video-access
                     return false;
             }
@@ -148,25 +148,25 @@ public class StorageScopesAppHooks {
     public static int getSpoofablePermissionDflag(String permName) {
         switch (permName) {
             case Manifest.permission.READ_EXTERNAL_STORAGE:
-                return DFLAG_HAS_READ_EXTERNAL_STORAGE_DECLARATION;
+                return DerivedPackageFlag.HAS_READ_EXTERNAL_STORAGE_DECLARATION;
 
             case Manifest.permission.WRITE_EXTERNAL_STORAGE:
-                return DFLAG_HAS_WRITE_EXTERNAL_STORAGE_DECLARATION;
+                return DerivedPackageFlag.HAS_WRITE_EXTERNAL_STORAGE_DECLARATION;
 
             case Manifest.permission.ACCESS_MEDIA_LOCATION:
-                return DFLAG_HAS_ACCESS_MEDIA_LOCATION_DECLARATION;
+                return DerivedPackageFlag.HAS_ACCESS_MEDIA_LOCATION_DECLARATION;
 
             case Manifest.permission.READ_MEDIA_AUDIO:
-                return DFLAG_HAS_READ_MEDIA_AUDIO_DECLARATION;
+                return DerivedPackageFlag.HAS_READ_MEDIA_AUDIO_DECLARATION;
 
             case Manifest.permission.READ_MEDIA_IMAGES:
-                return DFLAG_HAS_READ_MEDIA_IMAGES_DECLARATION;
+                return DerivedPackageFlag.HAS_READ_MEDIA_IMAGES_DECLARATION;
 
             case Manifest.permission.READ_MEDIA_VIDEO:
-                return DFLAG_HAS_READ_MEDIA_VIDEO_DECLARATION;
+                return DerivedPackageFlag.HAS_READ_MEDIA_VIDEO_DECLARATION;
 
             case Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED:
-                return DFLAG_HAS_READ_MEDIA_VISUAL_USER_SELECTED_DECLARATION;
+                return DerivedPackageFlag.HAS_READ_MEDIA_VISUAL_USER_SELECTED_DECLARATION;
 
             default:
                 return 0;
@@ -176,31 +176,31 @@ public class StorageScopesAppHooks {
     private static int getSpoofableAppOpPermissionDflag(int op) {
         switch (op) {
             case AppOpsManager.OP_READ_EXTERNAL_STORAGE:
-                return DFLAG_HAS_READ_EXTERNAL_STORAGE_DECLARATION;
+                return DerivedPackageFlag.HAS_READ_EXTERNAL_STORAGE_DECLARATION;
 
             case AppOpsManager.OP_WRITE_EXTERNAL_STORAGE:
-                return DFLAG_HAS_WRITE_EXTERNAL_STORAGE_DECLARATION;
+                return DerivedPackageFlag.HAS_WRITE_EXTERNAL_STORAGE_DECLARATION;
 
             case AppOpsManager.OP_READ_MEDIA_AUDIO:
-                return DFLAG_HAS_READ_MEDIA_AUDIO_DECLARATION;
+                return DerivedPackageFlag.HAS_READ_MEDIA_AUDIO_DECLARATION;
 
             case AppOpsManager.OP_READ_MEDIA_IMAGES:
-                return DFLAG_HAS_READ_MEDIA_IMAGES_DECLARATION;
+                return DerivedPackageFlag.HAS_READ_MEDIA_IMAGES_DECLARATION;
 
             case AppOpsManager.OP_READ_MEDIA_VIDEO:
-                return DFLAG_HAS_READ_MEDIA_VIDEO_DECLARATION;
+                return DerivedPackageFlag.HAS_READ_MEDIA_VIDEO_DECLARATION;
 
             case AppOpsManager.OP_MANAGE_EXTERNAL_STORAGE:
-                return DFLAG_HAS_MANAGE_EXTERNAL_STORAGE_DECLARATION;
+                return DerivedPackageFlag.HAS_MANAGE_EXTERNAL_STORAGE_DECLARATION;
 
             case AppOpsManager.OP_MANAGE_MEDIA:
-                return DFLAG_HAS_MANAGE_MEDIA_DECLARATION;
+                return DerivedPackageFlag.HAS_MANAGE_MEDIA_DECLARATION;
 
             case AppOpsManager.OP_ACCESS_MEDIA_LOCATION:
-                return DFLAG_HAS_ACCESS_MEDIA_LOCATION_DECLARATION;
+                return DerivedPackageFlag.HAS_ACCESS_MEDIA_LOCATION_DECLARATION;
 
             case AppOpsManager.OP_READ_MEDIA_VISUAL_USER_SELECTED:
-                return DFLAG_HAS_READ_MEDIA_VISUAL_USER_SELECTED_DECLARATION;
+                return DerivedPackageFlag.HAS_READ_MEDIA_VISUAL_USER_SELECTED_DECLARATION;
 
             default:
                 return 0;

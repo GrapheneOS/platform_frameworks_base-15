@@ -89,7 +89,7 @@ public class AppPermissionUtils {
     }
 
     private static int getSpoofablePermissionDflag(GosPackageState ps, String perm, boolean forRequestDialog) {
-        if (ps.hasFlag(GosPackageState.FLAG_STORAGE_SCOPES_ENABLED)) {
+        if (ps.hasFlag(GosPackageStateFlag.STORAGE_SCOPES_ENABLED)) {
             int permDflag = StorageScopesAppHooks.getSpoofablePermissionDflag(perm);
             if (permDflag != 0) {
                 if (!forRequestDialog) {
