@@ -3,6 +3,7 @@ java_test_host {
     srcs: [
         "src/**/*.java",
         "src/**/*.kt",
+        ":GosPackageStateFlags",
     ],
 
     libs: [
@@ -12,6 +13,7 @@ java_test_host {
     ],
 
     static_libs: [
+        "framework-annotations-lib",
         "frameworks-base-hostutils",
     ],
 

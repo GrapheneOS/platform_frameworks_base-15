@@ -1,5 +1,7 @@
 package grapheneos.hardeningtest;
 
+import android.content.pm.GosPackageStateFlag;
+
 import com.android.tradefed.device.DeviceNotAvailableException;
 import com.android.tradefed.testtype.DeviceJUnit4ClassRunner;
 import com.android.tradefed.testtype.junit4.BaseHostJUnit4Test;
@@ -34,14 +36,17 @@ public class SELinuxTest extends BaseHostJUnit4Test {
         }
     }
 
-    private void editGosPackageState(String pkgName, int addFlags, int clearFlags) {
+    private void editGosPackageState(String pkgName, int[] addFlags, int[] clearFlags) {
         try {
             var device = getDevice();
-            var edRes = device.executeShellV2Command(
-                "pm edit-gos-package-state " + pkgName + " " + device.getCurrentUser()
-                + " add-flags " + Integer.toHexString(addFlags)
-                + " clear-flags " + Integer.toHexString(clearFlags)
-            );
+            var cmd = new StringBuilder("pm edit-gos-package-state " + pkgName + " " + device.getCurrentUser());
+            for (int flag : addFlags) {
+                cmd.append(" add-flag ").append(flag);
+            }
+            for (int flag : clearFlags) {
+                cmd.append(" clear-flag ").append(flag);
+            }
+            var edRes = device.executeShellV2Command(cmd.toString());
             assertEquals(edRes.toString(), 0L, (long) edRes.getExitCode());
         } catch (DeviceNotAvailableException e) {
             throw new IllegalStateException(e);
@@ -49,8 +54,8 @@ public class SELinuxTest extends BaseHostJUnit4Test {
     }
 
     private void setComplexFlagState(String pkgName, int flag, int nonDefaultFlag, boolean isSet) {
-        int addFlags = nonDefaultFlag | (isSet ? flag : 0);
-        int clearFlags = isSet ? 0 : flag;
+        int[] addFlags = isSet ? new int[] { nonDefaultFlag, flag } : new int[] { nonDefaultFlag };
+        int[] clearFlags = isSet ? new int[0] : new int[] { flag };
         editGosPackageState(pkgName, addFlags, clearFlags);
     }
 
@@ -71,8 +76,8 @@ public class SELinuxTest extends BaseHostJUnit4Test {
     }
 
     enum DclTestType {
-        Memory(GosPsFlags.FLAG_RESTRICT_MEMORY_DYN_CODE_LOADING, GosPsFlags.FLAG_RESTRICT_MEMORY_DYN_CODE_LOADING_NON_DEFAULT),
-        Storage(GosPsFlags.FLAG_RESTRICT_STORAGE_DYN_CODE_LOADING, GosPsFlags.FLAG_RESTRICT_STORAGE_DYN_CODE_LOADING_NON_DEFAULT),
+        Memory(GosPackageStateFlag.RESTRICT_MEMORY_DYN_CODE_LOADING, GosPackageStateFlag.RESTRICT_MEMORY_DYN_CODE_LOADING_NON_DEFAULT),
+        Storage(GosPackageStateFlag.RESTRICT_STORAGE_DYN_CODE_LOADING, GosPackageStateFlag.RESTRICT_STORAGE_DYN_CODE_LOADING_NON_DEFAULT),
         ;
 
         final int gosPsFlag;
@@ -128,8 +133,8 @@ public class SELinuxTest extends BaseHostJUnit4Test {
             }
 
             setComplexFlagState(pkg,
-                GosPsFlags.FLAG_BLOCK_NATIVE_DEBUGGING,
-                GosPsFlags.FLAG_BLOCK_NATIVE_DEBUGGING_NON_DEFAULT,
+                GosPackageStateFlag.BLOCK_NATIVE_DEBUGGING,
+                GosPackageStateFlag.BLOCK_NATIVE_DEBUGGING_NON_DEFAULT,
                 false);
             runDeviceTest(pkg, "testPtraceAllowed");
         });
@@ -139,8 +144,8 @@ public class SELinuxTest extends BaseHostJUnit4Test {
     public void testPtraceDenied() {
         forEachPackage(pkg -> {
             setComplexFlagState(pkg,
-                GosPsFlags.FLAG_BLOCK_NATIVE_DEBUGGING,
-                GosPsFlags.FLAG_BLOCK_NATIVE_DEBUGGING_NON_DEFAULT,
+                GosPackageStateFlag.BLOCK_NATIVE_DEBUGGING,
+                GosPackageStateFlag.BLOCK_NATIVE_DEBUGGING_NON_DEFAULT,
                 true);
             runDeviceTest(pkg, "testPtraceDenied");
         });
