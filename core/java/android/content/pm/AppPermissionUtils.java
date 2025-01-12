@@ -101,7 +101,7 @@ public class AppPermissionUtils {
             }
         }
 
-        if (ps.hasFlag(GosPackageState.FLAG_CONTACT_SCOPES_ENABLED)) {
+        if (ps.hasFlag(GosPackageStateFlag.CONTACT_SCOPES_ENABLED)) {
             int permDflag = ContactScopes.getSpoofablePermissionDflag(perm);
             if (permDflag != 0) {
                 return permDflag;

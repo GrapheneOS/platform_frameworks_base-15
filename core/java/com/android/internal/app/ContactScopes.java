@@ -5,17 +5,15 @@ import android.annotation.AnyThread;
 import android.app.AppOpsManager;
 import android.content.Context;
 import android.content.pm.GosPackageState;
+import android.content.pm.GosPackageStateFlag;
 import android.database.ContentObserver;
+import android.ext.DerivedPackageFlag;
 import android.ext.cscopes.ContactScopesApi;
 import android.net.Uri;
 import android.provider.ContactsContract;
 import android.provider.SimPhonebookContract;
 
 import com.android.internal.app.ContentProviderRedirector.ContentObserverList;
-
-import static android.content.pm.GosPackageState.DFLAG_HAS_GET_ACCOUNTS_DECLARATION;
-import static android.content.pm.GosPackageState.DFLAG_HAS_READ_CONTACTS_DECLARATION;
-import static android.content.pm.GosPackageState.DFLAG_HAS_WRITE_CONTACTS_DECLARATION;
 
 public class ContactScopes {
     private static volatile boolean isEnabled;
@@ -34,7 +32,7 @@ public class ContactScopes {
                 return;
             }
 
-            if (ps.hasFlag(GosPackageState.FLAG_CONTACT_SCOPES_ENABLED)) {
+            if (ps.hasFlag(GosPackageStateFlag.CONTACT_SCOPES_ENABLED)) {
                 gosPsDerivedFlags = ps.derivedFlags;
                 {
                     var col = new ContentObserverList();
@@ -144,11 +142,11 @@ public class ContactScopes {
     public static int getSpoofablePermissionDflag(String permName) {
         switch (permName) {
             case Manifest.permission.READ_CONTACTS:
-                return DFLAG_HAS_READ_CONTACTS_DECLARATION;
+                return DerivedPackageFlag.HAS_READ_CONTACTS_DECLARATION;
             case Manifest.permission.WRITE_CONTACTS:
-                return DFLAG_HAS_WRITE_CONTACTS_DECLARATION;
+                return DerivedPackageFlag.HAS_WRITE_CONTACTS_DECLARATION;
             case Manifest.permission.GET_ACCOUNTS:
-                return DFLAG_HAS_GET_ACCOUNTS_DECLARATION;
+                return DerivedPackageFlag.HAS_GET_ACCOUNTS_DECLARATION;
             default:
                 return 0;
         }
@@ -157,11 +155,11 @@ public class ContactScopes {
     private static int getSpoofableAppOpPermissionDflag(int op) {
         switch (op) {
             case AppOpsManager.OP_READ_CONTACTS:
-                return DFLAG_HAS_READ_CONTACTS_DECLARATION;
+                return DerivedPackageFlag.HAS_READ_CONTACTS_DECLARATION;
             case AppOpsManager.OP_WRITE_CONTACTS:
-                return DFLAG_HAS_WRITE_CONTACTS_DECLARATION;
+                return DerivedPackageFlag.HAS_WRITE_CONTACTS_DECLARATION;
             case AppOpsManager.OP_GET_ACCOUNTS:
-                return DFLAG_HAS_WRITE_CONTACTS_DECLARATION;
+                return DerivedPackageFlag.HAS_WRITE_CONTACTS_DECLARATION;
             default:
                 return 0;
         }

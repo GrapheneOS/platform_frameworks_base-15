@@ -55,8 +55,8 @@ public class PackageManagerHooks {
             PackageManagerInternal pm, String permName, String packageName, int userId)
     {
         if (ContactScopes.getSpoofablePermissionDflag(permName) != 0) {
-            GosPackageStatePm gosPs = pm.getGosPackageState(packageName, userId);
-            if (gosPs != null && gosPs.hasFlags(GosPackageState.FLAG_CONTACT_SCOPES_ENABLED)) {
+            GosPackageState gosPs = pm.getGosPackageState(packageName, userId);
+            if (gosPs.hasFlag(GosPackageStateFlag.CONTACT_SCOPES_ENABLED)) {
                 String msg = "refusing to grant " + permName + " to " + packageName +
                         ": Contact Scopes is enabled";
                 Slog.d("PermissionManager", msg);
