@@ -4,7 +4,7 @@ import android.annotation.Nullable;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.GosPackageState;
+import android.content.pm.GosPackageStateFlag;
 import android.content.pm.PackageManagerInternal;
 import android.ext.LogViewerApp;
 import android.ext.SettingsIntents;
@@ -73,7 +73,7 @@ public class DynCodeLoadingUtils {
             Context ctx, ApplicationInfo appInfo) {
         var n = AppSwitchNotification.create(ctx, appInfo, SettingsIntents.APP_MEMORY_DYN_CODE_LOADING);
         n.titleRes = R.string.notif_memory_dcl_title;
-        n.gosPsFlagSuppressNotif = GosPackageState.FLAG_RESTRICT_MEMORY_DYN_CODE_LOADING_SUPPRESS_NOTIF;
+        n.gosPsFlagSuppressNotif = GosPackageStateFlag.RESTRICT_MEMORY_DYN_CODE_LOADING_SUPPRESS_NOTIF;
         return n;
     }
 
