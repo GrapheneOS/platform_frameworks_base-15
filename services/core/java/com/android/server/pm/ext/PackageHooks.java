@@ -6,7 +6,6 @@ import android.content.pm.PackageManagerInternal;
 import android.util.ArraySet;
 
 import com.android.server.pm.pkg.AndroidPackage;
-import com.android.server.pm.pkg.GosPackageStatePm;
 import com.android.server.pm.pkg.PackageState;
 import com.android.server.pm.pkg.PackageStateInternal;
 import com.android.server.pm.pkg.PackageUserStateInternal;
@@ -85,11 +84,6 @@ public class PackageHooks {
 
     protected static boolean isUserInstalledPkg(PackageState ps) {
         return !ps.isSystem();
-    }
-
-    protected static long getGosPsPackageFlags(PackageUserStateInternal pkgUserState) {
-        GosPackageStatePm ps = pkgUserState.getGosPackageState();
-        return ps != null ? ps.packageFlags : 0L;
     }
 
     public boolean shouldAllowFgsWhileInUsePermission(PackageManagerInternal pm, int userId) {
