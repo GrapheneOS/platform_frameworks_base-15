@@ -4912,7 +4912,10 @@ package android.ext {
     method public boolean hasFlag(int);
     method public void writeToParcel(@NonNull android.os.Parcel, int);
     field @NonNull public static final android.os.Parcelable.Creator<android.ext.AppInfoExt> CREATOR;
-    field public static final int FLAG_HAS_GMSCORE_CLIENT_LIBRARY = 0; // 0x0
+  }
+
+  public interface AppInfoExtFlag {
+    field public static final int HAS_GMSCORE_CLIENT_LIBRARY = 0; // 0x0
   }
 
   public interface DerivedPackageFlag {

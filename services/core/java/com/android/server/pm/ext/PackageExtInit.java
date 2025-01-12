@@ -4,7 +4,7 @@ import android.annotation.Nullable;
 import android.content.pm.SigningDetails;
 import android.content.pm.parsing.result.ParseInput;
 import android.content.pm.parsing.result.ParseResult;
-import android.ext.AppInfoExt;
+import android.ext.AppInfoExtFlag;
 import android.ext.PackageId;
 import android.os.Bundle;
 import android.util.Slog;
@@ -58,7 +58,7 @@ public class PackageExtInit implements ParsingPackageUtils.PackageExtInitIface {
         Bundle metadata = pkg.getMetaData();
         if (metadata != null) {
             if (metadata.containsKey("com.google.android.gms.version")) {
-                flags |= (1 << AppInfoExt.FLAG_HAS_GMSCORE_CLIENT_LIBRARY);
+                flags |= (1 << AppInfoExtFlag.HAS_GMSCORE_CLIENT_LIBRARY);
             }
         }
 
