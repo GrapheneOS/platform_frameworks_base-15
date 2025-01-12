@@ -9,6 +9,8 @@ import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.GosPackageState;
+import android.content.pm.GosPackageStateFlag;
 import android.content.pm.PackageManagerInternal;
 import android.ext.SettingsIntents;
 import android.os.Bundle;
@@ -23,7 +25,6 @@ import com.android.internal.R;
 import com.android.internal.messages.nano.SystemMessageProto.SystemMessage;
 import com.android.internal.notification.SystemNotificationChannels;
 import com.android.server.LocalServices;
-import com.android.server.pm.pkg.GosPackageStatePm;
 
 import static com.android.internal.util.Preconditions.checkState;
 import static com.android.server.ext.SseUtils.addNotifAction;
@@ -57,7 +58,7 @@ public class AppSwitchNotification {
     @Nullable public CharSequence titleOverride;
 
     @Nullable public Intent moreInfoIntent; // optional, shows up as "More info" notif action
-    public int gosPsFlagSuppressNotif; // optional, adds "Don't show again" notif action
+    @GosPackageStateFlag.Enum public int gosPsFlagSuppressNotif; // optional, adds "Don't show again" notif action
 
     @Nullable
     public static AppSwitchNotification maybeCreate(Context ctx, String firstPackageName,
@@ -129,8 +130,8 @@ public class AppSwitchNotification {
         final var pmi = LocalServices.getService(PackageManagerInternal.class);
 
         if (gosPsFlagSuppressNotif != 0) {
-            GosPackageStatePm gosPs = pmi.getGosPackageState(pkgName, userId);
-            if (gosPs != null && gosPs.hasFlags(gosPsFlagSuppressNotif)) {
+            GosPackageState gosPs = pmi.getGosPackageState(pkgName, userId);
+            if (gosPs.hasFlag(gosPsFlagSuppressNotif)) {
                 Slog.d(TAG, "gosPsFlagSuppressNotif is set");
                 return;
             }
@@ -214,10 +215,8 @@ public class AppSwitchNotification {
             UserHandle user = args.getParcelable(Intent.EXTRA_USER, UserHandle.class);
             int gosPsFlagSuppressNotif = args.getNumber(EXTRA_GOSPS_FLAG_SUPPRESS_NOTIF);
 
-            var pmi = LocalServices.getService(PackageManagerInternal.class);
-
-            GosPackageStatePm.getEditor(pmi, packageName, user.getIdentifier())
-                .addFlags(gosPsFlagSuppressNotif)
+            GosPackageState.edit(packageName, user)
+                .addFlag(gosPsFlagSuppressNotif)
                 .apply();
 
             int notifId = args.getNumber(EXTRA_NOTIF_ID);
