@@ -144,6 +144,11 @@ filegroup {
 }
 
 filegroup {
+    name: "GosPackageStateFlags",
+    srcs: [ "android/content/pm/GosPackageStateFlag.java", ],
+}
+
+filegroup {
     name: "libincident_aidl",
     srcs: [
         "android/os/IIncidentDumpCallback.aidl",
