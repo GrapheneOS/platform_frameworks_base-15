@@ -1,7 +1,6 @@
 package android.ext.dcl;
 
 import android.annotation.NonNull;
-import android.annotation.Nullable;
 import android.annotation.SuppressLint;
 import android.annotation.SystemApi;
 import android.app.ActivityManager;
@@ -9,7 +8,7 @@ import android.app.AppGlobals;
 import android.app.Application;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.GosPackageStateBase;
+import android.content.pm.GosPackageState;
 import android.ext.settings.app.AswRestrictMemoryDynCodeLoading;
 import android.ext.settings.app.AswRestrictStorageDynCodeLoading;
 import android.os.RemoteException;
@@ -38,7 +37,7 @@ public class DynCodeLoading {
 
     /** @hide */
     public static int getAppBindFlags(Context ctx, int userId, ApplicationInfo appInfo,
-                                     @Nullable GosPackageStateBase gosPs) {
+                                      GosPackageState gosPs) {
         int res = 0;
 
         if (AswRestrictMemoryDynCodeLoading.I.get(ctx, userId, appInfo, gosPs)) {
