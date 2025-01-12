@@ -1,10 +1,9 @@
 package android.ext.settings.app;
 
-import android.annotation.Nullable;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.GosPackageState;
-import android.content.pm.GosPackageStateBase;
+import android.content.pm.GosPackageStateFlag;
 import android.ext.PackageId;
 import android.ext.settings.ExtSettings;
 
@@ -17,15 +16,15 @@ public class AswUseMemoryTagging extends AppSwitch {
     public static final AswUseMemoryTagging I = new AswUseMemoryTagging();
 
     private AswUseMemoryTagging() {
-        gosPsFlag = GosPackageState.FLAG_FORCE_MEMTAG;
-        gosPsFlagNonDefault = GosPackageState.FLAG_FORCE_MEMTAG_NON_DEFAULT;
-        gosPsFlagSuppressNotif = GosPackageState.FLAG_FORCE_MEMTAG_SUPPRESS_NOTIF;
+        gosPsFlag = GosPackageStateFlag.FORCE_MEMTAG;
+        gosPsFlagNonDefault = GosPackageStateFlag.FORCE_MEMTAG_NON_DEFAULT;
+        gosPsFlagSuppressNotif = GosPackageStateFlag.FORCE_MEMTAG_SUPPRESS_NOTIF;
         compatChangeToDisableHardening = AppCompatProtos.DISABLE_MEMORY_TAGGING;
     }
 
     @Override
     public Boolean getImmutableValue(Context ctx, int userId, ApplicationInfo appInfo,
-                                     @Nullable GosPackageStateBase ps, StateInfo si) {
+                                     GosPackageState ps, StateInfo si) {
         final String primaryAbi = appInfo.primaryCpuAbi;
         if (primaryAbi == null) {
             si.immutabilityReason = IR_NO_NATIVE_CODE;
@@ -52,7 +51,7 @@ public class AswUseMemoryTagging extends AppSwitch {
             return true;
         }
 
-        if (ps != null && ps.hasFlags(GosPackageState.FLAG_ENABLE_EXPLOIT_PROTECTION_COMPAT_MODE)) {
+        if (ps.hasFlag(GosPackageStateFlag.ENABLE_EXPLOIT_PROTECTION_COMPAT_MODE)) {
             si.immutabilityReason = IR_EXPLOIT_PROTECTION_COMPAT_MODE;
             return false;
         }
@@ -62,7 +61,7 @@ public class AswUseMemoryTagging extends AppSwitch {
 
     @Override
     protected boolean getDefaultValueInner(Context ctx, int userId, ApplicationInfo appInfo,
-                                           @Nullable GosPackageStateBase ps, StateInfo si) {
+                                           GosPackageState ps, StateInfo si) {
         si.defaultValueReason = DVR_DEFAULT_SETTING;
         return ExtSettings.FORCE_APP_MEMTAG_BY_DEFAULT.get(ctx, userId);
     }
