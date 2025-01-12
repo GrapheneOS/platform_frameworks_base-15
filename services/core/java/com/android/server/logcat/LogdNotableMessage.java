@@ -5,7 +5,7 @@ import android.app.ActivityManagerInternal;
 import android.app.ActivityManagerInternal.ProcessRecordSnapshot;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.GosPackageState;
+import android.content.pm.GosPackageStateFlag;
 import android.ext.SettingsIntents;
 import android.util.Slog;
 
@@ -129,7 +129,7 @@ public class LogdNotableMessage {
 
             var n = AppSwitchNotification.create(ctx, appInfo, SettingsIntents.APP_NATIVE_DEBUGGING);
             n.titleRes = R.string.notif_native_debug_title;
-            n.gosPsFlagSuppressNotif = GosPackageState.FLAG_BLOCK_NATIVE_DEBUGGING_SUPPRESS_NOTIF;
+            n.gosPsFlagSuppressNotif = GosPackageStateFlag.BLOCK_NATIVE_DEBUGGING_SUPPRESS_NOTIF;
             n.maybeShow();
         }
         else if ((SELinuxFlags.RESTRICT_MEMORY_DYN_CODE_EXEC_FLAGS & flagValue) != 0) {
