@@ -6,7 +6,7 @@ import android.app.ActivityManagerInternal;
 import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.GosPackageState;
+import android.content.pm.GosPackageStateFlag;
 import android.content.pm.PackageManagerInternal;
 import android.ext.LogViewerApp;
 import android.ext.SettingsIntents;
@@ -328,7 +328,7 @@ public class TombstoneHandler {
                     return;
                 }
                 n.titleRes = R.string.notif_memtag_crash_title;
-                n.gosPsFlagSuppressNotif = GosPackageState.FLAG_FORCE_MEMTAG_SUPPRESS_NOTIF;
+                n.gosPsFlagSuppressNotif = GosPackageStateFlag.FORCE_MEMTAG_SUPPRESS_NOTIF;
             }
             case ASW_NOTIF_TYPE_HARDENED_MALLOC -> {
                 n = AppSwitchNotification.maybeCreate(ctx, firstPackageName, packageUid,
