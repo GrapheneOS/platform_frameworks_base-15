@@ -93,7 +93,7 @@ public class DynCodeLoadingUtils {
     public static AppSwitchNotification createStorageDclNotif(Context ctx, ApplicationInfo appInfo) {
         var n = AppSwitchNotification.create(ctx, appInfo, SettingsIntents.APP_STORAGE_DYN_CODE_LOADING);
         n.titleRes = R.string.notif_storage_dcl_title;
-        n.gosPsFlagSuppressNotif = GosPackageState.FLAG_RESTRICT_STORAGE_DYN_CODE_LOADING_SUPPRESS_NOTIF;
+        n.gosPsFlagSuppressNotif = GosPackageStateFlag.RESTRICT_STORAGE_DYN_CODE_LOADING_SUPPRESS_NOTIF;
         return n;
     }
 
