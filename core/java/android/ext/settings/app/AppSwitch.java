@@ -1,25 +1,24 @@
 package android.ext.settings.app;
 
-import android.annotation.Nullable;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.GosPackageState;
-import android.content.pm.GosPackageStateBase;
+import android.content.pm.GosPackageStateFlag;
 import android.ext.AppInfoExt;
 import android.ext.settings.ExtSettings;
 
 /** @hide */
 public abstract class AppSwitch {
     // optional GosPackageState flag that indicates that non-default value is set, ignored if 0
-    int gosPsFlagNonDefault;
+    @GosPackageStateFlag.Enum int gosPsFlagNonDefault;
     // GosPackageState flag that indicates whether the switch is on or off, ignored if
     // non-default flag is not set
-    int gosPsFlag;
+    @GosPackageStateFlag.Enum int gosPsFlag;
     // invert meaning of gosPsFlag, i.e. true is off, false is on
     boolean gosPsFlagInverted;
     // optional GosPackageState flag to suppress switch-related notification (e.g. after
     // "Don't show again" notification action)
-    int gosPsFlagSuppressNotif;
+    @GosPackageStateFlag.Enum int gosPsFlagSuppressNotif;
 
     int compatChangeToDisableHardening = -1;
 
@@ -68,28 +67,28 @@ public abstract class AppSwitch {
     }
 
     public final boolean isImmutable(Context ctx, int userId, ApplicationInfo appInfo,
-                                     @Nullable GosPackageStateBase ps) {
+                                     GosPackageState ps) {
         return getImmutableValue(ctx, userId, appInfo, ps) != null;
     }
 
     public final Boolean getImmutableValue(Context ctx, int userId, ApplicationInfo appInfo,
-                                     @Nullable GosPackageStateBase ps) {
+                                           GosPackageState ps) {
         return getImmutableValue(ctx, userId, appInfo, ps, StateInfo.PLACEHOLDER);
     }
 
     // returns null if value is currently mutable
     public Boolean getImmutableValue(Context ctx, int userId, ApplicationInfo appInfo,
-                                     @Nullable GosPackageStateBase ps, StateInfo si) {
+                                     GosPackageState ps, StateInfo si) {
         return null;
     }
 
     public final boolean getDefaultValue(Context ctx, int userId, ApplicationInfo appInfo,
-                                         @Nullable GosPackageStateBase ps) {
+                                         GosPackageState ps) {
         return getDefaultValue(ctx, userId, appInfo, ps, StateInfo.PLACEHOLDER);
     }
 
     public final boolean getDefaultValue(Context ctx, int userId, ApplicationInfo appInfo,
-                                         @Nullable GosPackageStateBase ps, StateInfo si) {
+                                         GosPackageState ps, StateInfo si) {
         int compatChangeForOff = this.compatChangeToDisableHardening;
         if (compatChangeForOff >= 0) {
             AppInfoExt aie = appInfo.ext();
@@ -107,16 +106,16 @@ public abstract class AppSwitch {
     }
 
     protected abstract boolean getDefaultValueInner(Context ctx, int userId, ApplicationInfo appInfo,
-                                                    @Nullable GosPackageStateBase ps, StateInfo si);
+                                                    GosPackageState ps, StateInfo si);
 
 
     public final boolean get(Context ctx, int userId, ApplicationInfo appInfo,
-                             @Nullable GosPackageStateBase ps) {
+                             GosPackageState ps) {
         return get(ctx, userId, appInfo, ps, StateInfo.PLACEHOLDER);
     }
 
     public final boolean get(Context ctx, int userId, ApplicationInfo appInfo,
-                             @Nullable GosPackageStateBase ps, StateInfo si) {
+                             GosPackageState ps, StateInfo si) {
         Boolean immValue = getImmutableValue(ctx, userId, appInfo, ps, si);
 
         boolean res;
@@ -127,7 +126,7 @@ public abstract class AppSwitch {
             si.isUsingDefaultValue = true;
             res = getDefaultValue(ctx, userId, appInfo, ps, si);
         } else {
-            res = ps.hasFlags(gosPsFlag);
+            res = ps.hasFlag(gosPsFlag);
             if (gosPsFlagInverted) {
                 res = !res;
             }
@@ -138,37 +137,38 @@ public abstract class AppSwitch {
 
     public final void set(GosPackageState.Editor ed, boolean on) {
         if (gosPsFlagNonDefault != 0) {
-            ed.addFlags(gosPsFlagNonDefault);
+            ed.addFlag(gosPsFlagNonDefault);
         }
         
         if (gosPsFlagInverted) {
-            ed.setFlagsState(gosPsFlag, !on);
+            ed.setFlagState(gosPsFlag, !on);
         } else {
-            ed.setFlagsState(gosPsFlag, on);
+            ed.setFlagState(gosPsFlag, on);
         }
     }
 
-    private boolean isUsingDefaultValue(@Nullable GosPackageStateBase ps) {
-        return ps == null || (gosPsFlagNonDefault != 0 && !ps.hasFlags(gosPsFlagNonDefault));
+    private boolean isUsingDefaultValue(GosPackageState ps) {
+        return gosPsFlagNonDefault != 0 && !ps.hasFlag(gosPsFlagNonDefault);
     }
 
     public final void setUseDefaultValue(GosPackageState.Editor ed) {
-        ed.clearFlags(gosPsFlagNonDefault | gosPsFlag);
+        ed.clearFlag(gosPsFlagNonDefault);
+        ed.clearFlag(gosPsFlag);
     }
 
     public final boolean hasNotification() {
         return gosPsFlagSuppressNotif != 0;
     }
 
-    public final boolean isNotificationEnabled(@Nullable GosPackageStateBase ps) {
+    public final boolean isNotificationEnabled(GosPackageState ps) {
         int flag = gosPsFlagSuppressNotif;
         if (flag == 0) {
             return false;
         }
-        return ps == null || !ps.hasFlags(flag);
+        return !ps.hasFlag(flag);
     }
 
     public final void setNotificationEnabled(GosPackageState.Editor ed, boolean enabled) {
-        ed.setFlagsState(gosPsFlagSuppressNotif, !enabled);
+        ed.setFlagState(gosPsFlagSuppressNotif, !enabled);
     }
 }
