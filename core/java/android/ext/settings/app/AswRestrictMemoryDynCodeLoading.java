@@ -1,10 +1,9 @@
 package android.ext.settings.app;
 
-import android.annotation.Nullable;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.GosPackageState;
-import android.content.pm.GosPackageStateBase;
+import android.content.pm.GosPackageStateFlag;
 import android.ext.settings.ExtSettings;
 import android.util.ArraySet;
 
@@ -17,9 +16,9 @@ public class AswRestrictMemoryDynCodeLoading extends AppSwitch {
     public static final AswRestrictMemoryDynCodeLoading I = new AswRestrictMemoryDynCodeLoading();
 
     private AswRestrictMemoryDynCodeLoading() {
-        gosPsFlagNonDefault = GosPackageState.FLAG_RESTRICT_MEMORY_DYN_CODE_LOADING_NON_DEFAULT;
-        gosPsFlag = GosPackageState.FLAG_RESTRICT_MEMORY_DYN_CODE_LOADING;
-        gosPsFlagSuppressNotif = GosPackageState.FLAG_RESTRICT_MEMORY_DYN_CODE_LOADING_SUPPRESS_NOTIF;
+        gosPsFlagNonDefault = GosPackageStateFlag.RESTRICT_MEMORY_DYN_CODE_LOADING_NON_DEFAULT;
+        gosPsFlag = GosPackageStateFlag.RESTRICT_MEMORY_DYN_CODE_LOADING;
+        gosPsFlagSuppressNotif = GosPackageStateFlag.RESTRICT_MEMORY_DYN_CODE_LOADING_SUPPRESS_NOTIF;
         compatChangeToDisableHardening = AppCompatProtos.ALLOW_MEMORY_DYN_CODE_EXEC;
     }
 
@@ -37,7 +36,7 @@ public class AswRestrictMemoryDynCodeLoading extends AppSwitch {
 
     @Override
     public Boolean getImmutableValue(Context ctx, int userId, ApplicationInfo appInfo,
-                                     @Nullable GosPackageStateBase ps, StateInfo si) {
+                                     GosPackageState ps, StateInfo si) {
         if (appInfo.isSystemApp()) {
             if (shouldAllowByDefaultToSystemPkg(ctx, appInfo.packageName)) {
                 // allow manual restriction
@@ -50,7 +49,7 @@ public class AswRestrictMemoryDynCodeLoading extends AppSwitch {
             return true;
         }
 
-        if (ps != null && ps.hasFlags(GosPackageState.FLAG_ENABLE_EXPLOIT_PROTECTION_COMPAT_MODE)) {
+        if (ps.hasFlag(GosPackageStateFlag.ENABLE_EXPLOIT_PROTECTION_COMPAT_MODE)) {
             si.immutabilityReason = IR_EXPLOIT_PROTECTION_COMPAT_MODE;
             return false;
         }
@@ -60,7 +59,7 @@ public class AswRestrictMemoryDynCodeLoading extends AppSwitch {
 
     @Override
     protected boolean getDefaultValueInner(Context ctx, int userId, ApplicationInfo appInfo,
-                                           @Nullable GosPackageStateBase ps, StateInfo si) {
+                                           GosPackageState ps, StateInfo si) {
         if (appInfo.isSystemApp()) {
             return !shouldAllowByDefaultToSystemPkg(ctx, appInfo.packageName);
         } else {

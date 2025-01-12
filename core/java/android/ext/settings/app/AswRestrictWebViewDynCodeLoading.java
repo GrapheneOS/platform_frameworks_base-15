@@ -1,10 +1,9 @@
 package android.ext.settings.app;
 
-import android.annotation.Nullable;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.GosPackageState;
-import android.content.pm.GosPackageStateBase;
+import android.content.pm.GosPackageStateFlag;
 import android.ext.settings.ExtSettings;
 import android.util.ArraySet;
 
@@ -15,8 +14,8 @@ public class AswRestrictWebViewDynCodeLoading extends AppSwitch {
     public static final AswRestrictWebViewDynCodeLoading I = new AswRestrictWebViewDynCodeLoading();
 
     private AswRestrictWebViewDynCodeLoading() {
-        gosPsFlagNonDefault = GosPackageState.FLAG_RESTRICT_WEBVIEW_DYN_CODE_LOADING_NON_DEFAULT;
-        gosPsFlag = GosPackageState.FLAG_RESTRICT_WEBVIEW_DYN_CODE_LOADING;
+        gosPsFlagNonDefault = GosPackageStateFlag.RESTRICT_WEBVIEW_DYN_CODE_LOADING_NON_DEFAULT;
+        gosPsFlag = GosPackageStateFlag.RESTRICT_WEBVIEW_DYN_CODE_LOADING;
     }
 
     private static volatile ArraySet<String> allowedSystemPkgs;
@@ -33,7 +32,7 @@ public class AswRestrictWebViewDynCodeLoading extends AppSwitch {
 
     @Override
     public Boolean getImmutableValue(Context ctx, int userId, ApplicationInfo appInfo,
-                                     @Nullable GosPackageStateBase ps, StateInfo si) {
+                                     GosPackageState ps, StateInfo si) {
         if (appInfo.isSystemApp()) {
             if (shouldAllowByDefaultToSystemPackage(ctx, appInfo.packageName)) {
                 // allow manual restriction
@@ -48,7 +47,7 @@ public class AswRestrictWebViewDynCodeLoading extends AppSwitch {
 
     @Override
     protected boolean getDefaultValueInner(Context ctx, int userId, ApplicationInfo appInfo,
-                                           @Nullable GosPackageStateBase ps, StateInfo si) {
+                                           GosPackageState ps, StateInfo si) {
         if (appInfo.isSystemApp()) {
             return !shouldAllowByDefaultToSystemPackage(ctx, appInfo.packageName);
         } else {
