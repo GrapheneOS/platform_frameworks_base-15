@@ -68,6 +68,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.GosPackageState;
+import android.content.pm.GosPackageStateFlag;
 import android.content.pm.IPackageManager;
 import android.content.pm.IPackageMoveObserver;
 import android.content.pm.PackageManager;
@@ -157,7 +158,6 @@ import com.android.modules.utils.TypedXmlPullParser;
 import com.android.modules.utils.TypedXmlSerializer;
 import com.android.server.pm.Installer;
 import com.android.server.pm.UserManagerInternal;
-import com.android.server.pm.pkg.GosPackageStatePm;
 import com.android.server.storage.AppFuseBridge;
 import com.android.server.storage.StorageSessionController;
 import com.android.server.storage.StorageSessionController.ExternalStorageServiceException;
@@ -4630,8 +4630,8 @@ class StorageManagerService extends IStorageManager.Stub
                 (same screen that grants the REQUEST_INSTALL_PACKAGES permission)
                  */
 
-                GosPackageStatePm ps = mPmInternal.getGosPackageState(packageName, UserHandle.getUserId(uid));
-                if (ps != null && ps.hasFlags(GosPackageState.FLAG_ALLOW_ACCESS_TO_OBB_DIRECTORY)) {
+                GosPackageState ps = mPmInternal.getGosPackageState(packageName, UserHandle.getUserId(uid));
+                if (ps.hasFlag(GosPackageStateFlag.ALLOW_ACCESS_TO_OBB_DIRECTORY)) {
                     return StorageManager.MOUNT_MODE_EXTERNAL_INSTALLER;
                 }
             }
