@@ -19,6 +19,7 @@ package com.android.server.pm.pkg;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.content.ComponentName;
+import android.content.pm.GosPackageState;
 import android.content.pm.PackageManager;
 import android.content.pm.UserPackage;
 import android.content.pm.overlay.OverlayPaths;
@@ -158,7 +159,7 @@ class PackageUserStateDefault implements PackageUserStateInternal {
 
     @Nullable
     @Override
-    public GosPackageStatePm getGosPackageState() {
+    public GosPackageState getGosPackageState() {
         return null;
     }
 

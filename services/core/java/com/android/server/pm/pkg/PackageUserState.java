@@ -20,6 +20,7 @@ import android.annotation.CurrentTimeMillisLong;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.annotation.SystemApi;
+import android.content.pm.GosPackageState;
 import android.content.pm.PackageManager;
 import android.content.pm.overlay.OverlayPaths;
 import android.os.UserHandle;
@@ -122,8 +123,10 @@ public interface PackageUserState {
     @PackageManager.EnabledState
     int getEnabledState();
 
+    /** @hide */
+    @Immutable.Ignore
     @Nullable
-    GosPackageStatePmApi getGosPackageState();
+    GosPackageState getGosPackageState();
 
     /**
      * @hide

@@ -21,6 +21,7 @@ import android.annotation.IntDef;
 import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.content.ComponentName;
+import android.content.pm.GosPackageState;
 import android.content.pm.PackageManager;
 import android.content.pm.UserPackage;
 import android.content.pm.overlay.OverlayPaths;
@@ -130,7 +131,7 @@ public class PackageUserStateImpl extends WatchableImpl implements PackageUserSt
     private @CurrentTimeMillisLong long mFirstInstallTimeMillis;
 
     @Nullable
-    private GosPackageStatePm mGosPackageState;
+    private GosPackageState mGosPackageState;
 
     // TODO(b/239050028): Remove, enforce notifying parent through PMS commit method
     @Nullable
@@ -611,7 +612,7 @@ public class PackageUserStateImpl extends WatchableImpl implements PackageUserSt
         return this;
     }
 
-    public @NonNull PackageUserStateImpl setGosPackageState(@Nullable GosPackageStatePm gosPackageState) {
+    public @NonNull PackageUserStateImpl setGosPackageState(@Nullable GosPackageState gosPackageState) {
         mGosPackageState = gosPackageState;
         onChanged();
         return this;
@@ -815,7 +816,7 @@ public class PackageUserStateImpl extends WatchableImpl implements PackageUserSt
     }
 
     @DataClass.Generated.Member
-    public @Nullable GosPackageStatePm getGosPackageState() {
+    public @Nullable GosPackageState getGosPackageState() {
         return mGosPackageState;
     }
 

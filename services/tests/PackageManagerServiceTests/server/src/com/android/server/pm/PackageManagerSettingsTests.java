@@ -47,6 +47,7 @@ import android.app.PropertyInvalidatedCache;
 import android.content.ComponentName;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.Flags;
+import android.content.pm.GosPackageState;
 import android.content.pm.PackageManager;
 import android.content.pm.SharedLibraryInfo;
 import android.content.pm.SuspendDialogInfo;
@@ -79,7 +80,6 @@ import com.android.server.pm.parsing.PackageInfoUtils;
 import com.android.server.pm.permission.LegacyPermissionDataProvider;
 import com.android.server.pm.pkg.AndroidPackage;
 import com.android.server.pm.pkg.ArchiveState;
-import com.android.server.pm.pkg.GosPackageStatePm;
 import com.android.server.pm.pkg.PackageUserState;
 import com.android.server.pm.pkg.PackageUserStateInternal;
 import com.android.server.pm.pkg.SuspendParams;
@@ -1422,10 +1422,10 @@ public class PackageManagerSettingsTests {
                 .setPrimaryCpuAbi("x86_64")
                 .setSecondaryCpuAbi("x86")
                 .setLongVersionCode(INITIAL_VERSION_CODE);
-        origPkgSetting01.setUserState(0, 100, 100, 1, true, false, false, false, 0, null, false,
+        origPkgSetting01.setUserState(0, 100, 100, 1, true, false, false, false, createTestGosPackageState(), 0, null, false,
                 false, "lastDisabledCaller", new ArraySet<>(new String[]{"enabledComponent1"}),
                 new ArraySet<>(new String[]{"disabledComponent1"}), 0, 0, "harmfulAppWarning",
-                "splashScreenTheme", 1000L, PackageManager.USER_MIN_ASPECT_RATIO_UNSET, null, createTestGosPackageState());
+                "splashScreenTheme", 1000L, PackageManager.USER_MIN_ASPECT_RATIO_UNSET, null);
         final PersistableBundle appExtras1 = createPersistableBundle(
                 PACKAGE_NAME_1, 1L, 0.01, true, "appString1");
         final PersistableBundle launcherExtras1 = createPersistableBundle(
@@ -1457,10 +1457,10 @@ public class PackageManagerSettingsTests {
                 testPkgSetting01.readUserState(0));
     }
 
-    private static GosPackageStatePm createTestGosPackageState() {
+    private static GosPackageState createTestGosPackageState() {
         var hf = HexFormat.ofDelimiter(" ");
         // argument values are random
-        return new GosPackageStatePm(0xf1_67_2e_b8, 0xf4_93_53_00_98_c8_f0_0cL,
+        return new GosPackageState(0xf0_bc_06_f1_f1_67_2e_b8L, 0xf4_93_53_00_98_c8_f0_0cL,
                 hf.parseHex("2d f6 37 f2 90 39 da ef"),
                 hf.parseHex("8b 9d 61 a3 3e 45 12")
         );
