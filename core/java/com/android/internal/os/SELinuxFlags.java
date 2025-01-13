@@ -3,7 +3,7 @@ package com.android.internal.os;
 import android.annotation.Nullable;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.GosPackageStateBase;
+import android.content.pm.GosPackageState;
 import android.ext.BrowserUtils;
 import android.ext.settings.app.AswDenyNativeDebug;
 import android.ext.settings.app.AswRestrictMemoryDynCodeLoading;
@@ -56,7 +56,7 @@ public class SELinuxFlags {
     ;
 
     static long getForWebViewProcess(Context ctx, int userId, ApplicationInfo callerAppInfo,
-                    @Nullable GosPackageStateBase callerPs) {
+                                     GosPackageState callerPs) {
         if (Build.IS_DEBUGGABLE || Build.IS_EMULATOR) {
             if (!kernelSupportsSELinuxFlags()) {
                 return 0L;
@@ -73,7 +73,7 @@ public class SELinuxFlags {
     }
 
     static long get(Context ctx, int userId, ApplicationInfo appInfo,
-                    @Nullable GosPackageStateBase ps, boolean isIsolatedProcess) {
+                    GosPackageState ps, boolean isIsolatedProcess) {
         if (Build.IS_DEBUGGABLE || Build.IS_EMULATOR) {
             if (!kernelSupportsSELinuxFlags()) {
                 return 0L;
