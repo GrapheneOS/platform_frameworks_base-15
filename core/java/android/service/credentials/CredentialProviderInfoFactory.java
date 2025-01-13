@@ -37,6 +37,7 @@ import android.content.res.TypedArray;
 import android.content.res.XmlResourceParser;
 import android.credentials.CredentialManager;
 import android.credentials.CredentialProviderInfo;
+import android.ext.PackageId;
 import android.os.Bundle;
 import android.os.RemoteException;
 import android.os.UserHandle;
@@ -182,7 +183,7 @@ public final class CredentialProviderInfoFactory {
         requireNonNull(context, "context must not be null");
 
         // Pretend like GMS is installed as a system app on GrapheneOS
-        if (serviceInfo.packageName == "com.google.android.gms") {
+        if (serviceInfo.packageName == PackageId.GMS_CORE_NAME) {
             return true;
         }
         
@@ -403,7 +404,7 @@ public final class CredentialProviderInfoFactory {
 
             // Google sign-in expects GMS to be installed as a system app, which it isn't on
             // GrapheneOS, so we just pretend it is.
-            if (serviceInfo != null && serviceInfo.packageName == "com.google.android.gms") {
+            if (serviceInfo != null && serviceInfo.packageName == PackageId.GMS_CORE_NAME) {
                 services.add(serviceInfo);
                 continue;
             }
