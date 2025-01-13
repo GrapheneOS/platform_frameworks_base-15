@@ -617,14 +617,12 @@ final class DeletePackageHelper {
                     : ps.getUserStateOrDefault(nextUserId).getFirstInstallTimeMillis();
 
             // Preserve GosPackageState if archiving an app.
-            final com.android.server.pm.pkg.GosPackageStatePm gosPackageStatePm;
-            {
-                if ((flags & (PackageManager.DELETE_KEEP_DATA | PackageManager.DELETE_ARCHIVE))
-                        == (PackageManager.DELETE_KEEP_DATA | PackageManager.DELETE_ARCHIVE)) {
-                    gosPackageStatePm = ps.getUserStateOrDefault(nextUserId).getGosPackageState();
-                } else {
-                    gosPackageStatePm = null;
-                }
+            final android.content.pm.GosPackageState gosPackageState;
+            if ((flags & (PackageManager.DELETE_KEEP_DATA | PackageManager.DELETE_ARCHIVE))
+                    == (PackageManager.DELETE_KEEP_DATA | PackageManager.DELETE_ARCHIVE)) {
+                gosPackageState = ps.getUserStateOrDefault(nextUserId).getGosPackageState();
+            } else {
+                gosPackageState = null;
             }
 
             ps.setUserState(nextUserId,
@@ -635,6 +633,7 @@ final class DeletePackageHelper {
                     true /*stopped*/,
                     true /*notLaunched*/,
                     false /*hidden*/,
+                    gosPackageState,
                     0 /*distractionFlags*/,
                     null /*suspendParams*/,
                     false /*instantApp*/,
@@ -648,8 +647,7 @@ final class DeletePackageHelper {
                     null /*splashScreenTheme*/,
                     firstInstallTime,
                     PackageManager.USER_MIN_ASPECT_RATIO_UNSET,
-                    archiveState,
-                    gosPackageStatePm);
+                    archiveState);
         }
         mPm.mSettings.writeKernelMappingLPr(ps);
     }

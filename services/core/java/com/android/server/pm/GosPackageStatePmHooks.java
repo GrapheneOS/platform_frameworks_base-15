@@ -424,9 +424,9 @@ public class GosPackageStatePmHooks {
     private static void clearContactScopesStorage(PackageManagerService pm, int userId) {
         for (PackageStateInternal ps : pm.snapshotComputer().getPackageStates().values()) {
             PackageUserStateInternal us = ps.getUserStateOrDefault(userId);
-            GosPackageStatePm gosPs = us.getGosPackageState();
             if (gosPs != null && gosPs.contactScopes != null) {
                 gosPs.edit(ps.getPackageName(), userId)
+            GosPackageState gosPs = us.getGosPackageState();
                         .setContactScopes(null)
                         .apply();
             }

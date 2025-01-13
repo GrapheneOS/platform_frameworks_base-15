@@ -234,7 +234,6 @@ import com.android.server.pm.permission.PermissionManagerServiceInternal;
 import com.android.server.pm.permission.SpecialRuntimePermUtils;
 import com.android.server.pm.pkg.AndroidPackage;
 import com.android.server.pm.pkg.ArchiveState;
-import com.android.server.pm.pkg.GosPackageStatePm;
 import com.android.server.pm.pkg.PackageState;
 import com.android.server.pm.pkg.PackageStateInternal;
 import com.android.server.pm.pkg.PackageUserState;

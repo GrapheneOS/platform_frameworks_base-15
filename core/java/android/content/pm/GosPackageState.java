@@ -33,6 +33,13 @@ import android.permission.PermissionManager;
 import java.util.Objects;
 
 /**
+ * GrapheneOS-specific persistent package state, stored in per-user PackageUserState.
+ * <p>
+ * GosPackageState has a special handling for sharedUid packages. All packages in a given sharedUid
+ * share the same GosPackageState. This was done because in some cases (e.g. when an app accesses
+ * MediaProvider via FUSE) there's no way to retrieve the package name, only UID is available.
+ * Manually merging GosPackageStates of sharedUid members would be too complex.
+ *
  * @hide
  */
 @SystemApi

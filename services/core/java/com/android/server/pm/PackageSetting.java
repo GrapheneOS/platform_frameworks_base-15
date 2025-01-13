@@ -28,6 +28,7 @@ import android.annotation.Nullable;
 import android.annotation.UserIdInt;
 import android.content.ComponentName;
 import android.content.pm.ApplicationInfo;
+import android.content.pm.GosPackageState;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManagerInternal;
 import android.content.pm.SharedLibraryInfo;
@@ -57,7 +58,6 @@ import com.android.server.pm.permission.LegacyPermissionDataProvider;
 import com.android.server.pm.permission.LegacyPermissionState;
 import com.android.server.pm.pkg.AndroidPackage;
 import com.android.server.pm.pkg.ArchiveState;
-import com.android.server.pm.pkg.GosPackageStatePm;
 import com.android.server.pm.pkg.PackageState;
 import com.android.server.pm.pkg.PackageStateInternal;
 import com.android.server.pm.pkg.PackageStateUnserialized;
@@ -409,7 +409,7 @@ public class PackageSetting extends SettingBase implements PackageStateInternal 
         return this;
     }
 
-    public void setGosPackageState(@UserIdInt int userId, @Nullable GosPackageStatePm state) {
+    public void setGosPackageState(@UserIdInt int userId, @Nullable GosPackageState state) {
         modifyUserState(userId).setGosPackageState(state);
         onChanged();
     }
@@ -1112,13 +1112,13 @@ public class PackageSetting extends SettingBase implements PackageStateInternal 
 
     void setUserState(int userId, long ceDataInode, long deDataInode, int enabled,
                       boolean installed, boolean stopped, boolean notLaunched, boolean hidden,
+                      GosPackageState gosPackageState,
                       int distractionFlags, ArrayMap<UserPackage, SuspendParams> suspendParams,
                       boolean instantApp, boolean virtualPreload, String lastDisableAppCaller,
                       ArraySet<String> enabledComponents, ArraySet<String> disabledComponents,
                       int installReason, int uninstallReason,
                       String harmfulAppWarning, String splashScreenTheme,
-                      long firstInstallTime, int aspectRatio, ArchiveState archiveState,
-                      GosPackageStatePm gosPackageState) {
+                      long firstInstallTime, int aspectRatio, ArchiveState archiveState) {
         modifyUserState(userId)
                 .setSuspendParams(suspendParams)
                 .setCeDataInode(ceDataInode)
@@ -1148,7 +1148,7 @@ public class PackageSetting extends SettingBase implements PackageStateInternal 
     void setUserState(int userId, PackageUserStateInternal otherState) {
         setUserState(userId, otherState.getCeDataInode(), otherState.getDeDataInode(),
                 otherState.getEnabledState(), otherState.isInstalled(), otherState.isStopped(),
-                otherState.isNotLaunched(), otherState.isHidden(), otherState.getDistractionFlags(),
+                otherState.isNotLaunched(), otherState.isHidden(), otherState.getGosPackageState(), otherState.getDistractionFlags(),
                 otherState.getSuspendParams() == null
                         ? null : otherState.getSuspendParams().untrackedStorage(),
                 otherState.isInstantApp(), otherState.isVirtualPreload(),
@@ -1160,8 +1160,7 @@ public class PackageSetting extends SettingBase implements PackageStateInternal 
                 otherState.getInstallReason(), otherState.getUninstallReason(),
                 otherState.getHarmfulAppWarning(), otherState.getSplashScreenTheme(),
                 otherState.getFirstInstallTimeMillis(), otherState.getMinAspectRatio(),
-                otherState.getArchiveState(),
-                otherState.getGosPackageState());
+                otherState.getArchiveState());
     }
 
     WatchedArraySet<String> getEnabledComponents(int userId) {
