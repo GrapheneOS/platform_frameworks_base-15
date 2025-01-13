@@ -3,7 +3,7 @@ package com.android.internal.os;
 import android.annotation.Nullable;
 import android.content.Context;
 import android.content.pm.ApplicationInfo;
-import android.content.pm.GosPackageStateBase;
+import android.content.pm.GosPackageState;
 
 // Extra args for:
 // - children of main zygote{,64}, including AppZygotes, but excluding WebViewZygote
@@ -27,7 +27,7 @@ public class ZygoteExtraArgs {
     private static final String SEPARATOR = "\t";
 
     public static String createFlat(Context ctx, int userId, ApplicationInfo appInfo,
-                                @Nullable GosPackageStateBase ps,
+                                GosPackageState ps,
                                 boolean isIsolatedProcess) {
         String[] arr = new String[ARR_LEN];
         arr[IDX_SELINUX_FLAGS] = Long.toHexString(
@@ -37,7 +37,7 @@ public class ZygoteExtraArgs {
     }
 
     public static String createFlatForWebviewProcess(Context ctx, int userId,
-             ApplicationInfo callerAppInfo, @Nullable GosPackageStateBase callerPs) {
+             ApplicationInfo callerAppInfo, GosPackageState callerPs) {
         String[] arr = new String[ARR_LEN];
         arr[IDX_SELINUX_FLAGS] = Long.toHexString(
             SELinuxFlags.getForWebViewProcess(ctx, userId, callerAppInfo, callerPs)

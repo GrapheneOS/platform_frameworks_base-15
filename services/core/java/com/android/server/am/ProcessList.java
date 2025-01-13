@@ -151,7 +151,6 @@ import com.android.server.Watchdog;
 import com.android.server.am.ActivityManagerService.ProcessChangeItem;
 import com.android.server.compat.PlatformCompat;
 import com.android.server.pm.pkg.AndroidPackage;
-import com.android.server.pm.pkg.GosPackageStatePm;
 import com.android.server.pm.pkg.PackageStateInternal;
 import com.android.server.wm.ActivityServiceConnectionsHolder;
 import com.android.server.wm.WindowManagerService;
@@ -2100,11 +2099,11 @@ public final class ProcessList {
                     throw new IllegalStateException("callerAppInfo is null");
                 }
 
-                GosPackageStatePm callerPs = pmi.getGosPackageState(callerPkgName, userId);
+                GosPackageState callerPs = pmi.getGosPackageState(callerPkgName, userId);
 
                 flatExtraArgs = ZygoteExtraArgs.createFlatForWebviewProcess(ctx, userId, callerAppInfo, callerPs);
             } else {
-                GosPackageStatePm ps = pmi.getGosPackageState(definingAppInfo.packageName, userId);
+                GosPackageState ps = pmi.getGosPackageState(definingAppInfo.packageName, userId);
 
                 flatExtraArgs = ZygoteExtraArgs.createFlat(ctx, userId, definingAppInfo, ps, app.isolated);
 
