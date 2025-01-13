@@ -66,7 +66,6 @@ class AndroidPackageTest : ParcelableComponentTest(AndroidPackage::class, Packag
         // Internal methods
         "initPackageParsingHooks", "getPackageParsingHooks",
         "setPackageExt", "ext",
-        "setGosPackageStateCachedDerivedFlags", "getGosPackageStateCachedDerivedFlags",
         "toAppInfoToString",
         "toAppInfoWithoutState",
         "toAppInfoWithoutStateWithoutFlags",
