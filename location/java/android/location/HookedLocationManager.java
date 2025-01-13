@@ -4,7 +4,7 @@ import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.app.PendingIntent;
 import android.content.Context;
-import android.content.pm.GosPackageStateBase;
+import android.content.pm.GosPackageState;
 import android.location.provider.ProviderProperties;
 import android.os.CancellationSignal;
 
@@ -20,7 +20,7 @@ public class HookedLocationManager extends LocationManager {
 
     private static int flags;
 
-    public static int getFlags(GosPackageStateBase gosPs, boolean isUserApp) {
+    public static int getFlags(GosPackageState gosPs, boolean isUserApp) {
         if (isUserApp) {
             // see comment in translateProvider()
             return FLAG_ENABLE_PROVIDER_TRANSLATION;
