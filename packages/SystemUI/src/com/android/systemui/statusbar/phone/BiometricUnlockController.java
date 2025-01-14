@@ -630,7 +630,7 @@ public class BiometricUnlockController extends KeyguardUpdateMonitorCallback imp
                 // conditional is always true. Everything is running in the same thread so not
                 // possible for this implication to be invalidated externally.
                 if (mKeyguardStateController.isUnlocked()) {
-                    return MODE_WAKE_AND_UNLOCK;
+                    return MODE_ONLY_WAKE;
                 }
                 // This is unreachable.
                 return MODE_ONLY_WAKE;
