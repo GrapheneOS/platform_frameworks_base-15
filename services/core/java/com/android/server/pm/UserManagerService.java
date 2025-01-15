@@ -1782,6 +1782,8 @@ public class UserManagerService extends IUserManager.Stub {
                 (flags & UserManager.QUIET_MODE_DISABLE_DONT_ASK_CREDENTIAL) != 0;
         final boolean onlyIfCredentialNotRequired =
                 (flags & UserManager.QUIET_MODE_DISABLE_ONLY_IF_CREDENTIAL_NOT_REQUIRED) != 0;
+        final boolean delayStorageLocking =
+                (flags & (UserManager.QUIET_MODE_ENABLE_STOP_WITHOUT_DELAYED_LOCKING)) == 0;
         if (dontAskCredential && onlyIfCredentialNotRequired) {
             throw new IllegalArgumentException("invalid flags: " + flags);
         }
@@ -1815,7 +1817,7 @@ public class UserManagerService extends IUserManager.Stub {
                 }
             }
             if (enableQuietMode) {
-                setQuietModeEnabled(userId, true /* enableQuietMode */, target, callingPackage);
+                setQuietModeEnabled(userId, true /* enableQuietMode */, target, callingPackage, delayStorageLocking);
                 return true;
             }
             if (android.os.Flags.allowPrivateProfile()
@@ -1934,6 +1936,11 @@ public class UserManagerService extends IUserManager.Stub {
 
     private void setQuietModeEnabled(@UserIdInt int userId, boolean enableQuietMode,
             IntentSender target, @Nullable String callingPackage) {
+        setQuietModeEnabled(userId, enableQuietMode, target, callingPackage, true);
+    }
+
+    private void setQuietModeEnabled(@UserIdInt int userId, boolean enableQuietMode,
+            IntentSender target, @Nullable String callingPackage, boolean delayStorageLocking) {
         final UserInfo profile, parent;
         final UserData profileUserData;
         synchronized (mUsersLock) {
@@ -1957,7 +1964,7 @@ public class UserManagerService extends IUserManager.Stub {
 
         try {
             if (enableQuietMode) {
-                stopUserForQuietMode(userId);
+                stopUserForQuietMode(userId, delayStorageLocking);
                 LocalServices.getService(ActivityManagerInternal.class)
                         .killForegroundAppsForUser(userId);
             } else {
@@ -1986,8 +1993,9 @@ public class UserManagerService extends IUserManager.Stub {
         }
     }
 
-    private void stopUserForQuietMode(int userId) throws RemoteException {
+    private void stopUserForQuietMode(int userId, boolean delayStorageLocking) throws RemoteException {
         if (android.os.Flags.allowPrivateProfile()
+                && delayStorageLocking
                 && android.multiuser.Flags.enableBiometricsToUnlockPrivateSpace()
                 && android.multiuser.Flags.enablePrivateSpaceFeatures()) {
             // Allow delayed locking since some profile types want to be able to unlock again via

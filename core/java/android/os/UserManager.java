@@ -227,6 +227,13 @@ public class UserManager {
     public static final int QUIET_MODE_DISABLE_DONT_ASK_CREDENTIAL = 0x2;
 
     /**
+     * Flag passed to {@link #requestQuietModeEnabled} to request enabling quiet mode without
+     * delaying storage locking once the user is stopped.
+     * @hide
+     */
+    public static final int QUIET_MODE_ENABLE_STOP_WITHOUT_DELAYED_LOCKING = 1 << 31;
+
+    /**
      * List of flags available for the {@link #requestQuietModeEnabled} method.
      * @hide
      */
