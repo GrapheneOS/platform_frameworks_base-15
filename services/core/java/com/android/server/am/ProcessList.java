@@ -3710,7 +3710,7 @@ public final class ProcessList {
     }
 
     @GuardedBy(anyOf = {"mService", "mProcLock"})
-    void onGosPackageStateChangedLOSP(int uid, @Nullable GosPackageState state) {
+    void onGosPackageStateChangedLOSP(int uid, GosPackageState state) {
         for (int i = mLruProcesses.size() - 1; i >= 0; i--) {
             ProcessRecord r = mLruProcesses.get(i);
             if (r.uid != uid) {

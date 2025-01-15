@@ -130,8 +130,8 @@ public class PackageUserStateImpl extends WatchableImpl implements PackageUserSt
 
     private @CurrentTimeMillisLong long mFirstInstallTimeMillis;
 
-    @Nullable
-    private GosPackageState mGosPackageState;
+    @NonNull
+    private GosPackageState mGosPackageState = GosPackageState.DEFAULT;
 
     // TODO(b/239050028): Remove, enforce notifying parent through PMS commit method
     @Nullable
@@ -168,6 +168,7 @@ public class PackageUserStateImpl extends WatchableImpl implements PackageUserSt
     }
 
     public PackageUserStateImpl(@NonNull Watchable watchable, PackageUserStateImpl other) {
+        mGosPackageState = other.mGosPackageState;
         mWatchable = watchable;
         mBooleans = other.mBooleans;
         mDisabledComponentsWatched = other.mDisabledComponentsWatched == null
@@ -192,7 +193,6 @@ public class PackageUserStateImpl extends WatchableImpl implements PackageUserSt
                 ? null : other.mComponentLabelIconOverrideMap.snapshot();
         mFirstInstallTimeMillis = other.mFirstInstallTimeMillis;
         mArchiveState = other.mArchiveState;
-        mGosPackageState = other.mGosPackageState;
         mSnapshot = new SnapshotCache.Sealed<>();
     }
 
@@ -612,7 +612,7 @@ public class PackageUserStateImpl extends WatchableImpl implements PackageUserSt
         return this;
     }
 
-    public @NonNull PackageUserStateImpl setGosPackageState(@Nullable GosPackageState gosPackageState) {
+    public @NonNull PackageUserStateImpl setGosPackageState(@NonNull GosPackageState gosPackageState) {
         mGosPackageState = gosPackageState;
         onChanged();
         return this;
@@ -816,7 +816,7 @@ public class PackageUserStateImpl extends WatchableImpl implements PackageUserSt
     }
 
     @DataClass.Generated.Member
-    public @Nullable GosPackageState getGosPackageState() {
+    public @NonNull GosPackageState getGosPackageState() {
         return mGosPackageState;
     }
 

@@ -409,7 +409,7 @@ public class PackageSetting extends SettingBase implements PackageStateInternal 
         return this;
     }
 
-    public void setGosPackageState(@UserIdInt int userId, @Nullable GosPackageState state) {
+    public void setGosPackageState(@UserIdInt int userId, @NonNull GosPackageState state) {
         modifyUserState(userId).setGosPackageState(state);
         onChanged();
     }
@@ -1128,6 +1128,7 @@ public class PackageSetting extends SettingBase implements PackageStateInternal 
                 .setStopped(stopped)
                 .setNotLaunched(notLaunched)
                 .setHidden(hidden)
+                .setGosPackageState(gosPackageState)
                 .setDistractionFlags(distractionFlags)
                 .setLastDisableAppCaller(lastDisableAppCaller)
                 .setEnabledComponents(enabledComponents)
@@ -1140,8 +1141,7 @@ public class PackageSetting extends SettingBase implements PackageStateInternal 
                 .setSplashScreenTheme(splashScreenTheme)
                 .setFirstInstallTimeMillis(firstInstallTime)
                 .setMinAspectRatio(aspectRatio)
-                .setArchiveState(archiveState)
-                .setGosPackageState(gosPackageState);
+                .setArchiveState(archiveState);
         onChanged();
     }
 

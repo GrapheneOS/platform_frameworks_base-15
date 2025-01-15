@@ -1325,7 +1325,7 @@ public abstract class ActivityManagerInternal {
     public abstract void killApplicationSync(String pkgName, int appId, int userId,
             String reason, int exitInfoReason);
 
-    public abstract void onGosPackageStateChanged(int uid, @Nullable GosPackageState state);
+    public abstract void onGosPackageStateChanged(int uid, GosPackageState state);
 
     public static class ProcessRecordSnapshot {
         public final int pid;

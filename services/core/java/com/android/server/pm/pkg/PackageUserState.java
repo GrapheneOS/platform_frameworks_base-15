@@ -125,7 +125,7 @@ public interface PackageUserState {
 
     /** @hide */
     @Immutable.Ignore
-    @Nullable
+    @NonNull
     GosPackageState getGosPackageState();
 
     /**

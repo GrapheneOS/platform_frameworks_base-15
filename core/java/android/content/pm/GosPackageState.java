@@ -2,6 +2,7 @@ package android.content.pm;
 
 import android.annotation.NonNull;
 import android.annotation.Nullable;
+import android.annotation.SuppressLint;
 import android.annotation.SystemApi;
 import android.annotation.UserIdInt;
 import android.app.ActivityThread;
@@ -10,11 +11,11 @@ import android.content.Context;
 import android.ext.DerivedPackageFlag;
 import android.os.Parcel;
 import android.os.Parcelable;
-import android.os.Process;
 import android.os.RemoteException;
 import android.os.UserHandle;
 import android.permission.PermissionManager;
 
+import java.util.Arrays;
 import java.util.Objects;
 
 /**
@@ -52,6 +53,14 @@ public final class GosPackageState implements Parcelable {
 
     /** @hide */ public static final GosPackageState DEFAULT = createEmpty();
 
+    /**
+     * A sentinel value that is returned when the package is not installed (e.g. when it was racily
+     * uninstalled) and when the caller doesn't have access to the actual GosPackageState.
+     *
+     * @hide
+     */
+    public static final GosPackageState NONE = createEmpty();
+
     /** @hide */
     public GosPackageState(long flagStorage1, long packageFlagStorage,
                            @Nullable byte[] storageScopes, @Nullable byte[] contactScopes) {
@@ -65,43 +74,38 @@ public final class GosPackageState implements Parcelable {
         return new GosPackageState(0L, 0L, null, null);
     }
 
-    @Nullable
+    @NonNull
     public static GosPackageState getForSelf(@NonNull Context context) {
         return get(context.getPackageName(), context.getUserId());
     }
 
-    @Nullable
+    @NonNull
     @SuppressLint("UserHandleName")
     public static GosPackageState get(@NonNull String packageName, @NonNull UserHandle user) {
         return get(packageName, user.getIdentifier());
     }
 
-    @Nullable
+    @NonNull
     public static GosPackageState get(@NonNull String packageName, @UserIdInt int userId) {
-        var query = new CacheQuery(packageName, userId);
-        if (sCache.query(query) instanceof GosPackageState res) {
-            return res;
-        }
-        return null;
+        return Objects.requireNonNull(sCache.query(new CacheQuery(packageName, userId)));
     }
 
-    @NonNull
-    @SuppressLint("UserHandleName")
-    public static GosPackageState getOrDefault(@NonNull String packageName, @NonNull UserHandle user) {
-        return getOrDefault(packageName, user.getIdentifier());
-    }
-
-    @NonNull
-    public static GosPackageState getOrDefault(@NonNull String packageName, int userId) {
-        var s = get(packageName, userId);
-        if (s == null) {
-            s = DEFAULT;
-        }
-        return s;
-    }
+    private static final int TYPE_NONE = 0;
+    private static final int TYPE_DEFAULT = 1;
+    private static final int TYPE_REGULAR = 2;
 
     @Override
     public void writeToParcel(@NonNull Parcel dest, int flags) {
+        int type = TYPE_REGULAR;
+        if (this == DEFAULT) {
+            type = TYPE_DEFAULT;
+        } else if (this == NONE) {
+            type = TYPE_NONE;
+        }
+        dest.writeInt(type);
+        if (type != TYPE_REGULAR) {
+            return;
+        }
         dest.writeLong(this.flagStorage1);
         dest.writeLong(this.packageFlagStorage);
         dest.writeByteArray(storageScopes);
@@ -113,6 +117,10 @@ public final class GosPackageState implements Parcelable {
     public static final Creator<GosPackageState> CREATOR = new Creator<>() {
         @Override
         public GosPackageState createFromParcel(Parcel in) {
+            switch (in.readInt()) {
+                case TYPE_DEFAULT: return DEFAULT;
+                case TYPE_NONE: return NONE;
+            };
             var res = new GosPackageState(in.readLong(), in.readLong(),
                     in.createByteArray(), in.createByteArray());
             res.derivedFlags = in.readInt();
@@ -198,31 +206,27 @@ public final class GosPackageState implements Parcelable {
         return attachableToPackage(UserHandle.getAppId(ai.uid));
     }
 
+    /** @see #NONE */
+    public boolean isNone() {
+        return this == NONE;
+    }
+
     private record CacheQuery(String packageName, int userId) {}
 
     // invalidated by PackageManager#invalidatePackageInfoCache() (e.g. when
     // PackageManagerService#setGosPackageState succeeds)
-    @Nullable private static volatile PropertyInvalidatedCache<CacheQuery, Object> sCache =
+    private static volatile PropertyInvalidatedCache<CacheQuery, GosPackageState> sCache =
             new PropertyInvalidatedCache<>(256, PermissionManager.CACHE_KEY_PACKAGE_INFO,
-                "getGosPackageStateOtherUsers") {
+                "getGosPackageState") {
         @Override
-        public Object recompute(CacheQuery query) {
-            return getUncached(query.packageName, query.userId);
+        public GosPackageState recompute(CacheQuery query) {
+            try {
+                return ActivityThread.getPackageManager().getGosPackageState(query.packageName, query.userId);
+            } catch (RemoteException e) {
+                throw e.rethrowFromSystemServer();
+            }
         }
     };
-
-    static Object getUncached(String packageName, int userId) {
-        try {
-            GosPackageState s = ActivityThread.getPackageManager().getGosPackageState(packageName, userId);
-            if (s != null) {
-                return s;
-            }
-            // return non-null to cache null results, see javadoc for PropertyInvalidatedCache#recompute()
-            return GosPackageState.class;
-        } catch (RemoteException e) {
-            throw e.rethrowFromSystemServer();
-        }
-    }
 
     @NonNull
     @SuppressLint("UserHandleName")
@@ -243,11 +247,7 @@ public final class GosPackageState implements Parcelable {
 
     @NonNull
     public static Editor edit(@NonNull String packageName, @UserIdInt int userId) {
-        GosPackageState s = GosPackageState.get(packageName, userId);
-        if (s != null) {
-            return s.createEditor(packageName, userId);
-        }
-        return new Editor(packageName, userId);
+        return GosPackageState.get(packageName, userId).createEditor(packageName, userId);
     }
 
     public static final int EDITOR_FLAG_KILL_UID_AFTER_APPLY = 1;
@@ -261,15 +261,6 @@ public final class GosPackageState implements Parcelable {
         private byte[] storageScopes;
         private byte[] contactScopes;
         private int editorFlags;
-
-        /**
-         * Don't call directly, use GosPackageState#edit or GosPackageStatePm#getEditor
-         *
-         * @hide
-         */
-        public Editor(String packageName, int userId) {
-            this(DEFAULT, packageName, userId);
-        }
 
         /** @hide */
         public Editor(GosPackageState s, String packageName, int userId) {

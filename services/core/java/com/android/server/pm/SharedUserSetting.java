@@ -196,7 +196,7 @@ public final class SharedUserSetting extends SettingBase implements SharedUserAp
                 int userId = userStates.keyAt(userIndex);
                 for (int i = 0; i < numPkgs; ++i) {
                     GosPackageState gosPs = packages.valueAt(i).getUserStateOrDefault(userId).getGosPackageState();
-                    if (gosPs != null) {
+                    if (!gosPs.equals(GosPackageState.DEFAULT)) {
                         if (userGosPs == null) {
                             userGosPs = new SparseArray<>();
                         }
@@ -472,10 +472,7 @@ public final class SharedUserSetting extends SettingBase implements SharedUserAp
             PackageSetting ps = mPackages.valueAt(pkgIdx);
             SparseArray<? extends PackageUserStateInternal> userStates = ps.getUserStates();
             for (int userStateIdx = 0; userStateIdx < userStates.size(); ++userStateIdx) {
-                GosPackageState gosPs = userStates.valueAt(userStateIdx).getGosPackageState();
-                if (gosPs != null) {
-                    gosPs.derivedFlags = 0;
-                }
+                userStates.valueAt(userStateIdx).getGosPackageState().derivedFlags = 0;
             }
         }
     }

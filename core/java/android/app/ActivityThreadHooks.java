@@ -71,11 +71,9 @@ class ActivityThreadHooks {
     }
 
     // called from both main and worker threads
-    static void onGosPackageStateChanged(Context ctx, @Nullable GosPackageState state, boolean fromBind) {
-        if (state != null) {
-            StorageScopesAppHooks.maybeEnable(state);
-            ContactScopes.maybeEnable(ctx, state);
-        }
+    static void onGosPackageStateChanged(Context ctx, GosPackageState state, boolean fromBind) {
+        StorageScopesAppHooks.maybeEnable(state);
+        ContactScopes.maybeEnable(ctx, state);
     }
 
     static Service instantiateService(String className) {

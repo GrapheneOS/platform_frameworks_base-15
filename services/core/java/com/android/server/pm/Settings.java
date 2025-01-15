@@ -1146,7 +1146,7 @@ public final class Settings implements Watchable, Snappable, ResilientAtomicFile
                                 true /*stopped*/,
                                 true /*notLaunched*/,
                                 false /*hidden*/,
-                                null /*gosPackageState*/,
+                                GosPackageState.DEFAULT,
                                 0 /*distractionFlags*/,
                                 null /*suspendParams*/,
                                 instantApp,
@@ -1847,7 +1847,7 @@ public final class Settings implements Watchable, Snappable, ResilientAtomicFile
                                     false /*stopped*/,
                                     false /*notLaunched*/,
                                     false /*hidden*/,
-                                    null /*gosPackageState*/,
+                                    GosPackageState.DEFAULT,
                                     0 /*distractionFlags*/,
                                     null /*suspendParams*/,
                                     false /*instantApp*/,
@@ -1966,6 +1966,9 @@ public final class Settings implements Watchable, Snappable, ResilientAtomicFile
                                 PackageManager.USER_MIN_ASPECT_RATIO_UNSET);
 
                         GosPackageState gosPackageState = GosPackageStatePersistence.maybeDeserializeLegacy(parser);
+                        if (gosPackageState == null) {
+                            gosPackageState = GosPackageState.DEFAULT;
+                        }
 
                         ArraySet<String> enabledComponents = null;
                         ArraySet<String> disabledComponents = null;

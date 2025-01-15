@@ -7349,7 +7349,7 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
             return isUpgrading && mPriorSdkVersion < sdkVersion;
         }
 
-        @Nullable
+        @NonNull
         @Override
         public GosPackageStatePm getGosPackageState(String packageName, int userId) {
             return GosPackageStatePm.get(PackageManagerService.this, packageName, userId);
