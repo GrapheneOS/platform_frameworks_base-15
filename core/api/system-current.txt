@@ -4118,63 +4118,47 @@ package android.content.pm {
   }
 
   public final class GosPackageState implements android.os.Parcelable {
-    method public static boolean attachableToPackage(@NonNull String);
+    method @NonNull public android.content.pm.GosPackageState.Editor createEditor(@NonNull String, @NonNull android.os.UserHandle);
+    method @NonNull public android.content.pm.GosPackageState.Editor createEditor(@NonNull String, int);
     method public int describeContents();
-    method @NonNull public android.content.pm.GosPackageState.Editor edit();
-    method @NonNull public static android.content.pm.GosPackageState.Editor edit(@NonNull String);
+    method @NonNull public static android.content.pm.GosPackageState.Editor edit(@NonNull String, @NonNull android.os.UserHandle);
     method @NonNull public static android.content.pm.GosPackageState.Editor edit(@NonNull String, int);
-    method @Nullable public static android.content.pm.GosPackageState get(@NonNull String);
-    method @Nullable public static android.content.pm.GosPackageState get(@NonNull String, int);
-    method @Nullable public static android.content.pm.GosPackageState getForSelf();
-    method @NonNull public static android.content.pm.GosPackageState getOrDefault(@NonNull String);
-    method @NonNull public static android.content.pm.GosPackageState getOrDefault(@NonNull String, int);
-    method @NonNull public String getPackageName();
-    method public int getUserId();
+    method @NonNull public static android.content.pm.GosPackageState get(@NonNull String, @NonNull android.os.UserHandle);
+    method @NonNull public static android.content.pm.GosPackageState get(@NonNull String, int);
+    method @NonNull public static android.content.pm.GosPackageState getForSelf(@NonNull android.content.Context);
     method public boolean hasDerivedFlag(int);
     method public boolean hasDerivedFlags(int);
     method public boolean hasFlag(int);
-    method public final boolean hasFlags(int);
-    method public final boolean hasPackageFlags(long);
+    method public boolean hasPackageFlag(int);
+    method public boolean isNone();
     method public void writeToParcel(@NonNull android.os.Parcel, int);
     field @NonNull public static final android.os.Parcelable.Creator<android.content.pm.GosPackageState> CREATOR;
-    field public static final int DFLAGS_SET = 1; // 0x1
-    field public static final int DFLAG_EXPECTS_ACCESS_TO_MEDIA_FILES_ONLY = 4; // 0x4
-    field public static final int DFLAG_EXPECTS_ALL_FILES_ACCESS = 2; // 0x2
-    field public static final int DFLAG_EXPECTS_LEGACY_EXTERNAL_STORAGE = 8192; // 0x2000
-    field public static final int DFLAG_EXPECTS_STORAGE_WRITE_ACCESS = 8; // 0x8
-    field public static final int DFLAG_HAS_ACCESS_MEDIA_LOCATION_DECLARATION = 256; // 0x100
-    field public static final int DFLAG_HAS_GET_ACCOUNTS_DECLARATION = 4194304; // 0x400000
-    field public static final int DFLAG_HAS_MANAGE_EXTERNAL_STORAGE_DECLARATION = 64; // 0x40
-    field public static final int DFLAG_HAS_MANAGE_MEDIA_DECLARATION = 128; // 0x80
-    field public static final int DFLAG_HAS_READ_CONTACTS_DECLARATION = 1048576; // 0x100000
-    field public static final int DFLAG_HAS_READ_EXTERNAL_STORAGE_DECLARATION = 16; // 0x10
-    field public static final int DFLAG_HAS_READ_MEDIA_AUDIO_DECLARATION = 512; // 0x200
-    field public static final int DFLAG_HAS_READ_MEDIA_IMAGES_DECLARATION = 1024; // 0x400
-    field public static final int DFLAG_HAS_READ_MEDIA_VIDEO_DECLARATION = 2048; // 0x800
-    field public static final int DFLAG_HAS_READ_MEDIA_VISUAL_USER_SELECTED_DECLARATION = 4096; // 0x1000
-    field public static final int DFLAG_HAS_WRITE_CONTACTS_DECLARATION = 2097152; // 0x200000
-    field public static final int DFLAG_HAS_WRITE_EXTERNAL_STORAGE_DECLARATION = 32; // 0x20
     field public static final int EDITOR_FLAG_KILL_UID_AFTER_APPLY = 1; // 0x1
     field public static final int EDITOR_FLAG_NOTIFY_UID_AFTER_APPLY = 2; // 0x2
-    field public static final int FLAG_ALLOW_ACCESS_TO_OBB_DIRECTORY = 2; // 0x2
-    field public static final int FLAG_CONTACT_SCOPES_ENABLED = 32; // 0x20
-    field public static final int FLAG_STORAGE_SCOPES_ENABLED = 1; // 0x1
-    field public final int derivedFlags;
+    field @Nullable public final byte[] contactScopes;
+    field public final long flagStorage1;
+    field public final long packageFlagStorage;
+    field @Nullable public final byte[] storageScopes;
   }
 
   public static class GosPackageState.Editor {
-    method @NonNull public android.content.pm.GosPackageState.Editor addFlags(int);
-    method @NonNull public android.content.pm.GosPackageState.Editor addPackageFlags(long);
+    method @NonNull public android.content.pm.GosPackageState.Editor addFlag(int);
+    method @NonNull public android.content.pm.GosPackageState.Editor addPackageFlag(int);
     method public boolean apply();
-    method @NonNull public android.content.pm.GosPackageState.Editor clearFlags(int);
-    method @NonNull public android.content.pm.GosPackageState.Editor clearPackageFlags(long);
+    method @NonNull public android.content.pm.GosPackageState.Editor clearFlag(int);
+    method @NonNull public android.content.pm.GosPackageState.Editor clearPackageFlag(int);
     method @NonNull public android.content.pm.GosPackageState.Editor killUidAfterApply();
     method @NonNull public android.content.pm.GosPackageState.Editor setContactScopes(@Nullable byte[]);
-    method @NonNull public android.content.pm.GosPackageState.Editor setFlagsState(int, boolean);
+    method @NonNull public android.content.pm.GosPackageState.Editor setFlagState(int, boolean);
     method @NonNull public android.content.pm.GosPackageState.Editor setKillUidAfterApply(boolean);
     method @NonNull public android.content.pm.GosPackageState.Editor setNotifyUidAfterApply(boolean);
-    method @NonNull public android.content.pm.GosPackageState.Editor setPackageFlagState(long, boolean);
+    method @NonNull public android.content.pm.GosPackageState.Editor setPackageFlagState(int, boolean);
     method @NonNull public android.content.pm.GosPackageState.Editor setStorageScopes(@Nullable byte[]);
+  }
+
+  public interface GosPackageStateFlag {
+    field public static final int CONTACT_SCOPES_ENABLED = 5; // 0x5
+    field public static final int STORAGE_SCOPES_ENABLED = 0; // 0x0
   }
 
   public final class InstallationFile {
@@ -4933,6 +4917,26 @@ package android.ext {
     method public void writeToParcel(@NonNull android.os.Parcel, int);
     field @NonNull public static final android.os.Parcelable.Creator<android.ext.AppInfoExt> CREATOR;
     field public static final int FLAG_HAS_GMSCORE_CLIENT_LIBRARY = 0; // 0x0
+  }
+
+  public interface DerivedPackageFlag {
+    field public static final int DFLAGS_SET = 1; // 0x1
+    field public static final int EXPECTS_ACCESS_TO_MEDIA_FILES_ONLY = 4; // 0x4
+    field public static final int EXPECTS_ALL_FILES_ACCESS = 2; // 0x2
+    field public static final int EXPECTS_LEGACY_EXTERNAL_STORAGE = 8192; // 0x2000
+    field public static final int EXPECTS_STORAGE_WRITE_ACCESS = 8; // 0x8
+    field public static final int HAS_ACCESS_MEDIA_LOCATION_DECLARATION = 256; // 0x100
+    field public static final int HAS_GET_ACCOUNTS_DECLARATION = 4194304; // 0x400000
+    field public static final int HAS_MANAGE_EXTERNAL_STORAGE_DECLARATION = 64; // 0x40
+    field public static final int HAS_MANAGE_MEDIA_DECLARATION = 128; // 0x80
+    field public static final int HAS_READ_CONTACTS_DECLARATION = 1048576; // 0x100000
+    field public static final int HAS_READ_EXTERNAL_STORAGE_DECLARATION = 16; // 0x10
+    field public static final int HAS_READ_MEDIA_AUDIO_DECLARATION = 512; // 0x200
+    field public static final int HAS_READ_MEDIA_IMAGES_DECLARATION = 1024; // 0x400
+    field public static final int HAS_READ_MEDIA_VIDEO_DECLARATION = 2048; // 0x800
+    field public static final int HAS_READ_MEDIA_VISUAL_USER_SELECTED_DECLARATION = 4096; // 0x1000
+    field public static final int HAS_WRITE_CONTACTS_DECLARATION = 2097152; // 0x200000
+    field public static final int HAS_WRITE_EXTERNAL_STORAGE_DECLARATION = 32; // 0x20
   }
 
   public final class KnownSystemPackages {
