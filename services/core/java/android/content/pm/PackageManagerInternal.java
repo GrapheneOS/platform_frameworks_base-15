@@ -1454,6 +1454,6 @@ public abstract class PackageManagerInternal {
      */
     public abstract boolean isUpgradingFromLowerThan(int sdkVersion);
 
-    @Nullable
+    @NonNull
     public abstract GosPackageState getGosPackageState(String packageName, int userId);
 }

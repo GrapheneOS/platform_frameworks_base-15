@@ -157,10 +157,10 @@ class PackageUserStateDefault implements PackageUserStateInternal {
         return 0;
     }
 
-    @Nullable
+    @NonNull
     @Override
     public GosPackageState getGosPackageState() {
-        return null;
+        return GosPackageState.DEFAULT;
     }
 
     @Override

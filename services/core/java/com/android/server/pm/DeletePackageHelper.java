@@ -40,6 +40,7 @@ import android.app.ApplicationPackageManager;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.Flags;
+import android.content.pm.GosPackageState;
 import android.content.pm.IPackageDeleteObserver2;
 import android.content.pm.PackageInstaller;
 import android.content.pm.PackageManager;
@@ -622,7 +623,7 @@ final class DeletePackageHelper {
                     == (PackageManager.DELETE_KEEP_DATA | PackageManager.DELETE_ARCHIVE)) {
                 gosPackageState = ps.getUserStateOrDefault(nextUserId).getGosPackageState();
             } else {
-                gosPackageState = null;
+                gosPackageState = GosPackageState.DEFAULT;
             }
 
             ps.setUserState(nextUserId,
