@@ -267,12 +267,8 @@ public class GosPackageStatePmHooks {
 
         int flags;
         if (sharedUser != null) {
-            List<AndroidPackage> sharedPkgs = sharedUser.getPackages();
-            if (sharedPkgs == null) {
-                return;
-            }
             flags = 0;
-            for (AndroidPackage sharedPkg : sharedPkgs) {
+            for (AndroidPackage sharedPkg : sharedUser.getPackages()) {
                 // see GosPackageState doc
                 flags = deriveFlags(flags, sharedPkg);
             }
