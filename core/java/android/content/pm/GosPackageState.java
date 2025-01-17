@@ -74,22 +74,6 @@ public final class GosPackageState implements Parcelable {
         return new GosPackageState(0L, 0L, null, null);
     }
 
-    @NonNull
-    public static GosPackageState getForSelf(@NonNull Context context) {
-        return get(context.getPackageName(), context.getUserId());
-    }
-
-    @NonNull
-    @SuppressLint("UserHandleName")
-    public static GosPackageState get(@NonNull String packageName, @NonNull UserHandle user) {
-        return get(packageName, user.getIdentifier());
-    }
-
-    @NonNull
-    public static GosPackageState get(@NonNull String packageName, @UserIdInt int userId) {
-        return Objects.requireNonNull(sCache.query(new CacheQuery(packageName, userId)));
-    }
-
     private static final int TYPE_NONE = 0;
     private static final int TYPE_DEFAULT = 1;
     private static final int TYPE_REGULAR = 2;
@@ -185,6 +169,22 @@ public final class GosPackageState implements Parcelable {
     /** @see #NONE */
     public boolean isNone() {
         return this == NONE;
+    }
+
+    @NonNull
+    public static GosPackageState getForSelf(@NonNull Context context) {
+        return get(context.getPackageName(), context.getUserId());
+    }
+
+    @NonNull
+    @SuppressLint("UserHandleName")
+    public static GosPackageState get(@NonNull String packageName, @NonNull UserHandle user) {
+        return get(packageName, user.getIdentifier());
+    }
+
+    @NonNull
+    public static GosPackageState get(@NonNull String packageName, @UserIdInt int userId) {
+        return Objects.requireNonNull(sCache.query(new CacheQuery(packageName, userId)));
     }
 
     private record CacheQuery(String packageName, int userId) {}
