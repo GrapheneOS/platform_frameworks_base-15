@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2022 GrapheneOS
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package android.content.pm;
 
 import android.annotation.NonNull;
@@ -44,7 +28,14 @@ import java.util.Objects;
  * @hide
  */
 @SystemApi
-public final class GosPackageState extends GosPackageStateBase implements Parcelable {
+public final class GosPackageState implements Parcelable {
+    public final long flagStorage1;
+    // flags that have package-specific meaning
+    public final long packageFlagStorage;
+    @Nullable
+    public final byte[] storageScopes;
+    @Nullable
+    public final byte[] contactScopes;
     /**
      * These flags are lazily derived from persistent state. They are intentionally skipped from
      * equals() and hashCode(). derivedFlags are stored here for performance reasons, to avoid
@@ -59,12 +50,19 @@ public final class GosPackageState extends GosPackageStateBase implements Parcel
      */
     @DerivedPackageFlag.Enum public int derivedFlags;
 
+    /** @hide */ public static final GosPackageState DEFAULT = createEmpty();
+
     /** @hide */
-    public GosPackageState(int flags, long packageFlags,
-                           @Nullable byte[] storageScopes, @Nullable byte[] contactScopes,
-                           int derivedFlags) {
-        super(flags, packageFlags, storageScopes, contactScopes);
-        this.derivedFlags = derivedFlags;
+    public GosPackageState(long flagStorage1, long packageFlagStorage,
+                           @Nullable byte[] storageScopes, @Nullable byte[] contactScopes) {
+        this.flagStorage1 = flagStorage1;
+        this.packageFlagStorage = packageFlagStorage;
+        this.storageScopes = storageScopes;
+        this.contactScopes = contactScopes;
+    }
+
+    private static GosPackageState createEmpty() {
+        return new GosPackageState(0L, 0L, null, null);
     }
 
     @Nullable
@@ -104,8 +102,8 @@ public final class GosPackageState extends GosPackageStateBase implements Parcel
 
     @Override
     public void writeToParcel(@NonNull Parcel dest, int flags) {
-        dest.writeInt(this.flags);
-        dest.writeLong(this.packageFlags);
+        dest.writeLong(this.flagStorage1);
+        dest.writeLong(this.packageFlagStorage);
         dest.writeByteArray(storageScopes);
         dest.writeByteArray(contactScopes);
         dest.writeInt(derivedFlags);
@@ -115,9 +113,10 @@ public final class GosPackageState extends GosPackageStateBase implements Parcel
     public static final Creator<GosPackageState> CREATOR = new Creator<>() {
         @Override
         public GosPackageState createFromParcel(Parcel in) {
-            return new GosPackageState(in.readInt(), in.readLong(),
-                    in.createByteArray(), in.createByteArray(),
-                    in.readInt());
+            var res = new GosPackageState(in.readLong(), in.readLong(),
+                    in.createByteArray(), in.createByteArray());
+            res.derivedFlags = in.readInt();
+            return res;
         }
 
         @Override
@@ -127,14 +126,44 @@ public final class GosPackageState extends GosPackageStateBase implements Parcel
     };
 
     @Override
+    public int hashCode() {
+        return Long.hashCode(flagStorage1) + Arrays.hashCode(storageScopes) + Arrays.hashCode(contactScopes) + Long.hashCode(packageFlagStorage);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (!(obj instanceof GosPackageState o)) {
+            return false;
+        }
+        if (this == o) {
+            return true;
+        }
+        if (flagStorage1 != o.flagStorage1) {
+            return false;
+        }
+        if (!Arrays.equals(storageScopes, o.storageScopes)) {
+            return false;
+        }
+        if (!Arrays.equals(contactScopes, o.contactScopes)) {
+            return false;
+        }
+        if (packageFlagStorage != o.packageFlagStorage) {
+            return false;
+        }
+        return true;
+    }
+
+    @Override
     public int describeContents() {
         return 0;
     }
 
+    public boolean hasFlag(@GosPackageStateFlag.Enum int flag) {
+        return (this.flagStorage1 & (1L << flag)) != 0;
     }
 
-    public boolean hasFlag(int flag) {
-        return (flags & flag) != 0;
+    public boolean hasPackageFlag(int packageFlag) {
+        return (this.packageFlagStorage & (1L << packageFlag)) != 0;
     }
 
     public boolean hasDerivedFlag(@DerivedPackageFlag.Enum int flag) {
@@ -227,8 +256,8 @@ public final class GosPackageState extends GosPackageStateBase implements Parcel
     public static class Editor {
         private final String packageName;
         private final int userId;
-        private int flags;
-        private long packageFlags;
+        private long flagStorage1;
+        private long packageFlagStorage;
         private byte[] storageScopes;
         private byte[] contactScopes;
         private int editorFlags;
@@ -246,54 +275,53 @@ public final class GosPackageState extends GosPackageStateBase implements Parcel
         public Editor(GosPackageState s, String packageName, int userId) {
             this.packageName = packageName;
             this.userId = userId;
-            this.flags = s.flags;
-            this.packageFlags = s.packageFlags;
+            this.flagStorage1 = s.flagStorage1;
+            this.packageFlagStorage = s.packageFlagStorage;
             this.storageScopes = s.storageScopes;
             this.contactScopes = s.contactScopes;
         }
 
         @NonNull
-        public Editor setFlagsState(int flags, boolean state) {
+        public Editor setFlagState(@GosPackageStateFlag.Enum int flag, boolean state) {
             if (state) {
-                addFlags(flags);
+                addFlag(flag);
             } else {
-                clearFlags(flags);
+                clearFlag(flag);
             }
             return this;
         }
 
         @NonNull
-        public Editor addFlags(int flags) {
-            this.flags |= flags;
+        public Editor addFlag(@GosPackageStateFlag.Enum int flag) {
+            this.flagStorage1 |= (1L << flag);
             return this;
         }
 
         @NonNull
-        public Editor clearFlags(int flags) {
-            this.flags &= ~flags;
+        public Editor clearFlag(@GosPackageStateFlag.Enum int flag) {
+            this.flagStorage1 &= ~(1L << flag);
             return this;
         }
 
         @NonNull
-        public Editor addPackageFlags(long flags) {
-            this.packageFlags |= flags;
+        public Editor addPackageFlag(int flag) {
+            this.packageFlagStorage |= (1L << flag);
             return this;
         }
 
         @NonNull
-        public Editor clearPackageFlags(long flags) {
-            this.packageFlags &= ~flags;
+        public Editor clearPackageFlag(int flag) {
+            this.packageFlagStorage &= ~(1L << flag);
             return this;
         }
 
         @NonNull
-        public Editor setPackageFlagState(long flags, boolean state) {
+        public Editor setPackageFlagState(int flag, boolean state) {
             if (state) {
-                addPackageFlags(flags);
+                addPackageFlag(flag);
             } else {
-                clearPackageFlags(flags);
+                clearPackageFlag(flag);
             }
-
             return this;
         }
 
@@ -341,7 +369,7 @@ public final class GosPackageState extends GosPackageStateBase implements Parcel
 
             try {
                 return ActivityThread.getPackageManager().setGosPackageState(packageName, userId,
-                        new GosPackageState(flags, packageFlags, storageScopes, contactScopes, 0),
+                        new GosPackageState(flagStorage1, packageFlagStorage, storageScopes, contactScopes),
                         editorFlags);
             } catch (RemoteException e) {
                 throw e.rethrowFromSystemServer();
