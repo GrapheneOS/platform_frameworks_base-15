@@ -3850,18 +3850,6 @@ public class PackageImpl implements ParsedPackage, AndroidPackageInternal,
         private static final long UPDATABLE_SYSTEM = 1L << 2;
     }
 
-    private volatile int gosPackageStateCachedDerivedFlags;
-
-    @Override
-    public int getGosPackageStateCachedDerivedFlags() {
-        return gosPackageStateCachedDerivedFlags;
-    }
-
-    @Override
-    public void setGosPackageStateCachedDerivedFlags(int value) {
-        gosPackageStateCachedDerivedFlags = value;
-    }
-
     private PackageParsingHooks packageParsingHooks = PackageParsingHooks.DEFAULT;
 
     public static Function<String, PackageParsingHooks> packageParsingHooksSupplier;
