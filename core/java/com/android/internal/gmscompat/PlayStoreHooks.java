@@ -358,7 +358,14 @@ public final class PlayStoreHooks {
     public static LocaleList overrideApplicationLocales(LocaleList actualLocales, @Nullable String targetPackage) {
         Context ctx = GmsCompat.appContext();
 
-        if (Settings.Global.getInt(ctx.getContentResolver(), "gmscompat_play_store_fetch_all_locales", 0) != 1) {
+        ContentResolver resolver = ctx.getContentResolver();
+
+        String settingRegex = Settings.Global.getString(resolver, "gmscompat_play_store_fetch_all_locales");
+        if (settingRegex == null) {
+            return null;
+        }
+        String pkgName = targetPackage != null ? targetPackage : ctx.getPackageName();
+        if (!pkgName.matches(settingRegex)) {
             return null;
         }
 
