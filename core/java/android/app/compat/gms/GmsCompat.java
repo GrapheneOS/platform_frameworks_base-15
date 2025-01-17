@@ -11,6 +11,7 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.IPackageManager;
 import android.content.pm.PackageManager;
 import android.ext.AppInfoExt;
+import android.ext.AppInfoExtFlag;
 import android.ext.PackageId;
 import android.os.Binder;
 import android.os.Build;
@@ -129,7 +130,7 @@ public final class GmsCompat {
         }
 
         isEligibleForClientCompat = !isGmsCore() &&
-                appInfoExt.hasFlag(AppInfoExt.FLAG_HAS_GMSCORE_CLIENT_LIBRARY);
+                appInfoExt.hasFlag(AppInfoExtFlag.HAS_GMSCORE_CLIENT_LIBRARY);
     }
 
     public static boolean isEnabledFor(@NonNull ApplicationInfo app) {
