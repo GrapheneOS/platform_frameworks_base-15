@@ -1,19 +1,3 @@
-/*
- * Copyright (C) 2022 GrapheneOS
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.android.server.pm;
 
 import android.Manifest;
@@ -178,7 +162,8 @@ public class GosPackageStatePmHooks {
             return null;
         }
 
-        return permission.filterRead(gosPsPm, maybeDeriveFlags(pmComputer, gosPsPm, packageState));
+        maybeDeriveFlags(pmComputer, gosPs, packageState);
+        return permission.filterRead(gosPs);
     }
 
     static boolean set(PackageManagerService pm, String packageName, int userId,
@@ -260,49 +245,41 @@ public class GosPackageStatePmHooks {
         return true;
     }
 
-    private static int maybeDeriveFlags(Computer snapshot, final GosPackageStatePm gosPs, PackageStateInternal pkgSetting) {
-        if ((gosPs.flags & (FLAG_STORAGE_SCOPES_ENABLED | FLAG_CONTACT_SCOPES_ENABLED)) == 0) {
-            return 0;
+    private static void maybeDeriveFlags(Computer snapshot, GosPackageState gosPs, PackageStateInternal pkgState) {
+        if ((gosPs.derivedFlags & DerivedPackageFlag.DFLAGS_SET) != 0) {
+            return;
         }
 
-        var pkg = (AndroidPackageInternal) pkgSetting.getPkg();
+        if (!gosPs.hasFlag(GosPackageStateFlag.STORAGE_SCOPES_ENABLED) && !gosPs.hasFlag(GosPackageStateFlag.CONTACT_SCOPES_ENABLED)) {
+            return;
+        }
+
+        AndroidPackageInternal pkg = pkgState.getPkg();
         if (pkg == null) {
             // see AndroidPackage.pkg javadoc for an explanation
-            return 0;
-        }
-
-        int cachedDerivedFlags = pkg.getGosPackageStateCachedDerivedFlags();
-
-        if (cachedDerivedFlags != 0) {
-            return cachedDerivedFlags;
+            return;
         }
 
         SharedUserApi sharedUser = null;
-        if (pkgSetting.hasSharedUser()) {
-            sharedUser = snapshot.getSharedUser(pkgSetting.getSharedUserAppId());
+        if (pkgState.hasSharedUser()) {
+            sharedUser = snapshot.getSharedUser(pkgState.getSharedUserAppId());
         }
 
         int flags;
         if (sharedUser != null) {
             List<AndroidPackage> sharedPkgs = sharedUser.getPackages();
             if (sharedPkgs == null) {
-                return 0;
+                return;
             }
-
             flags = 0;
             for (AndroidPackage sharedPkg : sharedPkgs) {
-                // see GosPackageStatePm doc
+                // see GosPackageState doc
                 flags = deriveFlags(flags, sharedPkg);
             }
         } else {
             flags = deriveFlags(0, pkg);
         }
-
-        flags |= DFLAGS_SET;
-
-        pkg.setGosPackageStateCachedDerivedFlags(flags);
-
-        return flags;
+        gosPs.derivedFlags = flags | DerivedPackageFlag.DFLAGS_SET;
     }
 
     private static int deriveFlags(int flags, AndroidPackage pkg) {
@@ -315,8 +292,8 @@ public class GosPackageStatePmHooks {
                 case Manifest.permission.WRITE_EXTERNAL_STORAGE: {
                     boolean writePerm = name.equals(Manifest.permission.WRITE_EXTERNAL_STORAGE);
                     flags |= writePerm ?
-                            DFLAG_HAS_WRITE_EXTERNAL_STORAGE_DECLARATION :
-                            DFLAG_HAS_READ_EXTERNAL_STORAGE_DECLARATION;
+                            DerivedPackageFlag.HAS_WRITE_EXTERNAL_STORAGE_DECLARATION :
+                            DerivedPackageFlag.HAS_READ_EXTERNAL_STORAGE_DECLARATION;
 
                     int targetSdk = pkg.getTargetSdkVersion();
 
@@ -326,87 +303,87 @@ public class GosPackageStatePmHooks {
                     if (writePerm && legacy) {
                         // when app doesn't have "legacy external storage", WRITE_EXTERNAL_STORAGE
                         // doesn't grant write access
-                        flags |= DFLAG_EXPECTS_STORAGE_WRITE_ACCESS;
+                        flags |= DerivedPackageFlag.EXPECTS_STORAGE_WRITE_ACCESS;
                     }
 
-                    if ((flags & DFLAG_EXPECTS_ALL_FILES_ACCESS) == 0) {
+                    if ((flags & DerivedPackageFlag.EXPECTS_ALL_FILES_ACCESS) == 0) {
                         if (legacy) {
-                            flags |= (DFLAG_EXPECTS_ALL_FILES_ACCESS
-                                    | DFLAG_EXPECTS_LEGACY_EXTERNAL_STORAGE);
+                            flags |= (DerivedPackageFlag.EXPECTS_ALL_FILES_ACCESS
+                                    | DerivedPackageFlag.EXPECTS_LEGACY_EXTERNAL_STORAGE);
                         } else {
-                            flags |= DFLAG_EXPECTS_ACCESS_TO_MEDIA_FILES_ONLY;
+                            flags |= DerivedPackageFlag.EXPECTS_ACCESS_TO_MEDIA_FILES_ONLY;
                         }
                     }
                     continue;
                 }
 
                 case Manifest.permission.MANAGE_EXTERNAL_STORAGE:
-                    flags &= ~DFLAG_EXPECTS_ACCESS_TO_MEDIA_FILES_ONLY;
-                    flags |= DFLAG_EXPECTS_ALL_FILES_ACCESS
-                            | DFLAG_EXPECTS_STORAGE_WRITE_ACCESS
-                            | DFLAG_HAS_MANAGE_EXTERNAL_STORAGE_DECLARATION;
+                    flags &= ~DerivedPackageFlag.EXPECTS_ACCESS_TO_MEDIA_FILES_ONLY;
+                    flags |= DerivedPackageFlag.EXPECTS_ALL_FILES_ACCESS
+                            | DerivedPackageFlag.EXPECTS_STORAGE_WRITE_ACCESS
+                            | DerivedPackageFlag.HAS_MANAGE_EXTERNAL_STORAGE_DECLARATION;
                     continue;
 
                 case Manifest.permission.MANAGE_MEDIA:
-                    flags |= DFLAG_HAS_MANAGE_MEDIA_DECLARATION;
+                    flags |= DerivedPackageFlag.HAS_MANAGE_MEDIA_DECLARATION;
                     continue;
 
                 case Manifest.permission.ACCESS_MEDIA_LOCATION:
-                    flags |= DFLAG_HAS_ACCESS_MEDIA_LOCATION_DECLARATION;
+                    flags |= DerivedPackageFlag.HAS_ACCESS_MEDIA_LOCATION_DECLARATION;
                     continue;
 
                 case Manifest.permission.READ_MEDIA_AUDIO:
-                    flags |= DFLAG_HAS_READ_MEDIA_AUDIO_DECLARATION;
+                    flags |= DerivedPackageFlag.HAS_READ_MEDIA_AUDIO_DECLARATION;
                     continue;
 
                 case Manifest.permission.READ_MEDIA_IMAGES:
-                    flags |= DFLAG_HAS_READ_MEDIA_IMAGES_DECLARATION;
+                    flags |= DerivedPackageFlag.HAS_READ_MEDIA_IMAGES_DECLARATION;
                     continue;
 
                 case Manifest.permission.READ_MEDIA_VIDEO:
-                    flags |= DFLAG_HAS_READ_MEDIA_VIDEO_DECLARATION;
+                    flags |= DerivedPackageFlag.HAS_READ_MEDIA_VIDEO_DECLARATION;
                     continue;
 
                 case Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED:
-                    flags |= DFLAG_HAS_READ_MEDIA_VISUAL_USER_SELECTED_DECLARATION;
+                    flags |= DerivedPackageFlag.HAS_READ_MEDIA_VISUAL_USER_SELECTED_DECLARATION;
                     continue;
 
                 case Manifest.permission.READ_CONTACTS:
-                    flags |= DFLAG_HAS_READ_CONTACTS_DECLARATION;
+                    flags |= DerivedPackageFlag.HAS_READ_CONTACTS_DECLARATION;
                     continue;
 
                 case Manifest.permission.WRITE_CONTACTS:
-                    flags |= DFLAG_HAS_WRITE_CONTACTS_DECLARATION;
+                    flags |= DerivedPackageFlag.HAS_WRITE_CONTACTS_DECLARATION;
                     continue;
 
                 case Manifest.permission.GET_ACCOUNTS:
-                    flags |= DFLAG_HAS_GET_ACCOUNTS_DECLARATION;
+                    flags |= DerivedPackageFlag.HAS_GET_ACCOUNTS_DECLARATION;
                     continue;
             }
         }
 
-        if ((flags & DFLAG_HAS_MANAGE_MEDIA_DECLARATION) != 0) {
-            if ((flags & (DFLAG_HAS_READ_EXTERNAL_STORAGE_DECLARATION
-                    | DFLAG_HAS_READ_MEDIA_AUDIO_DECLARATION
-                    | DFLAG_HAS_READ_MEDIA_IMAGES_DECLARATION
-                    | DFLAG_HAS_READ_MEDIA_VIDEO_DECLARATION
-                    | DFLAG_HAS_MANAGE_EXTERNAL_STORAGE_DECLARATION)) == 0)
+        if ((flags & DerivedPackageFlag.HAS_MANAGE_MEDIA_DECLARATION) != 0) {
+            if ((flags & (DerivedPackageFlag.HAS_READ_EXTERNAL_STORAGE_DECLARATION
+                    | DerivedPackageFlag.HAS_READ_MEDIA_AUDIO_DECLARATION
+                    | DerivedPackageFlag.HAS_READ_MEDIA_IMAGES_DECLARATION
+                    | DerivedPackageFlag.HAS_READ_MEDIA_VIDEO_DECLARATION
+                    | DerivedPackageFlag.HAS_MANAGE_EXTERNAL_STORAGE_DECLARATION)) == 0)
             {
-                flags &= ~DFLAG_HAS_MANAGE_MEDIA_DECLARATION;
+                flags &= ~DerivedPackageFlag.HAS_MANAGE_MEDIA_DECLARATION;
             }
         }
 
-        if ((flags & DFLAG_HAS_MANAGE_MEDIA_DECLARATION) != 0) {
-            flags |= DFLAG_EXPECTS_STORAGE_WRITE_ACCESS;
+        if ((flags & DerivedPackageFlag.HAS_MANAGE_MEDIA_DECLARATION) != 0) {
+            flags |= DerivedPackageFlag.EXPECTS_STORAGE_WRITE_ACCESS;
         }
 
-        if ((flags & DFLAG_HAS_ACCESS_MEDIA_LOCATION_DECLARATION) != 0) {
-            if ((flags & (DFLAG_HAS_READ_EXTERNAL_STORAGE_DECLARATION
-                    | DFLAG_HAS_READ_MEDIA_IMAGES_DECLARATION
-                    | DFLAG_HAS_READ_MEDIA_VIDEO_DECLARATION
-                    | DFLAG_HAS_MANAGE_EXTERNAL_STORAGE_DECLARATION)) == 0)
+        if ((flags & DerivedPackageFlag.HAS_ACCESS_MEDIA_LOCATION_DECLARATION) != 0) {
+            if ((flags & (DerivedPackageFlag.HAS_READ_EXTERNAL_STORAGE_DECLARATION
+                    | DerivedPackageFlag.HAS_READ_MEDIA_IMAGES_DECLARATION
+                    | DerivedPackageFlag.HAS_READ_MEDIA_VIDEO_DECLARATION
+                    | DerivedPackageFlag.HAS_MANAGE_EXTERNAL_STORAGE_DECLARATION)) == 0)
             {
-                flags &= ~DFLAG_HAS_ACCESS_MEDIA_LOCATION_DECLARATION;
+                flags &= ~DerivedPackageFlag.HAS_ACCESS_MEDIA_LOCATION_DECLARATION;
             }
         }
 

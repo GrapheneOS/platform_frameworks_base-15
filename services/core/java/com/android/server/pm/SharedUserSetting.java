@@ -466,10 +466,17 @@ public final class SharedUserSetting extends SettingBase implements SharedUserAp
         return super.getLegacyPermissionState();
     }
 
-    // to recalculate derived flags when sharedUid members are added/removed
+    // invalidate derived flags when sharedUid members are added/removed
     private void clearGosPackageStateCachedDerivedFlags() {
-        for (AndroidPackage pkg : getPackages()) {
-            ((com.android.internal.pm.parsing.pkg.AndroidPackageInternal) pkg).setGosPackageStateCachedDerivedFlags(0);
+        for (int pkgIdx = 0; pkgIdx < mPackages.size(); pkgIdx++) {
+            PackageSetting ps = mPackages.valueAt(pkgIdx);
+            SparseArray<? extends PackageUserStateInternal> userStates = ps.getUserStates();
+            for (int userStateIdx = 0; userStateIdx < userStates.size(); ++userStateIdx) {
+                GosPackageState gosPs = userStates.valueAt(userStateIdx).getGosPackageState();
+                if (gosPs != null) {
+                    gosPs.derivedFlags = 0;
+                }
+            }
         }
     }
 }

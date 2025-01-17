@@ -23,6 +23,7 @@ import android.annotation.UserIdInt;
 import android.app.ActivityThread;
 import android.app.PropertyInvalidatedCache;
 import android.content.Context;
+import android.ext.DerivedPackageFlag;
 import android.os.Parcel;
 import android.os.Parcelable;
 import android.os.Process;
@@ -44,28 +45,19 @@ import java.util.Objects;
  */
 @SystemApi
 public final class GosPackageState extends GosPackageStateBase implements Parcelable {
-    public final int derivedFlags; // derived from persistent state, but not persisted themselves
-
-    // to distinguish between the case when no dflags are set and the case when dflags weren't calculated yet
-    public static final int DFLAGS_SET = 1;
-
-    public static final int DFLAG_EXPECTS_ALL_FILES_ACCESS = 1 << 1;
-    public static final int DFLAG_EXPECTS_ACCESS_TO_MEDIA_FILES_ONLY = 1 << 2;
-    public static final int DFLAG_EXPECTS_STORAGE_WRITE_ACCESS = 1 << 3;
-    public static final int DFLAG_HAS_READ_EXTERNAL_STORAGE_DECLARATION = 1 << 4;
-    public static final int DFLAG_HAS_WRITE_EXTERNAL_STORAGE_DECLARATION = 1 << 5;
-    public static final int DFLAG_HAS_MANAGE_EXTERNAL_STORAGE_DECLARATION = 1 << 6;
-    public static final int DFLAG_HAS_MANAGE_MEDIA_DECLARATION = 1 << 7;
-    public static final int DFLAG_HAS_ACCESS_MEDIA_LOCATION_DECLARATION = 1 << 8;
-    public static final int DFLAG_HAS_READ_MEDIA_AUDIO_DECLARATION = 1 << 9;
-    public static final int DFLAG_HAS_READ_MEDIA_IMAGES_DECLARATION = 1 << 10;
-    public static final int DFLAG_HAS_READ_MEDIA_VIDEO_DECLARATION = 1 << 11;
-    public static final int DFLAG_HAS_READ_MEDIA_VISUAL_USER_SELECTED_DECLARATION = 1 << 12;
-    public static final int DFLAG_EXPECTS_LEGACY_EXTERNAL_STORAGE = 1 << 13;
-
-    public static final int DFLAG_HAS_READ_CONTACTS_DECLARATION = 1 << 20;
-    public static final int DFLAG_HAS_WRITE_CONTACTS_DECLARATION = 1 << 21;
-    public static final int DFLAG_HAS_GET_ACCOUNTS_DECLARATION = 1 << 22;
+    /**
+     * These flags are lazily derived from persistent state. They are intentionally skipped from
+     * equals() and hashCode(). derivedFlags are stored here for performance reasons, to avoid
+     * performing separate IPC to fetch them.
+     * <p>
+     * Note that calculation of derived flags is skipped unless a GosPackageState flag is set that
+     * depends on derived flags, @see {@link com.android.server.pm.GosPackageStatePmHooks#maybeDeriveFlags}
+     * <p>
+     * If package is part of sharedUid, then its derivedFlags are calculated across all
+     * sharedUid member packages. See GosPackageState javadoc for reasoning.
+     * @hide
+     */
+    @DerivedPackageFlag.Enum public int derivedFlags;
 
     /** @hide */
     public GosPackageState(int flags, long packageFlags,
@@ -145,11 +137,11 @@ public final class GosPackageState extends GosPackageStateBase implements Parcel
         return (flags & flag) != 0;
     }
 
-    public boolean hasDerivedFlag(int flag) {
+    public boolean hasDerivedFlag(@DerivedPackageFlag.Enum int flag) {
         return (derivedFlags & flag) != 0;
     }
 
-    public boolean hasDerivedFlags(int flags) {
+    public boolean hasDerivedFlags(@DerivedPackageFlag.Enum int flags) {
         return (derivedFlags & flags) == flags;
     }
 
