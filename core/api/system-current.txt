@@ -4134,8 +4134,6 @@ package android.content.pm {
     method public void writeToParcel(@NonNull android.os.Parcel, int);
     field @NonNull public static final android.os.Parcelable.Creator<android.content.pm.GosPackageState> CREATOR;
     field @Nullable public final byte[] contactScopes;
-    field public final long flagStorage1;
-    field public final long packageFlagStorage;
     field @Nullable public final byte[] storageScopes;
   }
 

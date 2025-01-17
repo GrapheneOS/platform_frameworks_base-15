@@ -30,9 +30,9 @@ import java.util.Objects;
  */
 @SystemApi
 public final class GosPackageState implements Parcelable {
-    public final long flagStorage1;
+    /** @hide */ public final long flagStorage1;
     // flags that have package-specific meaning
-    public final long packageFlagStorage;
+    /** @hide */ public final long packageFlagStorage;
     @Nullable
     public final byte[] storageScopes;
     @Nullable
