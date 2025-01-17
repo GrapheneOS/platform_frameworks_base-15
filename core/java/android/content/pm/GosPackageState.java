@@ -365,8 +365,6 @@ public final class GosPackageState implements Parcelable {
         // Returns true if the update was successfully applied and is scheduled to be written back
         // to storage. Actual writeback is performed asynchronously.
         public boolean apply() {
-            setFlagsState(GosPackageState.FLAG_HAS_PACKAGE_FLAGS, packageFlags != 0);
-
             try {
                 return ActivityThread.getPackageManager().setGosPackageState(packageName, userId,
                         new GosPackageState(flagStorage1, packageFlagStorage, storageScopes, contactScopes),
