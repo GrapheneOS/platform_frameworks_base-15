@@ -10,9 +10,11 @@ import android.content.pm.GosPackageStateFlag;
 import android.ext.KnownSystemPackages;
 import android.ext.DerivedPackageFlag;
 import android.os.Binder;
+import android.os.Process;
 import android.os.RemoteException;
 import android.os.ShellCommand;
 import android.os.UserHandle;
+import android.util.Slog;
 
 import com.android.internal.pm.parsing.pkg.AndroidPackageInternal;
 import com.android.internal.pm.pkg.component.ParsedUsesPermission;
@@ -21,6 +23,7 @@ import com.android.server.pm.pkg.AndroidPackage;
 import com.android.server.pm.pkg.PackageStateInternal;
 import com.android.server.pm.pkg.PackageUserStateInternal;
 import com.android.server.pm.pkg.SharedUserApi;
+import com.android.server.utils.Slogf;
 
 import java.util.List;
 
@@ -81,13 +84,12 @@ public class GosPackageStatePmHooks {
                        final int callingUid, final int callingPid,
                        String packageName, int userId,
                        GosPackageState update, int editorFlags) {
-        GosPackageState currentGosPs = getUnfiltered(pm.snapshotComputer(), packageName, userId);
-
         final int appId;
 
         synchronized (pm.mLock) {
             PackageSetting packageSetting = pm.mSettings.getPackageLPr(packageName);
             if (packageSetting == null) {
+                Slogf.d(TAG, "set: no packageSetting for %s", packageName);
                 return false;
             }
 
@@ -97,6 +99,7 @@ public class GosPackageStatePmHooks {
             // to deal with due to the large number of packages that it includes (see GosPackageState
             // doc). These packages have no need for GosPackageState.
             if (appId == Process.SYSTEM_UID) {
+                Slogf.d(TAG, "set: appId of %s == SYSTEM_UID", packageName);
                 return false;
             }
 
@@ -104,9 +107,17 @@ public class GosPackageStatePmHooks {
                     callingUid, callingPid, appId, userId, true);
 
             if (permission == null) {
+                Slog.d(TAG, "no write permission");
                 return false;
             }
 
+            PackageUserStateInternal userState = packageSetting.getUserStates().get(userId);
+            if (userState == null) {
+                Slog.d(TAG, "no user state");
+                return false;
+            }
+
+            GosPackageState currentGosPs = userState.getGosPackageState();
             GosPackageState updatedGosPs = permission.filterWrite(currentGosPs, update);
 
             SharedUserSetting sharedUser = pm.mSettings.getSharedUserSettingLPr(packageSetting);
