@@ -171,7 +171,7 @@ public class AppCompatConf {
 
     @Nullable
     public static AppCompatProtos.CompatConfig get(PackageImpl pkg) {
-        var configs = com.android.server.ext.AppCompatConf.getParsedConfigs();
+        Configs configs = getParsedConfigs();
 
         if (configs == null) {
             return null;
