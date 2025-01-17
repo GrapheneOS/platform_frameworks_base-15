@@ -42,6 +42,10 @@ import static android.content.pm.GosPackageState.*;
 public class GosPackageStatePmHooks {
     private static final String TAG = "GosPackageStatePmHooks";
 
+    static void init(PackageManagerService pm) {
+        GosPackageStatePermissions.init(pm);
+    }
+
     static GosPackageState get(PackageManagerService pm, String packageName, int userId) {
         final int callingUid = Binder.getCallingUid();
         return get(pm, callingUid, packageName, userId);
@@ -74,7 +78,7 @@ public class GosPackageStatePmHooks {
             return null;
         }
 
-        Permission permission = Permission.get(callingUid, appId, userId, false);
+        GosPackageStatePermission permission = GosPackageStatePermissions.get(callingUid, callingPid, appId, userId, false);
         if (permission == null) {
             return null;
         }
@@ -103,20 +107,21 @@ public class GosPackageStatePmHooks {
                 return false;
             }
 
-            Permission permission = Permission.get(callingUid, appId, userId, true);
+            GosPackageStatePermission permission = GosPackageStatePermissions.get(
+                    callingUid, callingPid, appId, userId, true);
 
             if (permission == null) {
                 return false;
             }
 
-            GosPackageStatePm updatedGosPs = permission.filterWrite(currentGosPs, update);
+            GosPackageState updatedGosPs = permission.filterWrite(currentGosPs, update);
 
             SharedUserSetting sharedUser = pm.mSettings.getSharedUserSettingLPr(packageSetting);
 
             if (sharedUser != null) {
                 List<AndroidPackage> sharedPkgs = sharedUser.getPackages();
 
-                // see GosPackageStatePm doc
+                // see GosPackageState doc
                 for (AndroidPackage sharedPkg : sharedPkgs) {
                     PackageSetting sharedPkgSetting = pm.mSettings.getPackageLPr(sharedPkg.getPackageName());
                     if (sharedPkgSetting != null) {
@@ -142,7 +147,6 @@ public class GosPackageStatePmHooks {
                 Binder.restoreCallingIdentity(token);
             }
         }
-
         if ((editorFlags & EDITOR_FLAG_NOTIFY_UID_AFTER_APPLY) != 0) {
             int uid = UserHandle.getUid(userId, appId);
 
@@ -321,319 +325,6 @@ public class GosPackageStatePmHooks {
                         .apply();
             }
         }
-    }
-
-    static class Permission {
-        // bitmask of flags that can be read/written
-        final int readFlags;
-        final int writeFlags;
-
-        private static final int FIELD_STORAGE_SCOPES = 1;
-        private static final int FIELD_CONTACT_SCOPES = 1 << 1;
-        private static final int FIELD_PACKAGE_FLAGS = 1 << 2;
-
-        // bitmask of fields that can be read/written
-        final int readFields;
-        final int writeFields;
-
-        final int crossUserOrProfilePermissions;
-
-        private static final int ALLOW_CROSS_PROFILE_READS = 1;
-        private static final int ALLOW_CROSS_PROFILE_WRITES = 1 << 1;
-        private static final int ALLOW_CROSS_USER_OR_PROFILE_READS = 1 << 2;
-        private static final int ALLOW_CROSS_USER_OR_PROFILE_WRITES = 1 << 3;
-
-        private Permission(int readFlags, int writeFlags, int readFields, int writeFields,
-                           int crossUserOrProfilePermissions) {
-            this.readFlags = readFlags;
-            this.writeFlags = writeFlags;
-            this.readFields = readFields;
-            this.writeFields = writeFields;
-            this.crossUserOrProfilePermissions = crossUserOrProfilePermissions;
-        }
-
-        private static Permission readOnly(int flags) {
-            return readOnly(flags, 0);
-        }
-
-        private static Permission readOnly(int flags, int fields) {
-            return readOnly(flags, fields, 0);
-        }
-
-        private static Permission readOnly(int flags, int fields, int crossUserOrProfilePermissions) {
-            return new Permission(flags, 0, fields, 0, crossUserOrProfilePermissions);
-        }
-
-        private static Permission readWrite(int flags, int fields) {
-            return readWrite(flags, flags, fields, fields);
-        }
-
-        private static Permission readWrite(int readFlags, int writeFlags, int readFields, int writeFields) {
-            return new Permission(readFlags, writeFlags, readFields, writeFields, 0);
-        }
-
-        boolean canWrite() {
-            // each field has its own flag, no need to check writeFields
-            return writeFlags != 0;
-        }
-
-        @Nullable
-        static Permission get(int callingUid, int targetAppId, int targetUserId, boolean forWrite) {
-            if (callingUid == Process.SYSTEM_UID) {
-                return systemUidPermission;
-            }
-
-            int callingAppId = UserHandle.getAppId(callingUid);
-            Permission permission = grantedPermissions.get(callingAppId);
-
-            if (permission == null) {
-                if (targetAppId == callingAppId) {
-                    permission = selfAccessPermission;
-                } else {
-                    Slog.d(TAG, "uid " + callingUid + " doesn't have permission to " +
-                            "access GosPackageState of other packages");
-                    return null;
-                }
-            }
-
-            if (forWrite && !permission.canWrite()) {
-                return null;
-            }
-
-            if (!permission.checkCrossUserOrProfilePermissions(callingUid, targetUserId, forWrite)) {
-                return null;
-            }
-
-            return permission;
-        }
-
-        private boolean checkCrossUserOrProfilePermissions(int callingUid, int targetUserId, boolean forWrite) {
-            int callingUserId = UserHandle.getUserId(callingUid);
-
-            if (targetUserId == callingUserId) {
-                // caller and target are in the same userId
-                return true;
-            }
-
-            int perms = crossUserOrProfilePermissions;
-            final int crossUserOrProfileFlag = forWrite ?
-                    ALLOW_CROSS_USER_OR_PROFILE_WRITES : ALLOW_CROSS_USER_OR_PROFILE_READS;
-
-            if ((perms & crossUserOrProfileFlag) != 0) {
-                // caller is allowed to access any user of profile
-                return true;
-            }
-
-            final int crossProfileFlag = forWrite ?
-                    ALLOW_CROSS_PROFILE_WRITES : ALLOW_CROSS_PROFILE_READS;
-
-            if ((perms & crossProfileFlag) != 0) {
-                if (userManager.getProfileParentId(targetUserId) == callingUserId) {
-                    // caller is allowed to access its child profile
-                    return true;
-                }
-            }
-
-            Slog.d(TAG, "not allowed to access userId " + targetUserId + " from uid " + callingUid);
-            return false;
-        }
-
-        @Nullable
-        GosPackageState filterRead(GosPackageStatePm ps, int derivedFlags) {
-            int flags = ps.flags & readFlags;
-            if (flags == 0) {
-                return null;
-            }
-            int readFields = this.readFields;
-            return new GosPackageState(flags,
-                    (readFields & FIELD_PACKAGE_FLAGS) != 0 ? ps.packageFlags : 0L,
-                    (readFields & FIELD_STORAGE_SCOPES) != 0 ? ps.storageScopes : null,
-                    (readFields & FIELD_CONTACT_SCOPES) != 0 ? ps.contactScopes : null,
-                    derivedFlags);
-        }
-
-        @Nullable
-        GosPackageStatePm filterWrite(@Nullable GosPackageStateBase current, GosPackageState update) {
-            if (current == null) {
-                current = GosPackageState.createDefault(update.getPackageName(), update.getUserId());
-            }
-            int curFlags = current.flags;
-            int flags = (curFlags & ~writeFlags) | (update.flags & writeFlags);
-            if (flags == 0) {
-                return null;
-            }
-            byte[] storageScopes = current.storageScopes;
-            byte[] contactScopes = current.contactScopes;
-            long packageFlags = current.packageFlags;
-
-            if ((writeFields & FIELD_STORAGE_SCOPES) != 0) {
-                storageScopes = update.storageScopes;
-            }
-
-            if ((writeFields & FIELD_CONTACT_SCOPES) != 0) {
-                contactScopes = update.contactScopes;
-            }
-
-            if ((writeFields & FIELD_PACKAGE_FLAGS) != 0)  {
-                packageFlags = update.packageFlags;
-            }
-
-            return new GosPackageStatePm(flags, packageFlags, storageScopes, contactScopes);
-        }
-
-        // Permission that each package has for accessing its own GosPackageState
-        private static Permission selfAccessPermission;
-        private static Permission systemUidPermission;
-
-        // Maps app's appId to its permission.
-        // Written only during PackageManager init, no need to synchronize reads
-        private static SparseArray<Permission> grantedPermissions;
-
-        private static UserManagerInternal userManager;
-
-        static void init(PackageManagerService pm) {
-            selfAccessPermission = Permission.readOnly(FLAG_STORAGE_SCOPES_ENABLED
-                    | FLAG_ALLOW_ACCESS_TO_OBB_DIRECTORY
-                    | FLAG_CONTACT_SCOPES_ENABLED
-                    ,0);
-
-            grantedPermissions = new SparseArray<>();
-
-            var fullPermission = new Permission(-1, -1, -1, -1,
-                Permission.ALLOW_CROSS_USER_OR_PROFILE_READS
-                        | Permission.ALLOW_CROSS_USER_OR_PROFILE_WRITES
-            );
-            grantedPermissions.put(Process.SHELL_UID, fullPermission);
-            if (Build.isDebuggable()) {
-                // for root adb
-                grantedPermissions.put(Process.ROOT_UID, fullPermission);
-            }
-
-            Computer computer = pm.snapshotComputer();
-
-            KnownSystemPackages ksp = KnownSystemPackages.get(pm.getContext());
-
-            grantPermission(computer, ksp.mediaProvider,
-                    Permission.readOnly(FLAG_STORAGE_SCOPES_ENABLED, FIELD_STORAGE_SCOPES));
-
-            grantPermission(computer, ksp.contactsProvider,
-                    Permission.readOnly(FLAG_CONTACT_SCOPES_ENABLED, FIELD_CONTACT_SCOPES));
-
-            grantPermission(computer, ksp.launcher,
-                    Permission.readOnly(FLAG_STORAGE_SCOPES_ENABLED
-                                    | FLAG_CONTACT_SCOPES_ENABLED
-                            , 0,
-                            // work profile is handled by the launcher in profile's parent
-                            Permission.ALLOW_CROSS_PROFILE_READS));
-
-            grantPermission(computer, ksp.permissionController,
-                    Permission.readWrite(
-                            FLAG_STORAGE_SCOPES_ENABLED
-                                | FLAG_CONTACT_SCOPES_ENABLED
-                                | FLAG_HAS_PACKAGE_FLAGS
-                                ,FIELD_STORAGE_SCOPES
-                                | FIELD_CONTACT_SCOPES
-                                | FIELD_PACKAGE_FLAGS
-                    ));
-
-            final int settingsReadWriteFlags =
-                    FLAG_ALLOW_ACCESS_TO_OBB_DIRECTORY
-                    | FLAG_BLOCK_NATIVE_DEBUGGING_NON_DEFAULT
-                    | FLAG_BLOCK_NATIVE_DEBUGGING
-                    | FLAG_BLOCK_NATIVE_DEBUGGING_SUPPRESS_NOTIF
-                    | FLAG_RESTRICT_MEMORY_DYN_CODE_LOADING_NON_DEFAULT
-                    | FLAG_RESTRICT_MEMORY_DYN_CODE_LOADING
-                    | FLAG_RESTRICT_MEMORY_DYN_CODE_LOADING_SUPPRESS_NOTIF
-                    | FLAG_RESTRICT_STORAGE_DYN_CODE_LOADING_NON_DEFAULT
-                    | FLAG_RESTRICT_STORAGE_DYN_CODE_LOADING
-                    | FLAG_RESTRICT_STORAGE_DYN_CODE_LOADING_SUPPRESS_NOTIF
-                    | FLAG_RESTRICT_WEBVIEW_DYN_CODE_LOADING_NON_DEFAULT
-                    | FLAG_RESTRICT_WEBVIEW_DYN_CODE_LOADING
-                    | FLAG_USE_HARDENED_MALLOC_NON_DEFAULT
-                    | FLAG_USE_HARDENED_MALLOC
-                    | FLAG_USE_EXTENDED_VA_SPACE_NON_DEFAULT
-                    | FLAG_USE_EXTENDED_VA_SPACE
-                    | FLAG_FORCE_MEMTAG_NON_DEFAULT
-                    | FLAG_FORCE_MEMTAG
-                    | FLAG_FORCE_MEMTAG_SUPPRESS_NOTIF
-                    | FLAG_ENABLE_EXPLOIT_PROTECTION_COMPAT_MODE
-            ;
-
-            final int settingsReadFlags = settingsReadWriteFlags
-                    | FLAG_STORAGE_SCOPES_ENABLED
-                    | FLAG_CONTACT_SCOPES_ENABLED
-                    | FLAG_HAS_PACKAGE_FLAGS
-            ;
-
-            final int settingsWriteFlags = settingsReadWriteFlags;
-
-            final int settingsReadFields = FIELD_PACKAGE_FLAGS;
-
-            // note that this applies to all packages that run in the android.uid.system sharedUserId
-            // in secondary users, not just the Settings app. Packages that run in this sharedUserId
-            // in the primary user get the fullPermission declared above
-            grantPermission(computer, ksp.settings,
-                    Permission.readWrite(settingsReadFlags, settingsWriteFlags, settingsReadFields, 0));
-
-            final int systemUidWriteFlags = settingsWriteFlags
-                    | FLAG_BLOCK_NATIVE_DEBUGGING_SUPPRESS_NOTIF
-                    | FLAG_RESTRICT_MEMORY_DYN_CODE_LOADING_SUPPRESS_NOTIF
-                    | FLAG_RESTRICT_STORAGE_DYN_CODE_LOADING_SUPPRESS_NOTIF
-                    | FLAG_FORCE_MEMTAG_SUPPRESS_NOTIF;
-
-            final int systemUidWriteFields =
-                    FIELD_CONTACT_SCOPES // see onClearApplicationUserData() hook
-            ;
-
-            // Used for callers that run as SYSTEM_UID, e.g. system_server and packages in the
-            // android.uid.system sharedUserId in the primary user (but not in secondary users)
-            systemUidPermission = new Permission(-1, systemUidWriteFlags, -1, systemUidWriteFields,
-                Permission.ALLOW_CROSS_USER_OR_PROFILE_READS
-                        | Permission.ALLOW_CROSS_USER_OR_PROFILE_WRITES
-            );
-
-            userManager = Objects.requireNonNull(LocalServices.getService(UserManagerInternal.class));
-
-            if (Build.IS_DEBUGGABLE) {
-                var receiver = new BroadcastReceiver() {
-                    @Override
-                    public void onReceive(Context context, Intent intent) {
-                        var perm = new Permission(
-                            intent.getIntExtra("readFlags", 0),
-                            intent.getIntExtra("writeFlags", 0),
-                            intent.getIntExtra("readFields", 0),
-                            intent.getIntExtra("writeFields", 0),
-                            intent.getIntExtra("crossUserOrProfilePermissions", 0)
-                        );
-                        String pkgName = intent.getStringExtra("pkgName");
-                        grantPermission(pm.snapshotComputer(), pkgName, perm);
-                        PropertyInvalidatedCache.invalidateCache(PermissionManager.CACHE_KEY_PACKAGE_INFO);
-                        Slog.d(TAG, "granted permission " + intent.getExtras());
-                    }
-                };
-                pm.getContext().registerReceiver(receiver, new IntentFilter("GosPackageState.grant_permission"),
-                        Context.RECEIVER_EXPORTED);
-            }
-        }
-
-        private static void grantPermission(Computer computer, String pkgName, Permission filter) {
-            PackageStateInternal psi = computer.getPackageStateInternal(pkgName);
-            if (psi == null || !psi.isSystem()) {
-                Slog.d(TAG, pkgName + " is not a system package");
-                if (Build.IS_DEBUGGABLE) {
-                    throw new IllegalStateException();
-                }
-                return;
-            }
-
-            int appId = psi.getAppId();
-
-            grantedPermissions.put(appId, filter);
-        }
-    }
-
-    static void init(PackageManagerService pm) {
-        Permission.init(pm);
     }
 
     static int runShellCommand(PackageManagerShellCommand cmd) {
