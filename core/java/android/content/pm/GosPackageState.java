@@ -182,30 +182,6 @@ public final class GosPackageState implements Parcelable {
         return (derivedFlags & flags) == flags;
     }
 
-    /** @hide */
-    public static boolean attachableToPackage(int appId) {
-        // Packages with this appId use the "android.uid.system" sharedUserId, which is expensive
-        // to deal with due to the large number of packages that it includes (see GosPackageStatePm
-        // doc). These packages have no need for GosPackageState.
-        return appId != Process.SYSTEM_UID;
-    }
-
-    public static boolean attachableToPackage(@NonNull String pkg) {
-        Context ctx = ActivityThread.currentApplication();
-        if (ctx == null) {
-            return false;
-        }
-
-        ApplicationInfo ai;
-        try {
-            ai = ctx.getPackageManager().getApplicationInfo(pkg, 0);
-        } catch (PackageManager.NameNotFoundException e) {
-            return false;
-        }
-
-        return attachableToPackage(UserHandle.getAppId(ai.uid));
-    }
-
     /** @see #NONE */
     public boolean isNone() {
         return this == NONE;
