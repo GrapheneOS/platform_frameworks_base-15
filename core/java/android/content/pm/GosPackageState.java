@@ -226,8 +226,8 @@ public final class GosPackageState implements Parcelable {
         return GosPackageState.get(packageName, userId).createEditor(packageName, userId);
     }
 
-    public static final int EDITOR_FLAG_KILL_UID_AFTER_APPLY = 1;
-    public static final int EDITOR_FLAG_NOTIFY_UID_AFTER_APPLY = 1 << 1;
+    /** @hide */ public static final int EDITOR_FLAG_KILL_UID_AFTER_APPLY = 1;
+    /** @hide */ public static final int EDITOR_FLAG_NOTIFY_UID_AFTER_APPLY = 1 << 1;
 
     public static class Editor {
         private final String packageName;

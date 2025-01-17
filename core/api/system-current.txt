@@ -4133,8 +4133,6 @@ package android.content.pm {
     method public boolean isNone();
     method public void writeToParcel(@NonNull android.os.Parcel, int);
     field @NonNull public static final android.os.Parcelable.Creator<android.content.pm.GosPackageState> CREATOR;
-    field public static final int EDITOR_FLAG_KILL_UID_AFTER_APPLY = 1; // 0x1
-    field public static final int EDITOR_FLAG_NOTIFY_UID_AFTER_APPLY = 2; // 0x2
     field @Nullable public final byte[] contactScopes;
     field public final long flagStorage1;
     field public final long packageFlagStorage;
