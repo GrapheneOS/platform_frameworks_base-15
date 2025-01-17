@@ -719,7 +719,7 @@ public class GosPackageStatePmHooks {
         Permission.init(pm);
     }
 
-    public static int runShellCommand(PackageManagerShellCommand cmd) {
+    static int runShellCommand(PackageManagerShellCommand cmd) {
         String packageName = cmd.getNextArgRequired();
         int userId = Integer.parseInt(cmd.getNextArgRequired());
 
@@ -732,21 +732,17 @@ public class GosPackageStatePmHooks {
                 if (!ed.apply()) {
                     return 1;
                 }
-
                 if (updatePermissionState) {
                     cmd.mPermissionManager.updatePermissionState(packageName, userId);
                 }
-
                 return 0;
             }
-
             switch (arg) {
-                case "add-flags", "clear-flags" ->
-                    ed.setFlagsState(Integer.parseInt(cmd.getNextArgRequired(), 16),
-                            "add-flags".equals(arg));
-                case "add-package-flags", "clear-package-flags" ->
-                    ed.setPackageFlagState(Long.parseLong(cmd.getNextArgRequired(), 16),
-                            "add-package-flags".equals(arg));
+                case "add-flag", "clear-flag" ->
+                    ed.setFlagState(parseFlag(cmd.getNextArgRequired()), "add-flag".equals(arg));
+                case "add-package-flag", "clear-package-flag" ->
+                    ed.setPackageFlagState(Integer.parseInt(cmd.getNextArgRequired()),
+                            "add-package-flag".equals(arg));
                 case "set-storage-scopes" ->
                     ed.setStorageScopes(getByteArrArg(cmd));
                 case "set-contact-scopes" ->
