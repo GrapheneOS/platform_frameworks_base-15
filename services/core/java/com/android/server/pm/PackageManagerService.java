@@ -6664,13 +6664,17 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
 
         @Override
         public GosPackageState getGosPackageState(@NonNull String packageName, int userId) {
-            return GosPackageStatePmHooks.get(PackageManagerService.this, packageName, userId);
+            int callingUid = Binder.getCallingUid();
+            int callingPid = Binder.getCallingPid();
+            return GosPackageStatePmHooks.getFiltered(PackageManagerService.this, callingUid, callingPid, packageName, userId);
         }
 
         @Override
         public boolean setGosPackageState(@NonNull String packageName, int userId,
                                                   @NonNull GosPackageState updatedPs, int editorFlags) {
-            return GosPackageStatePmHooks.set(PackageManagerService.this, packageName, userId,
+            int callingUid = Binder.getCallingUid();
+            int callingPid = Binder.getCallingPid();
+            return GosPackageStatePmHooks.set(PackageManagerService.this, callingUid, callingPid, packageName, userId,
                     updatedPs, editorFlags);
         }
 
@@ -7351,8 +7355,8 @@ public class PackageManagerService implements PackageSender, TestUtilityService 
 
         @NonNull
         @Override
-        public GosPackageStatePm getGosPackageState(String packageName, int userId) {
-            return GosPackageStatePm.get(PackageManagerService.this, packageName, userId);
+        public GosPackageState getGosPackageState(String packageName, int userId) {
+            return GosPackageStatePmHooks.getUnfiltered(PackageManagerService.this, packageName, userId);
         }
     }
 

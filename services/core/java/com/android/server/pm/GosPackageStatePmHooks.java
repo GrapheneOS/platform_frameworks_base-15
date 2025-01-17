@@ -1,43 +1,31 @@
 package com.android.server.pm;
 
 import android.Manifest;
+import android.annotation.NonNull;
 import android.annotation.Nullable;
 import android.app.ActivityManager;
 import android.app.ActivityManagerInternal;
-import android.app.PropertyInvalidatedCache;
-import android.content.BroadcastReceiver;
-import android.content.Context;
-import android.content.Intent;
-import android.content.IntentFilter;
 import android.content.pm.GosPackageState;
-import android.content.pm.GosPackageStateBase;
+import android.content.pm.GosPackageStateFlag;
 import android.ext.KnownSystemPackages;
+import android.ext.DerivedPackageFlag;
 import android.os.Binder;
-import android.os.Build;
-import android.os.Process;
 import android.os.RemoteException;
 import android.os.ShellCommand;
 import android.os.UserHandle;
-import android.permission.PermissionManager;
-import android.util.Slog;
-import android.util.SparseArray;
 
 import com.android.internal.pm.parsing.pkg.AndroidPackageInternal;
 import com.android.internal.pm.pkg.component.ParsedUsesPermission;
-import com.android.modules.utils.TypedXmlPullParser;
-import com.android.modules.utils.TypedXmlSerializer;
 import com.android.server.LocalServices;
 import com.android.server.pm.pkg.AndroidPackage;
-import com.android.server.pm.pkg.GosPackageStatePm;
 import com.android.server.pm.pkg.PackageStateInternal;
 import com.android.server.pm.pkg.PackageUserStateInternal;
 import com.android.server.pm.pkg.SharedUserApi;
 
-import java.io.IOException;
 import java.util.List;
-import java.util.Objects;
 
 import static android.content.pm.GosPackageState.*;
+import static com.android.server.pm.GosPackageStateUtils.parseFlag;
 
 public class GosPackageStatePmHooks {
     private static final String TAG = "GosPackageStatePmHooks";
@@ -46,52 +34,54 @@ public class GosPackageStatePmHooks {
         GosPackageStatePermissions.init(pm);
     }
 
-    static GosPackageState get(PackageManagerService pm, String packageName, int userId) {
-        final int callingUid = Binder.getCallingUid();
-        return get(pm, callingUid, packageName, userId);
+    @NonNull
+    public static GosPackageState getUnfiltered(PackageManagerService pm, String packageName, int userId) {
+        return getUnfiltered(pm.snapshotComputer(), packageName, userId);
     }
 
-    @Nullable
-    public static GosPackageState get(PackageManagerService pm, int callingUid, String packageName, int userId) {
+    @NonNull
+    public static GosPackageState getUnfiltered(Computer snapshot, String packageName, int userId) {
+        PackageStateInternal psi = snapshot.getPackageStates().get(packageName);
+        if (psi == null) {
+            return NONE;
+        }
+        return psi.getUserStateOrDefault(userId).getGosPackageState();
+    }
+
+    @NonNull
+    public static GosPackageState getFiltered(PackageManagerService pm, int callingUid, int callingPid,
+                                              String packageName, int userId) {
         Computer pmComputer = pm.snapshotComputer();
         PackageStateInternal packageState = pmComputer.getPackageStates().get(packageName);
         if (packageState == null) {
             // the package was likely racily uninstalled
-            return null;
+            return NONE;
         }
-
-        return get(pmComputer, packageState,
+        return getFiltered(pmComputer, packageState,
                 packageState.getUserStateOrDefault(userId).getGosPackageState(),
-                callingUid, userId);
+                callingUid, callingPid, userId);
     }
 
-    @Nullable
-    public static GosPackageState get(Computer pmComputer,
-                                      PackageStateInternal packageState, GosPackageStatePm gosPsPm,
-                                      int callingUid, int userId) {
-        if (gosPsPm == null) {
-            return null;
-        }
-
+    @NonNull
+    public static GosPackageState getFiltered(Computer pmComputer,
+                                      PackageStateInternal packageState, GosPackageState gosPs,
+                                      int callingUid, int callingPid, int userId) {
         final int appId = packageState.getAppId();
-        if (!GosPackageState.attachableToPackage(appId)) {
-            return null;
-        }
 
         GosPackageStatePermission permission = GosPackageStatePermissions.get(callingUid, callingPid, appId, userId, false);
         if (permission == null) {
-            return null;
+            return NONE;
         }
 
         maybeDeriveFlags(pmComputer, gosPs, packageState);
         return permission.filterRead(gosPs);
     }
 
-    static boolean set(PackageManagerService pm, String packageName, int userId,
-                               GosPackageState update, int editorFlags) {
-        final int callingUid = Binder.getCallingUid();
-
-        GosPackageStatePm currentGosPs = GosPackageStatePm.get(pm.snapshotComputer(), packageName, userId);
+    static boolean set(PackageManagerService pm,
+                       final int callingUid, final int callingPid,
+                       String packageName, int userId,
+                       GosPackageState update, int editorFlags) {
+        GosPackageState currentGosPs = getUnfiltered(pm.snapshotComputer(), packageName, userId);
 
         final int appId;
 
@@ -103,7 +93,10 @@ public class GosPackageStatePmHooks {
 
             appId = packageSetting.getAppId();
 
-            if (!GosPackageState.attachableToPackage(appId)) {
+            // Packages with this appId use the "android.uid.system" sharedUserId, which is expensive
+            // to deal with due to the large number of packages that it includes (see GosPackageState
+            // doc). These packages have no need for GosPackageState.
+            if (appId == Process.SYSTEM_UID) {
                 return false;
             }
 
@@ -151,10 +144,9 @@ public class GosPackageStatePmHooks {
             int uid = UserHandle.getUid(userId, appId);
 
             // get GosPackageState as the target app
-            GosPackageState ps = get(pm, uid, packageName, userId);
+            GosPackageState ps = getFiltered(pm, uid, GosPackageStatePermissions.UNKNOWN_CALLING_PID, packageName, userId);
 
             final long token = Binder.clearCallingIdentity();
-
             try {
                 var am = LocalServices.getService(ActivityManagerInternal.class);
                 am.onGosPackageStateChanged(uid, ps);
@@ -162,7 +154,6 @@ public class GosPackageStatePmHooks {
                 Binder.restoreCallingIdentity(token);
             }
         }
-
         return true;
     }
 
@@ -307,7 +298,7 @@ public class GosPackageStatePmHooks {
         return flags;
     }
 
-    // IPackageManagerImpl.clearApplicationUserData
+    /** @see PackageManagerService.IPackageManagerImpl#clearApplicationUserData */
     public static void onClearApplicationUserData(PackageManagerService pm, String packageName, int userId) {
         if (packageName.equals(KnownSystemPackages.get(pm.getContext()).contactsProvider)) {
             // discard IDs that refer to entries in the contacts provider database
@@ -318,9 +309,9 @@ public class GosPackageStatePmHooks {
     private static void clearContactScopesStorage(PackageManagerService pm, int userId) {
         for (PackageStateInternal ps : pm.snapshotComputer().getPackageStates().values()) {
             PackageUserStateInternal us = ps.getUserStateOrDefault(userId);
-            if (gosPs != null && gosPs.contactScopes != null) {
-                gosPs.edit(ps.getPackageName(), userId)
             GosPackageState gosPs = us.getGosPackageState();
+            if (gosPs.contactScopes != null) {
+                gosPs.createEditor(ps.getPackageName(), userId)
                         .setContactScopes(null)
                         .apply();
             }
